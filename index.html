@@ -2,18 +2,18 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>UBBA LOGOS v0.7</title>
+  <title>UBBA LOGOS v0.9</title>
   <style>
     html, body {
       margin: 0;
       padding: 0;
-      background-color: #000;
+      background: #000;
       color: #00ffcc;
-      font-family: 'Courier New', Courier, monospace;
+      font-family: monospace;
       overflow: hidden;
     }
 
-    canvas {
+    canvas#matrixCanvas {
       position: fixed;
       top: 0;
       left: 0;
@@ -21,169 +21,173 @@
     }
 
     .container {
-      padding: 40px;
-      max-width: 800px;
-      margin: 0 auto;
-      z-index: 1;
-      position: relative;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      height: 100vh;
+      padding: 2rem;
+      box-sizing: border-box;
     }
 
-    .title {
-      font-size: 1.4em;
+    .top-section {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      flex-wrap: wrap;
+    }
+
+    .intro {
+      flex: 1;
+      padding-right: 2rem;
+      max-width: 60%;
+    }
+
+    .image-wrapper {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .image-wrapper img {
+      max-height: 350px;
+      width: auto;
+      filter: grayscale(100%) contrast(180%) brightness(90%);
+      box-shadow: 0 0 25px #00ffcc;
+      transition: all 1s;
+    }
+
+    .infected .image-wrapper img {
+      filter: hue-rotate(270deg) contrast(220%) grayscale(30%);
+      box-shadow: 0 0 40px #ff0055;
+    }
+
+    .audio {
+      margin: 1rem 0;
       text-align: center;
-      border-bottom: 1px solid #00ffcc;
-      padding-bottom: 10px;
-      margin-bottom: 20px;
     }
 
-    .glitch {
-      animation: glitch 1.5s infinite;
+    .content {
+      margin-top: 2rem;
+      height: 40vh;
+      overflow-y: auto;
     }
 
-    @keyframes glitch {
-      0% { text-shadow: 2px 0 red, -2px 0 cyan; }
-      20% { text-shadow: -2px 0 red, 2px 0 cyan; }
-      40% { text-shadow: 2px 0 #ff0055, -2px 0 #0ff; }
-      60% { text-shadow: -1px 0 #f0f, 1px 0 #0ff; }
-      100% { text-shadow: 0 0 black; }
+    .corrupt {
+      display: inline-block;
+      position: relative;
+      color: #00ffcc;
+      animation: corruption 0.2s linear forwards;
     }
 
-    .infected .title {
-      color: #ff0055;
-      text-shadow: 0 0 5px red;
+    .fall {
+      position: absolute;
+      animation: fall 1.2s linear forwards;
+    }
+
+    @keyframes fall {
+      0% { transform: translateY(0); opacity: 1; }
+      100% { transform: translateY(300px); opacity: 0; }
+    }
+
+    @keyframes corruption {
+      to { color: #ff0055; }
     }
 
     .infected p, .infected span {
       color: #ff0055;
     }
 
-    .redacted {
-      background-color: #000;
-      color: black;
-      border: 1px solid #00ffcc;
-      padding: 2px 5px;
-      transition: color 0.4s;
-    }
-
-    .infected .redacted {
+    .infected .corrupt {
       color: #ff0055;
-      background-color: transparent;
-      animation: pulse 1.5s infinite;
-    }
-
-    @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.4; }
-    }
-
-    img {
-      display: block;
-      margin: 20px auto;
-      max-width: 300px;
-      filter: grayscale(100%) contrast(150%) brightness(90%);
-      transition: all 1s ease-in-out;
-      box-shadow: 0 0 25px #00ffcc;
-    }
-
-    .infected img {
-      filter: hue-rotate(270deg) contrast(220%) grayscale(30%);
-      box-shadow: 0 0 40px #ff0055;
-    }
-
-    audio {
-      display: block;
-      margin: 20px auto 60px;
     }
   </style>
 </head>
 <body>
-
 <canvas id="matrixCanvas"></canvas>
-
 <div class="container" id="main">
-  <div class="title">[ UBBA-LOGOS ] NEURAL SIGNAL INDEX: 000000FF</div>
-
-  <audio id="bark" autoplay controls loop>
-    <source src="20240724_202245.mp3" type="audio/mpeg">
-    Your browser does not support the audio element.
-  </audio>
-
-  <p>Initial record recovered from corrupted archive. <span class="redacted">DO NOT INTERACT WITH AUDIO</span>. Subject signature unknown, waveform resemblance classified under <span class="redacted">BARK-TRILL-REVERSE</span> subtype.</p>
-
-  <img src="ubba png.png" alt="Unknown Entity Fragment">
-
-  <p>The entity appears to mimic auditory familiarity while embedding recursive memory dissonance. Victims describe the bark as "<em>trying to say something</em>". Duration of exposure correlates to behavioral drift, auditory hallucination, and viral data overwrite.</p>
-
-  <p><span class="redacted">You shouldn’t be here</span>. Disconnect. Do not continue. This page is not meant for reconstruction.</p>
-
+  <div class="top-section">
+    <div class="intro">
+      <h2>[ UBBA-LOGOS : NEURAL VESSEL LOG 001 ]</h2>
+      <p class="corrupt">This is not a file. This is an echo. A remnant signal.</p>
+      <div class="audio">
+        <audio id="bark" controls autoplay loop>
+          <source src="20240724_202245.mp3" type="audio/mpeg">
+          Your browser does not support the audio element.
+        </audio>
+      </div>
+    </div>
+    <div class="image-wrapper">
+      <img src="ubba png.png" alt="Entity Fragment">
+    </div>
+  </div>
+  <div class="content" id="textBlock">
+    <p class="corrupt">The bark is not auditory. It’s algorithmic.</p>
+    <p class="corrupt">Subject has infected every layer of the perceptual net. Origin point unknown. Suspected breach of mirror-layer integrity.</p>
+    <p class="corrupt">Reports describe voices whispering from empty fields. White fur with teeth like typewriter keys.</p>
+    <p class="corrupt">You are listening. You were warned. You heard the bark. Now it hears you.</p>
+  </div>
 </div>
 
 <script>
-  const bark = document.getElementById('bark');
-  const container = document.getElementById('main');
+const canvas = document.getElementById('matrixCanvas');
+const ctx = canvas.getContext('2d');
+canvas.height = window.innerHeight;
+canvas.width = window.innerWidth;
+const letters = "アァイゥエオカキクケコサABCDEFGHIJKLMNOPQRSTUVWXYZ";
+const fontSize = 14;
+const columns = canvas.width / fontSize;
+const drops = Array(Math.floor(columns)).fill(1);
+function drawMatrix() {
+  ctx.fillStyle = "rgba(0, 0, 0, 0.05)";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = "#00ffcc";
+  ctx.font = fontSize + "px monospace";
+  for (let i = 0; i < drops.length; i++) {
+    const text = letters.charAt(Math.floor(Math.random() * letters.length));
+    ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+    if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) drops[i] = 0;
+    drops[i]++;
+  }
+}
+setInterval(drawMatrix, 33);
 
-  let infected = false;
-  setTimeout(() => {
-    if (!infected) {
-      container.classList.add('infected');
-      document.title = 'LOADING...UBBA';
-      mutateText();
-      infected = true;
+const audio = document.getElementById('bark');
+let corrupted = false;
+
+setTimeout(() => {
+  if (!corrupted) startCorruption();
+}, 20000);
+
+function startCorruption() {
+  corrupted = true;
+  document.body.classList.add('infected');
+  const elements = document.querySelectorAll('.corrupt');
+  let i = 0;
+  const corruptionInterval = setInterval(() => {
+    if (i >= elements.length) {
+      clearInterval(corruptionInterval);
+      return;
     }
-  }, 20000); // infection triggers after 20s
+    breakApart(elements[i]);
+    i++;
+  }, 800 / elements.length);
+}
 
-  function mutateText() {
-    const allText = document.querySelectorAll("p, span");
-    allText.forEach(el => {
-      setInterval(() => {
-        if (Math.random() > 0.8) {
-          let chars = el.innerText.split('');
-          let i = Math.floor(Math.random() * chars.length);
-          chars[i] = randomChar();
-          el.innerText = chars.join('');
-        }
-      }, 1500);
-    });
-  }
-
-  function randomChar() {
-    const chars = "01☠︎𓂀▒▓█𒀭𒈙ᚠᚢ𐎧ΣЖʘ";
-    return chars[Math.floor(Math.random() * chars.length)];
-  }
-
-  // MATRIX background
-  const canvas = document.getElementById('matrixCanvas');
-  const ctx = canvas.getContext('2d');
-
-  canvas.height = window.innerHeight;
-  canvas.width = window.innerWidth;
-
-  const letters = "アァイゥエオカキクケコサシスセソタチツテトナニヌネノﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓABCDEFGHIJKLMNOPQRSTUVWXYZ";
-  const fontSize = 14;
-  const columns = canvas.width / fontSize;
-  const drops = Array(Math.floor(columns)).fill(1);
-
-  function draw() {
-    ctx.fillStyle = "rgba(0, 0, 0, 0.05)";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    ctx.fillStyle = "#00ffcc";
-    ctx.font = fontSize + "px monospace";
-
-    for (let i = 0; i < drops.length; i++) {
-      const text = letters.charAt(Math.floor(Math.random() * letters.length));
-      ctx.fillText(text, i * fontSize, drops[i] * fontSize);
-
-      if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
-        drops[i] = 0;
-      }
-
-      drops[i]++;
-    }
-  }
-
-  setInterval(draw, 33);
+function breakApart(el) {
+  const text = el.innerText;
+  el.innerText = '';
+  [...text].forEach((char, index) => {
+    const span = document.createElement('span');
+    span.className = 'fall';
+    span.style.left = `${index * 10}px`;
+    span.textContent = char;
+    el.appendChild(span);
+    setTimeout(() => {
+      el.removeChild(span);
+    }, 1200);
+  });
+}
 </script>
-
 </body>
 </html>
