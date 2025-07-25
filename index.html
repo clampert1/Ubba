@@ -5,34 +5,53 @@
   <title>Item #: SCP-UBBA</title>
   <style>
     body {
-      background-color: #111;
-      color: #0f0;
+      background-color: #0a0a0a;
+      color: #00ffcc;
       font-family: 'Courier New', Courier, monospace;
       margin: 40px;
       line-height: 1.6;
+      transition: all 0.5s ease;
     }
 
     .scp-header {
       text-align: center;
       font-size: 1.4em;
-      border-bottom: 2px solid #0f0;
+      border-bottom: 2px solid #00ffcc;
       padding-bottom: 10px;
       margin-bottom: 20px;
     }
 
     .redacted {
-      background-color: #111;
+      background-color: #0a0a0a;
       color: black;
-      border: 1px solid #0f0;
+      border: 1px solid #00ffcc;
       padding: 2px 5px;
+      transition: color 0.4s;
+    }
+
+    .infected .redacted {
+      color: #ff0055;
+      background-color: transparent;
+      animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
     }
 
     img {
       display: block;
       margin: 20px auto;
       max-width: 300px;
-      filter: contrast(140%) grayscale(80%);
-      box-shadow: 0 0 15px #0f0;
+      filter: grayscale(100%) contrast(180%) brightness(90%);
+      box-shadow: 0 0 25px #00ffcc;
+      transition: all 1s ease-in-out;
+    }
+
+    .infected img {
+      filter: hue-rotate(270deg) contrast(200%) grayscale(30%);
+      box-shadow: 0 0 40px #ff0055;
     }
 
     audio {
@@ -40,42 +59,84 @@
       margin: 40px auto;
     }
 
+    .glitch-text {
+      display: inline-block;
+      animation: glitch 1.8s infinite;
+    }
+
+    @keyframes glitch {
+      0% { text-shadow: 2px 0 red, -2px 0 cyan; }
+      25% { text-shadow: -2px 0 red, 2px 0 cyan; }
+      50% { text-shadow: 2px 0 #ff0055, -2px 0 #0ff; }
+      75% { text-shadow: -1px 0 #f0f, 1px 0 #0ff; }
+      100% { text-shadow: 0 0 black; }
+    }
+
     .footer {
       margin-top: 60px;
       text-align: center;
       font-size: 0.9em;
-      color: #0f0;
+      color: #00ffcc;
+    }
+
+    .infected .footer {
+      color: #ff0055;
+      text-shadow: 0 0 5px red;
     }
   </style>
 </head>
 <body>
 
-  <div class="scp-header">
-    SCP FOUNDATION SECURE SERVER  
-    <br>CLASSIFIED FILE — LEVEL 4 ACCESS ONLY
+  <div class="scp-header glitch-text">
+    SCP FOUNDATION ARCHIVE — WARNING: SIGNAL INTERFERENCE DETECTED
   </div>
 
   <h2>Item #: SCP-UBBA</h2>
-  <p><strong>Object Class:</strong> Euclid</p>
-  <p><strong>Special Containment Procedures:</strong> SCP-UBBA is to be confined to a standard Class-A containment kennel reinforced with [<span class="redacted">REDACTED</span>]. Under no circumstances is vocalization to be recorded or reproduced without Level 4 authorization.</p>
+  <p><strong>Object Class:</strong> [<span class="redacted">REDACTED</span>]</p>
+  <p><strong>Special Containment Procedures:</strong> SCP-UBBA is to remain isolated from digital environments. Any exposure to web-based systems must be terminated immediately. Audio playback is strictly prohibited. [<span class="redacted">DO NOT LISTEN</span>]</p>
 
-  <p><strong>Description:</strong> SCP-UBBA appears to be a domestic canine of indeterminate breed. Subject emits vocalizations bearing strong resemblance to the human word <em>"ubba"</em>. Repetition of these vocalizations at specific frequencies has been linked to the disappearance of [<span class="redacted">REDACTED</span>] personnel.</p>
+  <p><strong>Description:</strong> SCP-UBBA is a canine entity whose vocal emissions carry a complex **memetic infection**. Exposure to the auditory signal labeled as "<em>ubba</em>" has resulted in irreversible digital contamination across Foundation systems. This page has been [<span class="redacted">partially compromised</span>].</p>
 
-  <p>Subject exhibits elevated cognitive behavior, including awareness of surveillance equipment, time-based manipulation, and potential memetic resistance. Recovered footage suggests a persistent auditory anomaly correlating with exposure events. This anomaly is included below for research purposes only.</p>
+  <p>The following image was extracted from corrupted surveillance footage.</p>
 
-  <img src="ubba png.png" alt="SCP-UBBA Photograph">
+  <img src="ubba png.png" alt="SCP-UBBA">
 
-  <audio controls autoplay loop>
+  <audio id="bark" controls autoplay loop>
     <source src="20240724_202245.mp3" type="audio/mpeg">
     Your browser does not support the audio element.
   </audio>
 
-  <p>Personnel exposed to the sound for durations exceeding 3 minutes report mild euphoria, loss of spatial awareness, and visual hallucinations involving anomalous canine entities. Do not engage in prolonged listening.</p>
+  <p>Researchers who encountered the signal exhibited erratic behavior, describing "whispers in the bark" and visual phenomena including canine-shaped shadows and internal hallucinations of fur and teeth. Playback duration longer than <strong>20 seconds</strong> has been correlated with full-scale auditory system breach.</p>
 
   <div class="footer">
-    © SCP Foundation. Unauthorized access will be logged and investigated.  
-    <br>-- End of File --
+    [ LOGGING TERMINATED ]  
+    <br>-- END OF FILE --
   </div>
+
+  <script>
+    const audio = document.getElementById('bark');
+    let timer;
+
+    audio.addEventListener('play', () => {
+      clearTimeout(timer);
+      timer = setTimeout(() => {
+        document.body.classList.add('infected');
+        document.title = 'UBBA :: WAKING';
+        glitchText();
+      }, 20000); // 20 seconds triggers infection
+    });
+
+    function glitchText() {
+      const redacts = document.querySelectorAll('.redacted');
+      redacts.forEach(r => {
+        r.textContent = "ACCESS OVERRIDDEN";
+        r.classList.add('glitch-text');
+      });
+
+      const header = document.querySelector('.scp-header');
+      header.innerHTML = "█̷͎̓Ȗ̵͎̓B̵̲̀B̴̯́͐A̵̢̽̕.̷͚̥̽.̷̜͗.̵͚́͒ ̵͍̗̍Ḧ̸̳̻́̋A̵̗͗͋S̶͇̯̊ ̶̢͇͗̍C̶͉̚Ǫ̴͎̅̒N̷̘̜̚N̸̛͇̯͒E̷͎͛̋C̸̞̺̍̚T̵̼̠̀̀E̵̺̋D̵̖͋̔";
+    }
+  </script>
 
 </body>
 </html>
