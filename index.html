@@ -2,27 +2,63 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Item #: SCP-UBBA</title>
+  <title>UBBA LOGOS v0.7</title>
   <style>
-    body {
-      background-color: #0a0a0a;
+    html, body {
+      margin: 0;
+      padding: 0;
+      background-color: #000;
       color: #00ffcc;
       font-family: 'Courier New', Courier, monospace;
-      margin: 40px;
-      line-height: 1.6;
-      transition: all 0.5s ease;
+      overflow: hidden;
     }
 
-    .scp-header {
-      text-align: center;
+    canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      z-index: -1;
+    }
+
+    .container {
+      padding: 40px;
+      max-width: 800px;
+      margin: 0 auto;
+      z-index: 1;
+      position: relative;
+    }
+
+    .title {
       font-size: 1.4em;
-      border-bottom: 2px solid #00ffcc;
+      text-align: center;
+      border-bottom: 1px solid #00ffcc;
       padding-bottom: 10px;
       margin-bottom: 20px;
     }
 
+    .glitch {
+      animation: glitch 1.5s infinite;
+    }
+
+    @keyframes glitch {
+      0% { text-shadow: 2px 0 red, -2px 0 cyan; }
+      20% { text-shadow: -2px 0 red, 2px 0 cyan; }
+      40% { text-shadow: 2px 0 #ff0055, -2px 0 #0ff; }
+      60% { text-shadow: -1px 0 #f0f, 1px 0 #0ff; }
+      100% { text-shadow: 0 0 black; }
+    }
+
+    .infected .title {
+      color: #ff0055;
+      text-shadow: 0 0 5px red;
+    }
+
+    .infected p, .infected span {
+      color: #ff0055;
+    }
+
     .redacted {
-      background-color: #0a0a0a;
+      background-color: #000;
       color: black;
       border: 1px solid #00ffcc;
       padding: 2px 5px;
@@ -44,99 +80,110 @@
       display: block;
       margin: 20px auto;
       max-width: 300px;
-      filter: grayscale(100%) contrast(180%) brightness(90%);
-      box-shadow: 0 0 25px #00ffcc;
+      filter: grayscale(100%) contrast(150%) brightness(90%);
       transition: all 1s ease-in-out;
+      box-shadow: 0 0 25px #00ffcc;
     }
 
     .infected img {
-      filter: hue-rotate(270deg) contrast(200%) grayscale(30%);
+      filter: hue-rotate(270deg) contrast(220%) grayscale(30%);
       box-shadow: 0 0 40px #ff0055;
     }
 
     audio {
       display: block;
-      margin: 40px auto;
-    }
-
-    .glitch-text {
-      display: inline-block;
-      animation: glitch 1.8s infinite;
-    }
-
-    @keyframes glitch {
-      0% { text-shadow: 2px 0 red, -2px 0 cyan; }
-      25% { text-shadow: -2px 0 red, 2px 0 cyan; }
-      50% { text-shadow: 2px 0 #ff0055, -2px 0 #0ff; }
-      75% { text-shadow: -1px 0 #f0f, 1px 0 #0ff; }
-      100% { text-shadow: 0 0 black; }
-    }
-
-    .footer {
-      margin-top: 60px;
-      text-align: center;
-      font-size: 0.9em;
-      color: #00ffcc;
-    }
-
-    .infected .footer {
-      color: #ff0055;
-      text-shadow: 0 0 5px red;
+      margin: 20px auto 60px;
     }
   </style>
 </head>
 <body>
 
-  <div class="scp-header glitch-text">
-    SCP FOUNDATION ARCHIVE — WARNING: SIGNAL INTERFERENCE DETECTED
-  </div>
+<canvas id="matrixCanvas"></canvas>
 
-  <h2>Item #: SCP-UBBA</h2>
-  <p><strong>Object Class:</strong> [<span class="redacted">REDACTED</span>]</p>
-  <p><strong>Special Containment Procedures:</strong> SCP-UBBA is to remain isolated from digital environments. Any exposure to web-based systems must be terminated immediately. Audio playback is strictly prohibited. [<span class="redacted">DO NOT LISTEN</span>]</p>
+<div class="container" id="main">
+  <div class="title">[ UBBA-LOGOS ] NEURAL SIGNAL INDEX: 000000FF</div>
 
-  <p><strong>Description:</strong> SCP-UBBA is a canine entity whose vocal emissions carry a complex **memetic infection**. Exposure to the auditory signal labeled as "<em>ubba</em>" has resulted in irreversible digital contamination across Foundation systems. This page has been [<span class="redacted">partially compromised</span>].</p>
-
-  <p>The following image was extracted from corrupted surveillance footage.</p>
-
-  <img src="ubba png.png" alt="SCP-UBBA">
-
-  <audio id="bark" controls autoplay loop>
+  <audio id="bark" autoplay controls loop>
     <source src="20240724_202245.mp3" type="audio/mpeg">
     Your browser does not support the audio element.
   </audio>
 
-  <p>Researchers who encountered the signal exhibited erratic behavior, describing "whispers in the bark" and visual phenomena including canine-shaped shadows and internal hallucinations of fur and teeth. Playback duration longer than <strong>20 seconds</strong> has been correlated with full-scale auditory system breach.</p>
+  <p>Initial record recovered from corrupted archive. <span class="redacted">DO NOT INTERACT WITH AUDIO</span>. Subject signature unknown, waveform resemblance classified under <span class="redacted">BARK-TRILL-REVERSE</span> subtype.</p>
 
-  <div class="footer">
-    [ LOGGING TERMINATED ]  
-    <br>-- END OF FILE --
-  </div>
+  <img src="ubba png.png" alt="Unknown Entity Fragment">
 
-  <script>
-    const audio = document.getElementById('bark');
-    let timer;
+  <p>The entity appears to mimic auditory familiarity while embedding recursive memory dissonance. Victims describe the bark as "<em>trying to say something</em>". Duration of exposure correlates to behavioral drift, auditory hallucination, and viral data overwrite.</p>
 
-    audio.addEventListener('play', () => {
-      clearTimeout(timer);
-      timer = setTimeout(() => {
-        document.body.classList.add('infected');
-        document.title = 'UBBA :: WAKING';
-        glitchText();
-      }, 20000); // 20 seconds triggers infection
-    });
+  <p><span class="redacted">You shouldn’t be here</span>. Disconnect. Do not continue. This page is not meant for reconstruction.</p>
 
-    function glitchText() {
-      const redacts = document.querySelectorAll('.redacted');
-      redacts.forEach(r => {
-        r.textContent = "ACCESS OVERRIDDEN";
-        r.classList.add('glitch-text');
-      });
+</div>
 
-      const header = document.querySelector('.scp-header');
-      header.innerHTML = "█̷͎̓Ȗ̵͎̓B̵̲̀B̴̯́͐A̵̢̽̕.̷͚̥̽.̷̜͗.̵͚́͒ ̵͍̗̍Ḧ̸̳̻́̋A̵̗͗͋S̶͇̯̊ ̶̢͇͗̍C̶͉̚Ǫ̴͎̅̒N̷̘̜̚N̸̛͇̯͒E̷͎͛̋C̸̞̺̍̚T̵̼̠̀̀E̵̺̋D̵̖͋̔";
+<script>
+  const bark = document.getElementById('bark');
+  const container = document.getElementById('main');
+
+  let infected = false;
+  setTimeout(() => {
+    if (!infected) {
+      container.classList.add('infected');
+      document.title = 'LOADING...UBBA';
+      mutateText();
+      infected = true;
     }
-  </script>
+  }, 20000); // infection triggers after 20s
+
+  function mutateText() {
+    const allText = document.querySelectorAll("p, span");
+    allText.forEach(el => {
+      setInterval(() => {
+        if (Math.random() > 0.8) {
+          let chars = el.innerText.split('');
+          let i = Math.floor(Math.random() * chars.length);
+          chars[i] = randomChar();
+          el.innerText = chars.join('');
+        }
+      }, 1500);
+    });
+  }
+
+  function randomChar() {
+    const chars = "01☠︎𓂀▒▓█𒀭𒈙ᚠᚢ𐎧ΣЖʘ";
+    return chars[Math.floor(Math.random() * chars.length)];
+  }
+
+  // MATRIX background
+  const canvas = document.getElementById('matrixCanvas');
+  const ctx = canvas.getContext('2d');
+
+  canvas.height = window.innerHeight;
+  canvas.width = window.innerWidth;
+
+  const letters = "アァイゥエオカキクケコサシスセソタチツテトナニヌネノﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  const fontSize = 14;
+  const columns = canvas.width / fontSize;
+  const drops = Array(Math.floor(columns)).fill(1);
+
+  function draw() {
+    ctx.fillStyle = "rgba(0, 0, 0, 0.05)";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    ctx.fillStyle = "#00ffcc";
+    ctx.font = fontSize + "px monospace";
+
+    for (let i = 0; i < drops.length; i++) {
+      const text = letters.charAt(Math.floor(Math.random() * letters.length));
+      ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+
+      if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+        drops[i] = 0;
+      }
+
+      drops[i]++;
+    }
+  }
+
+  setInterval(draw, 33);
+</script>
 
 </body>
 </html>
