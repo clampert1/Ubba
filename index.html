@@ -155,11 +155,8 @@ setInterval(drawMatrix, 33);
 const audio = document.getElementById('bark');
 let corrupted = false;
 
-setTimeout(() => {
-  if (!corrupted) startCorruption();
-}, 20000);
-
-function startCorruption() {
+function triggerCorruption() {
+  if (corrupted) return;
   corrupted = true;
   document.body.classList.add('infected');
   const elements = document.querySelectorAll('.corrupt');
@@ -188,6 +185,17 @@ function breakApart(el) {
     }, 1200);
   });
 }
+
+// Initial infection after 20s
+setTimeout(triggerCorruption, 20000);
+
+// Infection triggered by hover and scroll
+document.addEventListener('mousemove', () => {
+  if (!corrupted) triggerCorruption();
+});
+document.addEventListener('scroll', () => {
+  if (!corrupted) triggerCorruption();
+});
 </script>
 </body>
 </html>
