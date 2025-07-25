@@ -10,7 +10,8 @@
       background: #000;
       color: #00ffcc;
       font-family: monospace;
-      overflow: hidden;
+      overflow-x: hidden;
+      overflow-y: auto;
     }
 
     canvas#matrixCanvas {
@@ -21,10 +22,6 @@
     }
 
     .container {
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      height: 100vh;
       padding: 2rem;
       box-sizing: border-box;
     }
@@ -69,15 +66,12 @@
 
     .content {
       margin-top: 2rem;
-      height: 40vh;
-      overflow-y: auto;
     }
 
     .corrupt {
       display: inline-block;
       position: relative;
       color: #00ffcc;
-      animation: corruption 0.2s linear forwards;
     }
 
     .fall {
@@ -90,15 +84,7 @@
       100% { transform: translateY(300px); opacity: 0; }
     }
 
-    @keyframes corruption {
-      to { color: #ff0055; }
-    }
-
     .infected p, .infected span {
-      color: #ff0055;
-    }
-
-    .infected .corrupt {
       color: #ff0055;
     }
   </style>
@@ -109,9 +95,11 @@
   <div class="top-section">
     <div class="intro">
       <h2>[ UBBA-LOGOS : NEURAL VESSEL LOG 001 ]</h2>
-      <p class="corrupt">This is not a file. This is an echo. A remnant signal.</p>
+      <p class="corrupt">File: UBBA-LOGOS_v0.9-ARCHIVE.DAT</p>
+      <p class="corrupt">Recovered: ██.██.2023</p>
+      <p class="corrupt">Clearance: ██/██ REQUIRED</p>
       <div class="audio">
-        <audio id="bark" controls autoplay loop>
+        <audio id="bark" controls>
           <source src="20240724_202245.mp3" type="audio/mpeg">
           Your browser does not support the audio element.
         </audio>
@@ -122,13 +110,24 @@
     </div>
   </div>
   <div class="content" id="textBlock">
-    <p class="corrupt">The bark is not auditory. It’s algorithmic.</p>
-    <p class="corrupt">Subject has infected every layer of the perceptual net. Origin point unknown. Suspected breach of mirror-layer integrity.</p>
-    <p class="corrupt">Reports describe voices whispering from empty fields. White fur with teeth like typewriter keys.</p>
-    <p class="corrupt">You are listening. You were warned. You heard the bark. Now it hears you.</p>
+    <p class="corrupt">First detection originated from a civilian amateur radio array near Spencer’s Bluff. The subject reported a "rhythmic distortion" resembling laughter, layered beneath barking, occurring across abandoned weather frequencies.</p>
+    <p class="corrupt">The vocalization, transcribed phonetically as "ubba," was thought to be a glitch. Three days later, the listener was discovered staring at a disabled receiver, whispering the sound in 9-second intervals. His pupils were dilated and unresponsive. He had no tongue.</p>
+    <p class="corrupt">A regional cyber-forensics team attempting to isolate the file accidentally uploaded a clip to internal Slack servers. Seven employees began reporting phantom heat and "dog-shaped static" appearing in peripheral vision.</p>
+    <p class="corrupt">[REDACTED] compiled a symptoms list after the seventh audio reproduction incident:</p>
+    <ul class="corrupt">
+      <li>– Temporary linguistic disfluency involving the phoneme "ubba"</li>
+      <li>– Shadows no longer align with body posture</li>
+      <li>– Echoes manifest even in text communication</li>
+      <li>– Headphones overheat and emit low canine growls when placed near mirrors</li>
+    </ul>
+    <p class="corrupt">One infected user typed “it has a tail in the code” during a livestream before the video feed collapsed into pure static. The phrase continues to propagate through unrelated commit messages.</p>
+    <p class="corrupt">PROJECT ABANDONED. Containment breached. Interaction with audio must now be assumed as voluntary infection.</p>
+    <p class="corrupt">DO NOT LISTEN TO THE BARK.</p>
+    <p class="corrupt">DO NOT MIMIC THE SOUND.</p>
+    <p class="corrupt">DO NOT TURN OFF THE SCREEN AFTER HEARING IT.</p>
+    <p class="corrupt">...ubba</p>
   </div>
 </div>
-
 <script>
 const canvas = document.getElementById('matrixCanvas');
 const ctx = canvas.getContext('2d');
@@ -154,9 +153,10 @@ setInterval(drawMatrix, 33);
 
 const audio = document.getElementById('bark');
 let corrupted = false;
+let hasPlayed = false;
 
 function triggerCorruption() {
-  if (corrupted) return;
+  if (corrupted || !hasPlayed) return;
   corrupted = true;
   document.body.classList.add('infected');
   const elements = document.querySelectorAll('.corrupt');
@@ -186,15 +186,15 @@ function breakApart(el) {
   });
 }
 
-// Initial infection after 20s
-setTimeout(triggerCorruption, 20000);
+audio.addEventListener('play', () => {
+  hasPlayed = true;
+});
 
-// Infection triggered by hover and scroll
 document.addEventListener('mousemove', () => {
-  if (!corrupted) triggerCorruption();
+  if (!corrupted && hasPlayed) triggerCorruption();
 });
 document.addEventListener('scroll', () => {
-  if (!corrupted) triggerCorruption();
+  if (!corrupted && hasPlayed) triggerCorruption();
 });
 </script>
 </body>
