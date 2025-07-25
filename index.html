@@ -1,201 +1,354 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>UBBA LOGOS v0.9</title>
-  <style>
-    html, body {
-      margin: 0;
-      padding: 0;
-      background: #000;
-      color: #00ffcc;
-      font-family: monospace;
-      overflow-x: hidden;
-      overflow-y: auto;
-    }
-
-    canvas#matrixCanvas {
-      position: fixed;
-      top: 0;
-      left: 0;
-      z-index: -1;
-    }
-
-    .container {
-      padding: 2rem;
-      box-sizing: border-box;
-    }
-
-    .top-section {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      flex-wrap: wrap;
-    }
-
-    .intro {
-      flex: 1;
-      padding-right: 2rem;
-      max-width: 60%;
-    }
-
-    .image-wrapper {
-      flex: 1;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
-
-    .image-wrapper img {
-      max-height: 350px;
-      width: auto;
-      filter: grayscale(100%) contrast(180%) brightness(90%);
-      box-shadow: 0 0 25px #00ffcc;
-      transition: all 1s;
-    }
-
-    .infected .image-wrapper img {
-      filter: hue-rotate(270deg) contrast(220%) grayscale(30%);
-      box-shadow: 0 0 40px #ff0055;
-    }
-
-    .audio {
-      margin: 1rem 0;
-      text-align: center;
-    }
-
-    .content {
-      margin-top: 2rem;
-    }
-
-    .corrupt {
-      display: inline-block;
-      position: relative;
-      color: #00ffcc;
-    }
-
-    .fall {
-      position: absolute;
-      animation: fall 1.2s linear forwards;
-    }
-
-    @keyframes fall {
-      0% { transform: translateY(0); opacity: 1; }
-      100% { transform: translateY(300px); opacity: 0; }
-    }
-
-    .infected p, .infected span {
-      color: #ff0055;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ubba Research Archive</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            background-color: #111;
+            color: #ccc;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            overflow-x: hidden;
+            transition: all 0.3s;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            position: relative;
+        }
+        
+        h1 {
+            color: #8b0000;
+            text-align: center;
+            border-bottom: 1px solid #333;
+            padding-bottom: 10px;
+        }
+        
+        .audio-container {
+            text-align: center;
+            margin: 30px 0;
+        }
+        
+        audio {
+            width: 100%;
+            max-width: 400px;
+            filter: grayscale(80%);
+        }
+        
+        .warning {
+            color: #8b0000;
+            font-weight: bold;
+            text-align: center;
+            margin: 20px 0;
+            opacity: 0;
+            transition: opacity 0.5s;
+        }
+        
+        .corrupt-letter {
+            position: absolute;
+            color: red;
+            animation: fall 3s linear forwards;
+            z-index: 100;
+        }
+        
+        @keyframes fall {
+            to {
+                transform: translateY(100vh) rotate(360deg);
+                opacity: 0;
+            }
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .distortion-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: repeating-linear-gradient(
+                0deg,
+                rgba(0, 0, 0, 0.8),
+                rgba(0, 0, 0, 0.8) 1px,
+                transparent 1px,
+                transparent 2px
+            );
+            pointer-events: none;
+            opacity: 0;
+            z-index: 1000;
+            transition: opacity 1s;
+        }
+        
+        .glitch-img {
+            max-width: 100%;
+            display: block;
+            margin: 20px auto;
+            border: 1px solid #333;
+            transition: all 0.5s;
+        }
+        
+        .corrupt-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAA8SURBVGhDY/j//z8DrmFgYGBgxJX4nwF3JjQNQ9MwNA1D0zA0DUPTMDQNQ9MwNA1D0zA0DUPTMDQNQ9MwNA0D1QAAXQYHZx4XJzAAAAAASUVORK5CYII=');
+            opacity: 0;
+            pointer-events: none;
+            z-index: 999;
+        }
+        
+        .final-message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: red;
+            font-size: 2em;
+            text-align: center;
+            opacity: 0;
+            z-index: 1001;
+            pointer-events: none;
+        }
+    </style>
 </head>
 <body>
-<canvas id="matrixCanvas"></canvas>
-<div class="container" id="main">
-  <div class="top-section">
-    <div class="intro">
-      <h2>[ UBBA-LOGOS : NEURAL VESSEL LOG 001 ]</h2>
-      <p class="corrupt">File: UBBA-LOGOS_v0.9-ARCHIVE.DAT</p>
-      <p class="corrupt">Recovered: ██.██.2023</p>
-      <p class="corrupt">Clearance: ██/██ REQUIRED</p>
-      <div class="audio">
-        <audio id="bark" controls>
-          <source src="20240724_202245.mp3" type="audio/mpeg">
-          Your browser does not support the audio element.
-        </audio>
-      </div>
+    <div class="corrupt-bg"></div>
+    <div class="distortion-overlay"></div>
+    <div class="final-message">YOU SHOULDN'T HAVE LISTENED</div>
+    
+    <div class="container" id="mainContent">
+        <h1>UBBA RESEARCH ARCHIVE</h1>
+        
+        <div class="audio-container">
+            <audio controls id="ubbaAudio">
+                <source src="20240724_202245.mp3" type="audio/mpeg">
+                Your browser does not support the audio element.
+            </audio>
+            <div class="warning">WARNING: Audio playback may trigger unexpected effects</div>
+        </div>
+        
+        <img src="ubba png.png" alt="Ubba" class="glitch-img" id="ubbaImage">
+        
+        <h2>Subject: Ubba</h2>
+        <p>Ubba is a canine subject that first came to our attention in late 2022. Initial reports described unusual auditory phenomena associated with its vocalizations.</p>
+        
+        <p>The bark pattern, phonetically transcribed as "ub-ba", appears to have properties that defy conventional acoustic analysis. When recorded and played back, the waveform displays anomalous characteristics not found in normal canine vocalizations.</p>
+        
+        <h3>Experimental Observations</h3>
+        <ul>
+            <li>Recording devices malfunction at unpredictable intervals when capturing Ubba's barks</li>
+            <li>Digital files containing Ubba's barks show signs of spontaneous corruption</li>
+            <li>Listeners report experiencing auditory hallucinations for 24-48 hours after exposure</li>
+            <li>Several research assistants have complained of vivid, disturbing dreams</li>
+        </ul>
+        
+        <h3>Theory</h3>
+        <p>We believe Ubba may be a carrier of what we're calling "acoustic memetic agents" - sound patterns that directly affect human neural pathways. The mechanism is unknown, but appears to be related to specific frequency modulations in the bark pattern.</p>
+        
+        <p>Further research is needed, but all attempts to study Ubba in controlled laboratory conditions have failed. The subject seems to resist containment, and recording equipment consistently malfunctions during critical moments.</p>
+        
+        <h3>WARNING</h3>
+        <p>If you're reading this, you may have encountered Ubba or one of its acoustic traces. Do not attempt to interact with the subject. If you've heard the bark, monitor your mental state carefully. Report any unusual thoughts, dreams, or perceptions to the research team immediately.</p>
+        
+        <div class="hidden" id="hiddenContent">
+            <h2>SECURED TRANSMISSION</h2>
+            <p>They told us it was just a dog. They were wrong. The barks aren't barks - they're signals. Ubba isn't the source, just the transmitter. It's coming from somewhere else. The more people hear it, the stronger the signal becomes.</p>
+            <p>I can hear them in my dreams now. The whispers. They're not in any language I know, but I understand them. They're calling. They're coming.</p>
+            <p>If you're reading this, it's already too late for me. Don't listen to the audio. Don't let others listen. Destroy all copies. The infection spreads through sound.</p>
+        </div>
     </div>
-    <div class="image-wrapper">
-      <img src="ubba png.png" alt="Entity Fragment">
-    </div>
-  </div>
-  <div class="content" id="textBlock">
-    <p class="corrupt">First detection originated from a civilian amateur radio array near Spencer’s Bluff. The subject reported a "rhythmic distortion" resembling laughter, layered beneath barking, occurring across abandoned weather frequencies.</p>
-    <p class="corrupt">The vocalization, transcribed phonetically as "ubba," was thought to be a glitch. Three days later, the listener was discovered staring at a disabled receiver, whispering the sound in 9-second intervals. His pupils were dilated and unresponsive. He had no tongue.</p>
-    <p class="corrupt">A regional cyber-forensics team attempting to isolate the file accidentally uploaded a clip to internal Slack servers. Seven employees began reporting phantom heat and "dog-shaped static" appearing in peripheral vision.</p>
-    <p class="corrupt">[REDACTED] compiled a symptoms list after the seventh audio reproduction incident:</p>
-    <ul class="corrupt">
-      <li>– Temporary linguistic disfluency involving the phoneme "ubba"</li>
-      <li>– Shadows no longer align with body posture</li>
-      <li>– Echoes manifest even in text communication</li>
-      <li>– Headphones overheat and emit low canine growls when placed near mirrors</li>
-    </ul>
-    <p class="corrupt">One infected user typed “it has a tail in the code” during a livestream before the video feed collapsed into pure static. The phrase continues to propagate through unrelated commit messages.</p>
-    <p class="corrupt">PROJECT ABANDONED. Containment breached. Interaction with audio must now be assumed as voluntary infection.</p>
-    <p class="corrupt">DO NOT LISTEN TO THE BARK.</p>
-    <p class="corrupt">DO NOT MIMIC THE SOUND.</p>
-    <p class="corrupt">DO NOT TURN OFF THE SCREEN AFTER HEARING IT.</p>
-    <p class="corrupt">...ubba</p>
-  </div>
-</div>
-<script>
-const canvas = document.getElementById('matrixCanvas');
-const ctx = canvas.getContext('2d');
-canvas.height = window.innerHeight;
-canvas.width = window.innerWidth;
-const letters = "アァイゥエオカキクケコサABCDEFGHIJKLMNOPQRSTUVWXYZ";
-const fontSize = 14;
-const columns = canvas.width / fontSize;
-const drops = Array(Math.floor(columns)).fill(1);
-function drawMatrix() {
-  ctx.fillStyle = "rgba(0, 0, 0, 0.05)";
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  ctx.fillStyle = "#00ffcc";
-  ctx.font = fontSize + "px monospace";
-  for (let i = 0; i < drops.length; i++) {
-    const text = letters.charAt(Math.floor(Math.random() * letters.length));
-    ctx.fillText(text, i * fontSize, drops[i] * fontSize);
-    if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) drops[i] = 0;
-    drops[i]++;
-  }
-}
-setInterval(drawMatrix, 33);
 
-const audio = document.getElementById('bark');
-let corrupted = false;
-let hasPlayed = false;
-
-function triggerCorruption() {
-  if (corrupted || !hasPlayed) return;
-  corrupted = true;
-  document.body.classList.add('infected');
-  const elements = document.querySelectorAll('.corrupt');
-  let i = 0;
-  const corruptionInterval = setInterval(() => {
-    if (i >= elements.length) {
-      clearInterval(corruptionInterval);
-      return;
-    }
-    breakApart(elements[i]);
-    i++;
-  }, 800 / elements.length);
-}
-
-function breakApart(el) {
-  const text = el.innerText;
-  el.innerText = '';
-  [...text].forEach((char, index) => {
-    const span = document.createElement('span');
-    span.className = 'fall';
-    span.style.left = `${index * 10}px`;
-    span.textContent = char;
-    el.appendChild(span);
-    setTimeout(() => {
-      el.removeChild(span);
-    }, 1200);
-  });
-}
-
-audio.addEventListener('play', () => {
-  hasPlayed = true;
-});
-
-document.addEventListener('mousemove', () => {
-  if (!corrupted && hasPlayed) triggerCorruption();
-});
-document.addEventListener('scroll', () => {
-  if (!corrupted && hasPlayed) triggerCorruption();
-});
-</script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const audio = document.getElementById('ubbaAudio');
+            const warning = document.querySelector('.warning');
+            const mainContent = document.getElementById('mainContent');
+            const hiddenContent = document.getElementById('hiddenContent');
+            const ubbaImage = document.getElementById('ubbaImage');
+            const corruptBg = document.querySelector('.corrupt-bg');
+            const distortionOverlay = document.querySelector('.distortion-overlay');
+            const finalMessage = document.querySelector('.final-message');
+            
+            let corruptionStarted = false;
+            let corruptionLevel = 0;
+            let corruptionInterval;
+            
+            // Show warning when hovering over audio
+            audio.addEventListener('mouseover', function() {
+                warning.style.opacity = '1';
+            });
+            
+            audio.addEventListener('mouseout', function() {
+                warning.style.opacity = '0';
+            });
+            
+            // Start corruption when audio is played
+            audio.addEventListener('play', function() {
+                if (!corruptionStarted) {
+                    startCorruption();
+                    corruptionStarted = true;
+                }
+            });
+            
+            function startCorruption() {
+                // Initial effects
+                document.body.style.backgroundColor = '#0a0a0a';
+                warning.style.color = '#ff0000';
+                warning.textContent = 'WARNING: AUDIO PLAYBACK DETECTED - CONTAINMENT FAILURE';
+                warning.style.opacity = '1';
+                
+                // Start gradual corruption
+                corruptionInterval = setInterval(increaseCorruption, 2000);
+                
+                // Show hidden content after delay
+                setTimeout(() => {
+                    hiddenContent.classList.remove('hidden');
+                }, 10000);
+            }
+            
+            function increaseCorruption() {
+                corruptionLevel++;
+                
+                // Stage 1: Text corruption
+                if (corruptionLevel >= 1) {
+                    corruptText();
+                }
+                
+                // Stage 2: Image glitching
+                if (corruptionLevel >= 3) {
+                    glitchImage();
+                }
+                
+                // Stage 3: Background distortion
+                if (corruptionLevel >= 5) {
+                    corruptBg.style.opacity = '0.2';
+                }
+                
+                // Stage 4: Heavy distortion
+                if (corruptionLevel >= 7) {
+                    distortionOverlay.style.opacity = '0.5';
+                    document.body.style.color = '#ff5555';
+                }
+                
+                // Stage 5: Final corruption
+                if (corruptionLevel >= 10) {
+                    finalCorruption();
+                    clearInterval(corruptionInterval);
+                }
+            }
+            
+            function corruptText() {
+                const elements = document.querySelectorAll('p, li, h2, h3');
+                elements.forEach(el => {
+                    if (Math.random() < 0.3 * (corruptionLevel / 10)) {
+                        const text = el.textContent;
+                        const words = text.split(' ');
+                        const corruptedWords = words.map(word => {
+                            if (Math.random() < 0.4) {
+                                return corruptWord(word);
+                            }
+                            return word;
+                        });
+                        el.textContent = corruptedWords.join(' ');
+                        
+                        // Make some letters fall
+                        if (Math.random() < 0.2) {
+                            makeLettersFall(el);
+                        }
+                    }
+                });
+            }
+            
+            function corruptWord(word) {
+                if (word.length < 2) return word;
+                
+                const chars = word.split('');
+                const corruptCount = Math.max(1, Math.floor(chars.length * 0.3));
+                
+                for (let i = 0; i < corruptCount; i++) {
+                    const pos = Math.floor(Math.random() * chars.length);
+                    chars[pos] = getRandomCorruptChar();
+                }
+                
+                return chars.join('');
+            }
+            
+            function getRandomCorruptChar() {
+                const corruptChars = ['@', '#', '$', '%', '&', '*', '�', '�', '�'];
+                return corruptChars[Math.floor(Math.random() * corruptChars.length)];
+            }
+            
+            function makeLettersFall(element) {
+                const text = element.textContent;
+                const letters = text.split('');
+                
+                element.textContent = ''; // Clear original text
+                
+                letters.forEach((letter, index) => {
+                    const span = document.createElement('span');
+                    span.textContent = letter;
+                    element.appendChild(span);
+                    
+                    if (Math.random() < 0.1 * (corruptionLevel / 10)) {
+                        const corruptLetter = document.createElement('div');
+                        corruptLetter.className = 'corrupt-letter';
+                        corruptLetter.textContent = getRandomCorruptChar();
+                        corruptLetter.style.left = (element.offsetLeft + index * 8) + 'px';
+                        corruptLetter.style.top = element.offsetTop + 'px';
+                        document.body.appendChild(corruptLetter);
+                        
+                        // Remove after animation
+                        setTimeout(() => {
+                            corruptLetter.remove();
+                        }, 3000);
+                    }
+                });
+            }
+            
+            function glitchImage() {
+                ubbaImage.style.filter = `hue-rotate(${Math.random() * 360}deg) contrast(${1 + Math.random()}) brightness(${0.7 + Math.random() * 0.6})`;
+                ubbaImage.style.transform = `translateX(${(Math.random() - 0.5) * 20}px) translateY(${(Math.random() - 0.5) * 20}px)`;
+                
+                if (Math.random() < 0.1) {
+                    ubbaImage.src = ''; // Briefly disappear
+                    setTimeout(() => {
+                        ubbaImage.src = 'ubba png.png';
+                    }, 100);
+                }
+            }
+            
+            function finalCorruption() {
+                // Heavy background distortion
+                corruptBg.style.opacity = '0.8';
+                distortionOverlay.style.opacity = '0.9';
+                
+                // Hide most content
+                mainContent.style.opacity = '0.1';
+                
+                // Show final message
+                finalMessage.style.opacity = '1';
+                finalMessage.style.fontSize = '3em';
+                
+                // Add pulsing effect to final message
+                setInterval(() => {
+                    finalMessage.style.fontSize = `${3 + Math.random()}em`;
+                }, 300);
+                
+                // Redirect after delay
+                setTimeout(() => {
+                    window.location.href = "about:blank";
+                }, 15000);
+            }
+        });
+    </script>
 </body>
 </html>
