@@ -1,32 +1,81 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Ubba is Watching</title>
+  <meta charset="UTF-8">
+  <title>Item #: SCP-UBBA</title>
   <style>
     body {
-      background-color: black;
-      color: #00ffcc;
-      font-family: monospace;
-      text-align: center;
-      padding: 50px;
-      animation: flicker 2s infinite;
+      background-color: #111;
+      color: #0f0;
+      font-family: 'Courier New', Courier, monospace;
+      margin: 40px;
+      line-height: 1.6;
     }
-    @keyframes flicker {
-      0%, 100% { opacity: 1; }
-      30% { opacity: 0.3; }
-      50% { opacity: 0.9; }
-      70% { opacity: 0.6; }
-      80% { opacity: 0.95; }
+
+    .scp-header {
+      text-align: center;
+      font-size: 1.4em;
+      border-bottom: 2px solid #0f0;
+      padding-bottom: 10px;
+      margin-bottom: 20px;
+    }
+
+    .redacted {
+      background-color: #111;
+      color: black;
+      border: 1px solid #0f0;
+      padding: 2px 5px;
+    }
+
+    img {
+      display: block;
+      margin: 20px auto;
+      max-width: 300px;
+      filter: contrast(140%) grayscale(80%);
+      box-shadow: 0 0 15px #0f0;
+    }
+
+    audio {
+      display: block;
+      margin: 40px auto;
+    }
+
+    .footer {
+      margin-top: 60px;
+      text-align: center;
+      font-size: 0.9em;
+      color: #0f0;
     }
   </style>
 </head>
 <body>
-  <h1>Ubba is Watching</h1>
-  <p>He barks. You listen.</p>
-  <p2> </p2>
+
+  <div class="scp-header">
+    SCP FOUNDATION SECURE SERVER  
+    <br>CLASSIFIED FILE — LEVEL 4 ACCESS ONLY
+  </div>
+
+  <h2>Item #: SCP-UBBA</h2>
+  <p><strong>Object Class:</strong> Euclid</p>
+  <p><strong>Special Containment Procedures:</strong> SCP-UBBA is to be confined to a standard Class-A containment kennel reinforced with [<span class="redacted">REDACTED</span>]. Under no circumstances is vocalization to be recorded or reproduced without Level 4 authorization.</p>
+
+  <p><strong>Description:</strong> SCP-UBBA appears to be a domestic canine of indeterminate breed. Subject emits vocalizations bearing strong resemblance to the human word <em>"ubba"</em>. Repetition of these vocalizations at specific frequencies has been linked to the disappearance of [<span class="redacted">REDACTED</span>] personnel.</p>
+
+  <p>Subject exhibits elevated cognitive behavior, including awareness of surveillance equipment, time-based manipulation, and potential memetic resistance. Recovered footage suggests a persistent auditory anomaly correlating with exposure events. This anomaly is included below for research purposes only.</p>
+
+  <img src="ubba png.png" alt="SCP-UBBA Photograph">
+
   <audio controls autoplay loop>
     <source src="20240724_202245.mp3" type="audio/mpeg">
     Your browser does not support the audio element.
   </audio>
+
+  <p>Personnel exposed to the sound for durations exceeding 3 minutes report mild euphoria, loss of spatial awareness, and visual hallucinations involving anomalous canine entities. Do not engage in prolonged listening.</p>
+
+  <div class="footer">
+    © SCP Foundation. Unauthorized access will be logged and investigated.  
+    <br>-- End of File --
+  </div>
+
 </body>
 </html>
