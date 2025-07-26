@@ -33,6 +33,7 @@
             gap: 20px;
             flex-wrap: wrap;
             margin-top: 20px;
+            position: relative;
         }
         
         .coloring-area {
@@ -41,6 +42,7 @@
             height: 600px;
             border: 3px solid #8b0000;
             background-color: #222;
+            overflow: hidden;
         }
         
         #coloring-canvas {
@@ -192,12 +194,76 @@
             80% { transform: translate(5px, -5px); }
             100% { transform: translate(0); }
         }
+        
+        /* Explosive transition effects */
+        .transition-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            z-index: 30;
+            opacity: 0;
+            pointer-events: none;
+        }
+        
+        .pixel-explosion {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background: #8b0000;
+            z-index: 40;
+            pointer-events: none;
+        }
+        
+        .color-burst {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            z-index: 40;
+            pointer-events: none;
+        }
+        
+        @keyframes explode {
+            0% { transform: scale(1); opacity: 1; }
+            100% { transform: scale(20); opacity: 0; }
+        }
+        
+        @keyframes implode {
+            0% { transform: scale(1); opacity: 1; }
+            100% { transform: scale(0); opacity: 0; }
+        }
+        
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-10px); }
+            20%, 40%, 60%, 80% { transform: translateX(10px); }
+        }
+        
+        .shake {
+            animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+        }
+        
+        /* Input blocker */
+        .input-blocker {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1000;
+            display: none;
+        }
     </style>
 </head>
 <body>
     <div class="scanlines"></div>
     <div class="glitch" id="glitch-effect"></div>
     <div class="hidden-message" id="hidden-message">GOOD DOG</div>
+    <div class="transition-overlay" id="transition-overlay"></div>
+    <div class="input-blocker" id="input-blocker"></div>
     
     <h1>UBBA COLORING ACTIVITY</h1>
     <div class="subtitle">Color by numbers! Drag colors to matching numbered areas</div>
@@ -233,6 +299,8 @@
         const hiddenMessage = document.getElementById('hidden-message');
         const completionMessage = document.getElementById('completion-message');
         const glitchEffect = document.getElementById('glitch-effect');
+        const transitionOverlay = document.getElementById('transition-overlay');
+        const inputBlocker = document.getElementById('input-blocker');
         
         // Colors with numbers (using all 8 colors)
         const colors = [
@@ -273,6 +341,7 @@
         let completedSections = [];
         let currentColor = null;
         let hasTransformed = false;
+        let isTransitioning = false;
         
         // Initialize the game
         function initGame() {
@@ -384,14 +453,77 @@
             return ctx.isPointInPath(x, y);
         }
         
+        // Create explosive pixel effect
+        function createExplosion(x, y, color) {
+            for (let i = 0; i < 50; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'pixel-explosion';
+                particle.style.left = `${x}px`;
+                particle.style.top = `${y}px`;
+                particle.style.background = color;
+                particle.style.transform = `translate(${Math.random() * 100 - 50}px, ${Math.random() * 100 - 50}px)`;
+                particle.style.animation = `explode ${Math.random() * 0.5 + 0.5}s forwards`;
+                document.querySelector('.coloring-area').appendChild(particle);
+                
+                // Remove after animation
+                setTimeout(() => {
+                    particle.remove();
+                }, 1000);
+            }
+        }
+        
+        // Create color burst effect
+        function createColorBurst() {
+            const colors = ['#8b0000', '#ff0000', '#ff4500', '#ffd700', '#00ffff', '#4b0082'];
+            const area = document.querySelector('.coloring-area');
+            const rect = area.getBoundingClientRect();
+            
+            for (let i = 0; i < 30; i++) {
+                const burst = document.createElement('div');
+                burst.className = 'color-burst';
+                burst.style.background = colors[Math.floor(Math.random() * colors.length)];
+                burst.style.left = `${Math.random() * rect.width}px`;
+                burst.style.top = `${Math.random() * rect.height}px`;
+                burst.style.animation = `implode ${Math.random() * 0.5 + 0.5}s forwards`;
+                area.appendChild(burst);
+                
+                setTimeout(() => {
+                    burst.remove();
+                }, 1000);
+            }
+        }
+        
         // Trigger the transformation to complex shape
         function transformToComplexShape() {
+            if (isTransitioning) return;
+            isTransitioning = true;
             hasTransformed = true;
+            
+            // Block input during transition
+            inputBlocker.style.display = 'block';
+            
+            // Shake the canvas violently
+            document.querySelector('.coloring-area').classList.add('shake');
             
             // Show glitch effect
             glitchEffect.style.opacity = '0.7';
             
-            // After glitch, transform the shape
+            // Create explosive effects from filled sections
+            currentSections.forEach((section, index) => {
+                const sectionId = `${section.number}-${index}`;
+                if (completedSections.includes(sectionId)) {
+                    const center = getCenter(section.path);
+                    const rect = canvas.getBoundingClientRect();
+                    const x = rect.left + center.x;
+                    const y = rect.top + center.y;
+                    createExplosion(x, y, colors.find(c => c.number === section.number).color);
+                }
+            });
+            
+            // Global color burst
+            createColorBurst();
+            
+            // After effects, transform the shape
             setTimeout(() => {
                 currentSections = complexSections;
                 createPalette(8); // Show all colors
@@ -405,24 +537,35 @@
                 });
                 completedSections = newCompleted;
                 
+                // Reset visual effects
+                document.querySelector('.coloring-area').classList.remove('shake');
+                glitchEffect.style.opacity = '0';
+                transitionOverlay.style.opacity = '0';
+                
+                // Draw new outline
                 drawOutline();
                 
-                // Hide glitch
-                setTimeout(() => {
-                    glitchEffect.style.opacity = '0';
-                }, 500);
-                
                 // Show creepy message
-                hiddenMessage.textContent = "UBBA IS TRANSFORMING...";
+                hiddenMessage.textContent = "UBBA HAS TRANSFORMED";
                 hiddenMessage.style.opacity = '1';
                 setTimeout(() => {
                     hiddenMessage.style.opacity = '0';
                 }, 2000);
-            }, 1000);
+                
+                // Re-enable input
+                setTimeout(() => {
+                    inputBlocker.style.display = 'none';
+                    isTransitioning = false;
+                }, 500);
+            }, 1500);
         }
         
         // Drag and drop functions
         function dragStart(e) {
+            if (isTransitioning) {
+                e.preventDefault();
+                return;
+            }
             currentColor = {
                 number: parseInt(e.target.dataset.number),
                 color: e.target.dataset.color
@@ -431,12 +574,20 @@
         }
         
         function dragOver(e) {
+            if (isTransitioning) {
+                e.preventDefault();
+                return;
+            }
             e.preventDefault();
         }
         
         function drop(e) {
+            if (isTransitioning) {
+                e.preventDefault();
+                return;
+            }
             e.preventDefault();
-            if (!currentColor) return;
+            if (!currentColor || isTransitioning) return;
             
             const rect = canvas.getBoundingClientRect();
             const x = e.clientX - rect.left;
