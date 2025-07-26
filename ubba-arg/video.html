@@ -35,12 +35,31 @@
             height: 100%;
             background-color: #000;
             display: flex;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
             color: #8b0000;
             font-family: 'Courier New', monospace;
             font-size: 24px;
             z-index: 2;
+            transition: opacity 1s;
+        }
+        
+        .loading-progress {
+            width: 60%;
+            max-width: 400px;
+            height: 10px;
+            background: #111;
+            margin-top: 20px;
+            border: 1px solid #8b0000;
+            overflow: hidden;
+        }
+        
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background: #8b0000;
+            transition: width 0.3s;
         }
         
         .corrupt-overlay {
@@ -60,17 +79,35 @@
             z-index: 3;
             opacity: 0.3;
         }
+        
+        .volume-warning {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            color: #8b0000;
+            font-family: 'Courier New', monospace;
+            background: rgba(0,0,0,0.7);
+            padding: 10px;
+            border: 1px solid #8b0000;
+            z-index: 4;
+            opacity: 0;
+            transition: opacity 1s;
+        }
     </style>
 </head>
 <body>
     <div class="loading-screen" id="loading-screen">
         <p>DECRYPTING SECURITY FOOTAGE...</p>
+        <div class="loading-progress">
+            <div class="progress-bar" id="progress-bar"></div>
+        </div>
     </div>
     
     <div class="corrupt-overlay"></div>
+    <div class="volume-warning" id="volume-warning">AUDIO PLAYBACK ACTIVE</div>
     
     <div id="video-container">
-        <video id="video-player" autoplay muted>
+        <video id="video-player" autoplay>
             <source src="assets/videos/security_footage.mp4" type="video/mp4">
             Your browser does not support the video tag.
         </video>
@@ -80,37 +117,70 @@
         document.addEventListener('DOMContentLoaded', function() {
             const video = document.getElementById('video-player');
             const loadingScreen = document.getElementById('loading-screen');
+            const progressBar = document.getElementById('progress-bar');
+            const volumeWarning = document.getElementById('volume-warning');
+            
+            // Simulate loading progress
+            let progress = 0;
+            const loadingInterval = setInterval(() => {
+                progress += Math.random() * 10;
+                if (progress > 100) progress = 100;
+                progressBar.style.width = `${progress}%`;
+                
+                if (progress === 100) {
+                    clearInterval(loadingInterval);
+                }
+            }, 200);
             
             // Hide loading screen when video starts playing
             video.addEventListener('playing', function() {
                 loadingScreen.style.opacity = '0';
+                volumeWarning.style.opacity = '1';
                 setTimeout(() => {
                     loadingScreen.style.display = 'none';
                 }, 1000);
+                
+                // Hide volume warning after 5 seconds
+                setTimeout(() => {
+                    volumeWarning.style.opacity = '0';
+                }, 5000);
             });
             
             // Redirect when video ends
             video.addEventListener('ended', function() {
-                // Add any transition effects here if needed
+                // Add corruption effect before redirect
                 document.body.style.backgroundColor = '#000';
+                document.querySelector('.corrupt-overlay').style.opacity = '0.8';
                 
-                // Redirect to the next page (blank for now)
+                // Redirect to the next page
                 setTimeout(() => {
                     window.location.href = "blank.html";
                 }, 2000);
             });
             
-            // Force play the video (muted autoplay is allowed by browsers)
-            video.play().catch(e => {
-                console.error("Autoplay prevented:", e);
+            // Attempt to play with sound
+            video.play().then(() => {
+                console.log("Video is playing with sound");
+            }).catch(e => {
+                console.error("Playback failed:", e);
                 // Fallback - show play button if autoplay is blocked
-                loadingScreen.innerHTML = '<button id="play-btn" style="padding: 15px 30px; background: #8b0000; color: white; border: 2px solid red; font-size: 24px; cursor: pointer;">PLAY FOOTAGE</button>';
+                loadingScreen.innerHTML = `
+                    <p>PLAYBACK REQUIRES MANUAL INITIATION</p>
+                    <button id="play-btn" style="padding: 15px 30px; background: #8b0000; color: white; border: 2px solid red; font-size: 24px; cursor: pointer; margin-top: 20px;">
+                        PLAY FOOTAGE
+                    </button>
+                    <p style="font-size: 14px; margin-top: 20px;">(Audio will play)</p>
+                `;
                 document.getElementById('play-btn').addEventListener('click', function() {
                     video.play();
                     this.style.display = 'none';
-                    loadingScreen.textContent = 'DECRYPTING SECURITY FOOTAGE...';
+                    loadingScreen.innerHTML = '<p>DECRYPTING SECURITY FOOTAGE...</p><div class="loading-progress"><div class="progress-bar" style="width: 100%"></div></div>';
                 });
             });
+            
+            // Preload video for better performance
+            video.preload = "auto";
+            video.load();
         });
     </script>
 </body>
