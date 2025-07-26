@@ -1,15 +1,14 @@
-// Game Configuration
+// Updated Configuration
 const CONFIG = {
-    WIDTH: 450,
-    HEIGHT: 450,
+    WIDTH: 740,
+    HEIGHT: 580,
     POWER_DRAIN_INTERVAL: 15000,
     POWER_DRAIN_AMOUNT: 5,
     CONSOLE_PENALTY: 15,
     VIEWPORT_OFFSET: 100,
     UBBA_CHILL_MIN: 15000,
     UBBA_CHILL_MAX: 20000,
-    UBBA_FREAKOUT_MIN: 600000,
-    UBBA_FREAKOUT_MAX: 1200000,
+    UBBA_FREAKOUT_DELAY: 60000, // Exactly 1 minute before freakout starts
     PAN_SPEED: 8,
     UBBA_WIDTH: 64,
     UBBA_HEIGHT: 128,
@@ -170,6 +169,7 @@ function startUbbaSystem() {
     setUbbaState('chill');
 }
 
+// Modified setUbbaState function
 function setUbbaState(newState) {
     // Clean up previous state
     if (state.ubbaState === 'freaking') {
@@ -187,7 +187,6 @@ function setUbbaState(newState) {
         state.nextUbbaStateChange = Date.now() + delay;
     }
     else if (newState === 'chill') {
-        // Use the pre-set position for this camera
         if (state.cameraUbbaPositions[state.currentCam]) {
             state.ubbaPosition = state.cameraUbbaPositions[state.currentCam];
         }
@@ -209,21 +208,20 @@ function setUbbaState(newState) {
             y: (Math.random() - 0.5) * 10
         };
         
-        // Enable anomaly reporting
+        // Enable anomaly reporting forever
         state.canReportAnomaly = true;
         elements.anomalyPrompt.style.display = 'block';
         
-        // Play freakout sound
+        // Play freakout sound forever
         state.assets.freakoutSound.loop = true;
         state.assets.freakoutSound.play().catch(e => console.log("Freakout sound error:", e));
         
-        // Set duration for freakout state
-        state.nextUbbaStateChange = Date.now() + 
-            CONFIG.UBBA_FREAKOUT_DURATION_MIN + 
-            Math.random() * (CONFIG.UBBA_FREAKOUT_DURATION_MAX - CONFIG.UBBA_FREAKOUT_DURATION_MIN);
+        // Never set next state change - freakout lasts forever
+        state.nextUbbaStateChange = Infinity;
     }
 }
 
+// Modified updateUbbaState function
 function updateUbbaState() {
     if (Date.now() > state.nextUbbaStateChange) {
         if (state.ubbaState === 'hidden') {
@@ -231,17 +229,13 @@ function updateUbbaState() {
         }
         else if (state.ubbaState === 'chill') {
             const timeSinceStart = Date.now() - state.gameStartTime;
-            const shouldFreakout = timeSinceStart > CONFIG.UBBA_FREAKOUT_MIN || 
-                                 Math.random() < 0.5;
+            const shouldFreakout = timeSinceStart > CONFIG.UBBA_FREAKOUT_DELAY;
             
             if (shouldFreakout) {
                 setUbbaState('freaking');
             } else {
                 setUbbaState('hidden');
             }
-        }
-        else if (state.ubbaState === 'freaking') {
-            setUbbaState('hidden');
         }
     }
 }
