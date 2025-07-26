@@ -86,10 +86,10 @@ class DOOMRenderer {
 const CONFIG = {
     WIDTH: 640,
     HEIGHT: 480,
-    POWER_DRAIN: 0.2,
-    CAMERA_SWITCH_COST: 2,
-    NIGHT_DURATION: 360,
-    UBBA_APPEARANCE_RATES: [0.1, 0.2, 0.3, 0.4, 0.5]
+    POWER_DRAIN_INTERVAL: 5000, // 5 seconds
+    POWER_DRAIN_AMOUNT: 5, // 5%
+    CONSOLE_PENALTY: 15, // 15% power loss for wrong answer
+    VIEWPORT_OFFSET: 100 // How much you can pan
 };
 
 // Game State
