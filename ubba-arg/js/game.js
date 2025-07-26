@@ -1,6 +1,7 @@
 // =============================================
 // DOOM-STYLE FNAF GAME - UBBA ANOMALY DETECTION
 // =============================================
+import { DOOMRenderer, DOOM_PALETTE } from './doom-style.js';
 
 // Game Configuration
 const CONFIG = {
