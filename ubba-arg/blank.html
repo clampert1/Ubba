@@ -192,17 +192,6 @@
             80% { transform: translate(5px, -5px); }
             100% { transform: translate(0); }
         }
-        
-        /* Pulsing effect for attention */
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-            100% { transform: scale(1); }
-        }
-        
-        .pulse {
-            animation: pulse 2s infinite;
-        }
     </style>
 </head>
 <body>
@@ -247,51 +236,36 @@
         
         // Colors with numbers (using all 8 colors)
         const colors = [
-            { number: 1, color: '#8b0000', name: 'Blood Red' },       // Body
-            { number: 2, color: '#000000', name: 'Void Black' },      // Head
-            { number: 3, color: '#556b2f', name: 'Sickly Green' },    // Left Leg
-            { number: 4, color: '#d3d3d3', name: 'Ashen Gray' },      // Right Leg
-            { number: 5, color: '#ffd700', name: 'Unnatural Gold' },  // Ear
-            { number: 6, color: '#4b0082', name: 'Eldritch Purple' }, // Tail
-            { number: 7, color: '#ff4500', name: 'Infected Orange' }, // Eyes
-            { number: 8, color: '#00ffff', name: 'Toxic Cyan' }       // Mouth
+            { number: 1, color: '#8b0000', name: 'Blood Red' },
+            { number: 2, color: '#000000', name: 'Void Black' },
+            { number: 3, color: '#556b2f', name: 'Sickly Green' },
+            { number: 4, color: '#d3d3d3', name: 'Ashen Gray' },
+            { number: 5, color: '#ffd700', name: 'Unnatural Gold' },
+            { number: 6, color: '#4b0082', name: 'Eldritch Purple' },
+            { number: 7, color: '#ff4500', name: 'Infected Orange' },
+            { number: 8, color: '#00ffff', name: 'Toxic Cyan' }
         ];
         
         // Simple Ubba silhouette sections (first 5 colors)
         const simpleSections = [
-            { number: 1, path: [{x:50,y:150}, {x:550,y:150}, {x:550,y:450}, {x:50,y:450}] }, // Body (red)
-            { number: 2, path: [{x:200,y:50}, {x:400,y:50}, {x:400,y:150}, {x:200,y:150}] }, // Head (black)
-            { number: 3, path: [{x:50,y:300}, {x:150,y:450}, {x:50,y:450}] }, // Left leg (green)
-            { number: 4, path: [{x:550,y:300}, {x:450,y:450}, {x:550,y:450}] }, // Right leg (gray)
-            { number: 5, path: [{x:300,y:50}, {x:350,y:25}, {x:400,y:50}] } // Ear (gold)
+            { number: 1, path: [{x:150,y:150}, {x:450,y:150}, {x:450,y:450}, {x:150,y:450}] }, // Body
+            { number: 2, path: [{x:225,y:75}, {x:375,y:75}, {x:375,y:150}, {x:225,y:150}] }, // Head
+            { number: 3, path: [{x:150,y:300}, {x:75,y:450}, {x:150,y:450}] }, // Left leg
+            { number: 4, path: [{x:450,y:300}, {x:525,y:450}, {x:450,y:450}] }, // Right leg
+            { number: 5, path: [{x:300,y:75}, {x:325,y:50}, {x:350,y:75}] } // Ear
         ];
         
-        // Complex Ubba shape (all 8 colors, large connected sections)
+        // Complex Ubba shape (all 8 colors)
         const complexSections = [
-            // Body (red - takes up most space)
-            { number: 1, path: [{x:50,y:100}, {x:300,y:50}, {x:550,y:100}, {x:550,y:400}, {x:300,y:450}, {x:50,y:400}] },
-            
-            // Head (black - connected to body)
-            { number: 2, path: [{x:200,y:50}, {x:400,y:50}, {x:400,y:150}, {x:300,y:150}, {x:300,y:100}, {x:200,y:100}] },
-            
-            // Left leg (green - connected to body)
-            { number: 3, path: [{x:50,y:300}, {x:150,y:450}, {x:200,y:450}, {x:100,y:300}, {x:50,y:300}] },
-            
-            // Right leg (gray - connected to body)
-            { number: 4, path: [{x:550,y:300}, {x:450,y:450}, {x:400,y:450}, {x:500,y:300}, {x:550,y:300}] },
-            
-            // Ear (gold - connected to head)
-            { number: 5, path: [{x:300,y:50}, {x:350,y:25}, {x:400,y:50}, {x:350,y:75}, {x:300,y:50}] },
-            
-            // Tail (purple - connected to body)
-            { number: 6, path: [{x:50,y:200}, {x:25,y:150}, {x:50,y:100}, {x:100,y:150}, {x:50,y:200}] },
-            
-            // Eyes (orange - inside head)
-            { number: 7, path: [{x:250,y:75}, {x:275,y:60}, {x:300,y:75}, {x:275,y:90}] }, // Left eye
-            { number: 7, path: [{x:350,y:75}, {x:325,y:60}, {x:300,y:75}, {x:325,y:90}] }, // Right eye
-            
-            // Mouth (cyan - inside head)
-            { number: 8, path: [{x:275,y:125}, {x:300,y:150}, {x:325,y:125}, {x:300,y:100}] }
+            // Body parts
+            { number: 1, path: [{x:100,y:200}, {x:500,y:200}, {x:500,y:400}, {x:100,y:400}] }, // Main body
+            { number: 2, path: [{x:200,y:100}, {x:400,y:100}, {x:400,y:200}, {x:200,y:200}] }, // Head
+            { number: 3, path: [{x:100,y:300}, {x:50,y:450}, {x:150,y:450}] }, // Left leg
+            { number: 4, path: [{x:500,y:300}, {x:550,y:450}, {x:450,y:450}] }, // Right leg
+            { number: 5, path: [{x:300,y:100}, {x:325,y:75}, {x:350,y:100}] }, // Ear
+            { number: 6, path: [{x:100,y:200}, {x:50,y:150}, {x:100,y:100}, {x:150,y:150}] }, // Tail
+            { number: 7, path: [{x:250,y:125}, {x:275,y:150}, {x:300,y:125}, {x:275,y:100}] }, // Left eye
+            { number: 8, path: [{x:350,y:125}, {x:325,y:150}, {x:300,y:125}, {x:325,y:100}] }  // Right eye
         ];
         
         // Game state
@@ -314,7 +288,6 @@
             
             // Set up completion button
             document.getElementById('continue-btn').addEventListener('click', () => {
-                // Redirect to next part of your ARG
                 window.location.href = "next-stage.html";
             });
         }
@@ -325,7 +298,7 @@
             for (let i = 0; i < count; i++) {
                 const color = colors[i];
                 const colorDiv = document.createElement('div');
-                colorDiv.className = 'color-option pulse';
+                colorDiv.className = 'color-option';
                 colorDiv.style.backgroundColor = color.color;
                 colorDiv.innerHTML = `<span class="number">${color.number}</span>`;
                 colorDiv.dataset.number = color.number;
@@ -334,17 +307,29 @@
                 
                 colorDiv.addEventListener('dragstart', dragStart);
                 palette.appendChild(colorDiv);
-                
-                // Remove pulse after first interaction
-                colorDiv.addEventListener('mousedown', () => {
-                    colorDiv.classList.remove('pulse');
-                });
             }
         }
         
         // Draw the numbered outline
         function drawOutline() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // First draw all filled sections
+            currentSections.forEach((section, index) => {
+                const sectionId = `${section.number}-${index}`;
+                if (completedSections.includes(sectionId)) {
+                    ctx.fillStyle = colors.find(c => c.number === section.number).color;
+                    ctx.beginPath();
+                    ctx.moveTo(section.path[0].x, section.path[0].y);
+                    for (let i = 1; i < section.path.length; i++) {
+                        ctx.lineTo(section.path[i].x, section.path[i].y);
+                    }
+                    ctx.closePath();
+                    ctx.fill();
+                }
+            });
+            
+            // Then draw all outlines and numbers
             ctx.strokeStyle = '#8b0000';
             ctx.lineWidth = 3;
             ctx.font = 'bold 28px Arial';
@@ -353,11 +338,6 @@
             ctx.textBaseline = 'middle';
             
             currentSections.forEach((section, index) => {
-                const sectionId = `${section.number}-${index}`;
-                
-                // Skip drawing if already filled
-                if (completedSections.includes(sectionId)) return;
-                
                 ctx.beginPath();
                 ctx.moveTo(section.path[0].x, section.path[0].y);
                 for (let i = 1; i < section.path.length; i++) {
@@ -369,11 +349,12 @@
                 // Calculate center for number
                 const center = getCenter(section.path);
                 
-                // Draw number with outline
+                // Draw number with outline (always visible)
                 ctx.save();
                 ctx.strokeStyle = '#000';
                 ctx.lineWidth = 6;
                 ctx.strokeText(section.number, center.x, center.y);
+                ctx.fillStyle = '#fff'; // White numbers for visibility
                 ctx.fillText(section.number, center.x, center.y);
                 ctx.restore();
             });
@@ -418,20 +399,8 @@
                 // Keep track of completed sections
                 const newCompleted = [];
                 complexSections.forEach((section, index) => {
-                    const sectionId = `${section.number}-${index}`;
-                    if (completedSections.includes(`${section.number}-0`)) { // Match by number only
-                        newCompleted.push(sectionId);
-                        
-                        // Redraw already completed sections
-                        ctx.fillStyle = colors.find(c => c.number === section.number).color;
-                        ctx.beginPath();
-                        ctx.moveTo(section.path[0].x, section.path[0].y);
-                        for (let i = 1; i < section.path.length; i++) {
-                            ctx.lineTo(section.path[i].x, section.path[i].y);
-                        }
-                        ctx.closePath();
-                        ctx.fill();
-                        ctx.stroke();
+                    if (completedSections.includes(`${section.number}-0`)) {
+                        newCompleted.push(`${section.number}-${index}`);
                     }
                 });
                 completedSections = newCompleted;
@@ -483,24 +452,12 @@
                     isPointInPath(section.path, x, y) &&
                     !completedSections.includes(sectionId)) {
                     
-                    // Fill the section
-                    ctx.fillStyle = currentColor.color;
-                    ctx.beginPath();
-                    ctx.moveTo(section.path[0].x, section.path[0].y);
-                    for (let i = 1; i < section.path.length; i++) {
-                        ctx.lineTo(section.path[i].x, section.path[i].y);
-                    }
-                    ctx.closePath();
-                    ctx.fill();
-                    
-                    // Redraw the outline over the fill
-                    ctx.strokeStyle = '#8b0000';
-                    ctx.lineWidth = 3;
-                    ctx.stroke();
-                    
                     // Mark as completed
                     completedSections.push(sectionId);
                     filledSection = true;
+                    
+                    // Redraw to show changes
+                    drawOutline();
                     
                     // Show hidden message randomly
                     if (Math.random() < 0.3) {
