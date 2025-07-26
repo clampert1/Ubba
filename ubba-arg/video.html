@@ -11,7 +11,6 @@
             background-color: #000;
             overflow: hidden;
             font-family: 'Courier New', monospace;
-            color: #8b0000;
         }
         
         #video-container {
@@ -21,6 +20,7 @@
             width: 100%;
             height: 100%;
             z-index: 1;
+            display: none; /* Hidden until fully loaded */
         }
         
         #video-player {
@@ -29,126 +29,183 @@
             object-fit: cover;
         }
         
-        .status-message {
+        .loading-screen {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
+            background-color: #000;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            background-color: #000;
             z-index: 10;
+            color: #8b0000;
             text-align: center;
-            padding: 20px;
-            box-sizing: border-box;
         }
         
-        .error-message {
-            color: #ff0000;
-            border: 1px solid #ff0000;
-            padding: 15px;
-            margin-top: 20px;
-            max-width: 500px;
-        }
-        
-        #play-btn {
-            padding: 15px 30px;
-            background: #8b0000;
-            color: white;
-            border: 2px solid red;
+        .loading-text {
             font-size: 24px;
-            cursor: pointer;
-            margin-top: 20px;
+            margin-bottom: 20px;
+            text-shadow: 0 0 5px #8b0000;
         }
         
-        .hidden {
-            display: none;
+        .corrupt-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: repeating-linear-gradient(
+                0deg,
+                rgba(139, 0, 0, 0.3),
+                rgba(139, 0, 0, 0.3) 1px,
+                transparent 1px,
+                transparent 2px
+            );
+            pointer-events: none;
+            z-index: 5;
+        }
+        
+        .scanlines {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+                to bottom,
+                rgba(0, 255, 0, 0.1) 50%,
+                transparent 50%
+            );
+            background-size: 100% 4px;
+            z-index: 6;
+            pointer-events: none;
+        }
+        
+        .glitch {
+            animation: glitch 1s linear infinite;
+        }
+        
+        @keyframes glitch {
+            0% { transform: translate(0); }
+            20% { transform: translate(-2px, 2px); }
+            40% { transform: translate(-2px, -2px); }
+            60% { transform: translate(2px, 2px); }
+            80% { transform: translate(2px, -2px); }
+            100% { transform: translate(0); }
+        }
+        
+        .progress-container {
+            width: 300px;
+            height: 10px;
+            background: #111;
+            border: 1px solid #8b0000;
+            margin-top: 20px;
+            overflow: hidden;
+        }
+        
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background: #8b0000;
+            transition: width 0.3s;
         }
     </style>
 </head>
 <body>
-    <div id="status-message" class="status-message">
-        <p>INITIALIZING SECURITY FOOTAGE...</p>
-        <div id="error-message" class="error-message hidden"></div>
-        <button id="play-btn" class="hidden">FORCE PLAYBACK</button>
+    <div class="corrupt-overlay"></div>
+    <div class="scanlines"></div>
+    
+    <div class="loading-screen" id="loading-screen">
+        <div class="loading-text glitch" id="loading-text">DECRYPTING FOOTAGE...</div>
+        <div class="progress-container">
+            <div class="progress-bar" id="progress-bar"></div>
+        </div>
     </div>
     
     <div id="video-container">
-        <video id="video-player">
+        <video id="video-player" autoplay muted>
             <source src="assets/videos/security_footage.mp4" type="video/mp4">
-            Your browser does not support the video tag.
         </video>
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const video = document.getElementById('video-player');
-            const statusMessage = document.getElementById('status-message');
-            const errorMessage = document.getElementById('error-message');
-            const playBtn = document.getElementById('play-btn');
+        // Scary loading messages
+        const messages = [
+            "DECRYPTING FOOTAGE...",
+            "ANALYZING CONTENT...",
+            "UBBA SIGNATURE DETECTED...",
+            "WARNING: AUDIO ANOMALIES FOUND...",
+            "PREPARING PLAYBACK..."
+        ];
+        
+        const loadingText = document.getElementById('loading-text');
+        const progressBar = document.getElementById('progress-bar');
+        const loadingScreen = document.getElementById('loading-screen');
+        const videoContainer = document.getElementById('video-container');
+        const video = document.getElementById('video-player');
+        
+        // Start creepy loading sequence
+        let progress = 0;
+        let messageIndex = 0;
+        
+        const loadingInterval = setInterval(() => {
+            // Update progress bar
+            progress += Math.random() * 15;
+            if (progress > 100) progress = 100;
+            progressBar.style.width = `${progress}%`;
             
-            // Debugging info
-            console.log("Starting video load...");
-            console.log("Video source:", video.querySelector('source').src);
-            
-            // Try to play immediately
-            function attemptPlay() {
-                video.play()
-                    .then(() => {
-                        console.log("Video playback started successfully");
-                        statusMessage.classList.add('hidden');
-                    })
-                    .catch(error => {
-                        console.error("Playback failed:", error);
-                        errorMessage.textContent = `PLAYBACK ERROR: ${error.message}`;
-                        errorMessage.classList.remove('hidden');
-                        playBtn.classList.remove('hidden');
-                    });
+            // Change loading message
+            if (progress >= (messageIndex + 1) * (100 / messages.length)) {
+                loadingText.textContent = messages[messageIndex];
+                loadingText.classList.remove('glitch');
+                void loadingText.offsetWidth; // Trigger reflow
+                loadingText.classList.add('glitch');
+                messageIndex++;
             }
             
-            // Set up play button as fallback
-            playBtn.addEventListener('click', function() {
-                console.log("User initiated playback");
-                attemptPlay();
-                this.classList.add('hidden');
-            });
-            
-            // When enough video has loaded to play
-            video.addEventListener('canplay', function() {
-                console.log("Video can play");
-                attemptPlay();
-            });
-            
-            // If video fails to load at all
-            video.addEventListener('error', function() {
-                console.error("Video loading error");
-                errorMessage.textContent = "FAILED TO LOAD VIDEO FILE. Please check the file exists at: assets/videos/security_footage.mp4";
-                errorMessage.classList.remove('hidden');
-                playBtn.classList.remove('hidden');
-            });
-            
-            // Start loading the video immediately
-            video.load();
-            
-            // Timeout if nothing happens after 5 seconds
+            // Complete loading
+            if (progress === 100) {
+                clearInterval(loadingInterval);
+                loadingText.textContent = "PLAYBACK INITIATED";
+                
+                // Start video playback
+                video.play().then(() => {
+                    // Hide loading screen with delay
+                    setTimeout(() => {
+                        loadingScreen.style.opacity = '0';
+                        videoContainer.style.display = 'block';
+                        
+                        // Unmute after showing video (if allowed)
+                        setTimeout(() => {
+                            video.muted = false;
+                        }, 500);
+                        
+                        // Remove loading screen completely
+                        setTimeout(() => {
+                            loadingScreen.style.display = 'none';
+                        }, 1000);
+                    }, 1500); // Extra time to read final message
+                }).catch(error => {
+                    loadingText.textContent = "PLAYBACK ERROR - CLICK TO RETRY";
+                    loadingScreen.style.cursor = 'pointer';
+                    loadingScreen.onclick = () => location.reload();
+                });
+            }
+        }, 300); // Update every 300ms
+        
+        // Redirect when video ends
+        video.addEventListener('ended', function() {
+            document.body.style.backgroundColor = '#000';
             setTimeout(() => {
-                if (video.readyState < 2) { // 0=HAVE_NOTHING, 1=HAVE_METADATA
-                    console.warn("Video loading timeout");
-                    errorMessage.textContent = "VIDEO LOADING TIMEOUT. The file may be missing or corrupted.";
-                    errorMessage.classList.remove('hidden');
-                    playBtn.classList.remove('hidden');
-                }
-            }, 5000);
-            
-            // Redirect when video ends
-            video.addEventListener('ended', function() {
-                console.log("Video ended, redirecting...");
                 window.location.href = "blank.html";
-            });
+            }, 1000);
         });
+        
+        // Start loading video immediately
+        video.load();
     </script>
 </body>
 </html>
