@@ -20,6 +20,7 @@
             max-width: 800px;
             margin: 0 auto;
             position: relative;
+            padding-bottom: 200px; /* Space for audio at bottom */
         }
         
         h1 {
@@ -31,7 +32,15 @@
         
         .audio-container {
             text-align: center;
-            margin: 30px 0;
+            margin: 50px 0;
+            position: fixed;
+            bottom: 20px;
+            left: 0;
+            right: 0;
+            background: rgba(0,0,0,0.7);
+            padding: 20px;
+            border-top: 1px solid #8b0000;
+            z-index: 100;
         }
         
         audio {
@@ -45,8 +54,8 @@
             font-weight: bold;
             text-align: center;
             margin: 20px 0;
-            opacity: 0;
-            transition: opacity 0.5s;
+            font-size: 1.2em;
+            text-transform: uppercase;
         }
         
         .corrupt-letter {
@@ -91,7 +100,17 @@
             display: block;
             margin: 20px auto;
             border: 1px solid #333;
-            transition: all 0.5s;
+            transition: all 0.1s;
+            position: static;
+        }
+        
+        .glitch-img.following {
+            position: fixed;
+            right: 20px;
+            bottom: 180px;
+            width: 150px;
+            z-index: 99;
+            opacity: 0.9;
         }
         
         .corrupt-bg {
@@ -117,6 +136,17 @@
             opacity: 0;
             z-index: 1001;
             pointer-events: none;
+            text-shadow: 0 0 10px #ff0000;
+        }
+        
+        .audio-warning {
+            color: #ff0000;
+            font-size: 1.3em;
+            text-align: center;
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #8b0000;
+            background: rgba(0,0,0,0.5);
         }
     </style>
 </head>
@@ -127,14 +157,6 @@
     
     <div class="container" id="mainContent">
         <h1>UBBA RESEARCH ARCHIVE</h1>
-        
-        <div class="audio-container">
-            <audio controls id="ubbaAudio">
-                <source src="20240724_202245.mp3" type="audio/mpeg">
-                Your browser does not support the audio element.
-            </audio>
-            <div class="warning">WARNING: Audio playback may trigger unexpected effects</div>
-        </div>
         
         <img src="ubba png.png" alt="Ubba" class="glitch-img" id="ubbaImage">
         
@@ -165,12 +187,26 @@
             <p>I can hear them in my dreams now. The whispers. They're not in any language I know, but I understand them. They're calling. They're coming.</p>
             <p>If you're reading this, it's already too late for me. Don't listen to the audio. Don't let others listen. Destroy all copies. The infection spreads through sound.</p>
         </div>
+        
+        <div class="audio-warning">
+            <p>BY ALL MEANS AND FOR THE SAKE OF YOUR SANITY...</p>
+            <p>DO NOT LISTEN TO THE AUDIO RECORDING BELOW</p>
+            <p>THIS IS YOUR FINAL WARNING</p>
+        </div>
+    </div>
+
+    <div class="audio-container">
+        <div class="warning">WARNING: Audio playback may trigger irreversible effects</div>
+        <audio controls id="ubbaAudio">
+            <source src="20240724_202245.mp3" type="audio/mpeg">
+            Your browser does not support the audio element.
+        </audio>
     </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const audio = document.getElementById('ubbaAudio');
-            const warning = document.querySelector('.warning');
+            const warning = document.querySelector('.audio-container .warning');
             const mainContent = document.getElementById('mainContent');
             const hiddenContent = document.getElementById('hiddenContent');
             const ubbaImage = document.getElementById('ubbaImage');
@@ -181,6 +217,8 @@
             let corruptionStarted = false;
             let corruptionLevel = 0;
             let corruptionInterval;
+            let imageFollowing = false;
+            let strobeInterval;
             
             // Show warning when hovering over audio
             audio.addEventListener('mouseover', function() {
@@ -188,7 +226,7 @@
             });
             
             audio.addEventListener('mouseout', function() {
-                warning.style.opacity = '0';
+                warning.style.opacity = '0.7';
             });
             
             // Start corruption when audio is played
@@ -203,8 +241,17 @@
                 // Initial effects
                 document.body.style.backgroundColor = '#0a0a0a';
                 warning.style.color = '#ff0000';
-                warning.textContent = 'WARNING: AUDIO PLAYBACK DETECTED - CONTAINMENT FAILURE';
+                warning.textContent = 'CONTAINMENT BREACH DETECTED';
                 warning.style.opacity = '1';
+                
+                // Make image follow scroll
+                imageFollowing = true;
+                ubbaImage.classList.add('following');
+                
+                // Start rapid strobe effect on image
+                strobeInterval = setInterval(() => {
+                    ubbaImage.style.filter = `contrast(${100 + Math.random() * 500}%) brightness(${0.5 + Math.random()})`;
+                }, 50);
                 
                 // Start gradual corruption
                 corruptionInterval = setInterval(increaseCorruption, 2000);
@@ -212,7 +259,7 @@
                 // Show hidden content after delay
                 setTimeout(() => {
                     hiddenContent.classList.remove('hidden');
-                }, 10000);
+                }, 8000);
             }
             
             function increaseCorruption() {
@@ -223,37 +270,39 @@
                     corruptText();
                 }
                 
-                // Stage 2: Image glitching
+                // Stage 2: Background distortion
                 if (corruptionLevel >= 3) {
-                    glitchImage();
+                    corruptBg.style.opacity = '0.3';
                 }
                 
-                // Stage 3: Background distortion
+                // Stage 3: Heavy distortion
                 if (corruptionLevel >= 5) {
-                    corruptBg.style.opacity = '0.2';
+                    distortionOverlay.style.opacity = '0.7';
+                    document.body.style.color = '#ff5555';
                 }
                 
-                // Stage 4: Heavy distortion
+                // Stage 4: Make image more disturbing
                 if (corruptionLevel >= 7) {
-                    distortionOverlay.style.opacity = '0.5';
-                    document.body.style.color = '#ff5555';
+                    ubbaImage.style.border = '1px solid red';
+                    ubbaImage.style.boxShadow = '0 0 20px red';
                 }
                 
                 // Stage 5: Final corruption
                 if (corruptionLevel >= 10) {
                     finalCorruption();
                     clearInterval(corruptionInterval);
+                    clearInterval(strobeInterval);
                 }
             }
             
             function corruptText() {
                 const elements = document.querySelectorAll('p, li, h2, h3');
                 elements.forEach(el => {
-                    if (Math.random() < 0.3 * (corruptionLevel / 10)) {
+                    if (Math.random() < 0.4 * (corruptionLevel / 10)) {
                         const text = el.textContent;
                         const words = text.split(' ');
                         const corruptedWords = words.map(word => {
-                            if (Math.random() < 0.4) {
+                            if (Math.random() < 0.5) {
                                 return corruptWord(word);
                             }
                             return word;
@@ -261,7 +310,7 @@
                         el.textContent = corruptedWords.join(' ');
                         
                         // Make some letters fall
-                        if (Math.random() < 0.2) {
+                        if (Math.random() < 0.3) {
                             makeLettersFall(el);
                         }
                     }
@@ -272,7 +321,7 @@
                 if (word.length < 2) return word;
                 
                 const chars = word.split('');
-                const corruptCount = Math.max(1, Math.floor(chars.length * 0.3));
+                const corruptCount = Math.max(1, Math.floor(chars.length * 0.5));
                 
                 for (let i = 0; i < corruptCount; i++) {
                     const pos = Math.floor(Math.random() * chars.length);
@@ -298,7 +347,7 @@
                     span.textContent = letter;
                     element.appendChild(span);
                     
-                    if (Math.random() < 0.1 * (corruptionLevel / 10)) {
+                    if (Math.random() < 0.2 * (corruptionLevel / 10)) {
                         const corruptLetter = document.createElement('div');
                         corruptLetter.className = 'corrupt-letter';
                         corruptLetter.textContent = getRandomCorruptChar();
@@ -314,22 +363,10 @@
                 });
             }
             
-            function glitchImage() {
-                ubbaImage.style.filter = `hue-rotate(${Math.random() * 360}deg) contrast(${1 + Math.random()}) brightness(${0.7 + Math.random() * 0.6})`;
-                ubbaImage.style.transform = `translateX(${(Math.random() - 0.5) * 20}px) translateY(${(Math.random() - 0.5) * 20}px)`;
-                
-                if (Math.random() < 0.1) {
-                    ubbaImage.src = ''; // Briefly disappear
-                    setTimeout(() => {
-                        ubbaImage.src = 'ubba png.png';
-                    }, 100);
-                }
-            }
-            
             function finalCorruption() {
                 // Heavy background distortion
-                corruptBg.style.opacity = '0.8';
-                distortionOverlay.style.opacity = '0.9';
+                corruptBg.style.opacity = '0.9';
+                distortionOverlay.style.opacity = '0.95';
                 
                 // Hide most content
                 mainContent.style.opacity = '0.1';
@@ -341,13 +378,24 @@
                 // Add pulsing effect to final message
                 setInterval(() => {
                     finalMessage.style.fontSize = `${3 + Math.random()}em`;
-                }, 300);
+                }, 100);
                 
                 // Redirect after delay
                 setTimeout(() => {
                     window.location.href = "about:blank";
-                }, 15000);
+                }, 10000);
             }
+            
+            // Handle scroll to keep image visible
+            window.addEventListener('scroll', function() {
+                if (imageFollowing) {
+                    // Image will stay fixed in its position due to CSS
+                    // Add additional effects when scrolling during corruption
+                    if (corruptionStarted && Math.random() < 0.1) {
+                        ubbaImage.style.transform = `translateX(${(Math.random() - 0.5) * 30}px) translateY(${(Math.random() - 0.5) * 30}px)`;
+                    }
+                }
+            });
         });
     </script>
 </body>
