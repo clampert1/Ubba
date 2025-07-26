@@ -62,23 +62,16 @@
             position: relative;
         }
         
-        .warning::before {
+        .warning::before, .warning::after {
             content: "⚠";
             font-size: 2em;
             position: absolute;
-            left: 10px;
             top: 50%;
             transform: translateY(-50%);
         }
         
-        .warning::after {
-            content: "⚠";
-            font-size: 2em;
-            position: absolute;
-            right: 10px;
-            top: 50%;
-            transform: translateY(-50%);
-        }
+        .warning::before { left: 10px; }
+        .warning::after { right: 10px; }
         
         .corrupt-letter {
             position: absolute;
@@ -118,21 +111,29 @@
         }
         
         .glitch-img {
-            max-width: 100%;
-            display: block;
-            margin: 20px auto;
-            border: 1px solid #333;
-            transition: all 0.1s;
-            position: static;
+            position: fixed;
+            width: 200px;
+            z-index: 99;
+            opacity: 0;
+            transition: all 0.5s;
+            pointer-events: none;
         }
         
-        .glitch-img.following {
-            position: fixed;
-            right: 20px;
-            bottom: 180px;
-            width: 150px;
-            z-index: 99;
-            opacity: 0.9;
+        .glitch-img.jumpscare {
+            width: 100vw;
+            height: 100vh;
+            object-fit: cover;
+            left: 0;
+            top: 0;
+            opacity: 1;
+            z-index: 2000;
+            animation: jumpscare 0.3s forwards;
+        }
+        
+        @keyframes jumpscare {
+            0% { transform: scale(1.5); opacity: 0; }
+            50% { transform: scale(1); opacity: 1; }
+            100% { transform: scale(1.2); opacity: 0; }
         }
         
         .corrupt-bg {
@@ -179,12 +180,27 @@
             from { opacity: 0.5; }
             to { opacity: 1; }
         }
+        
+        .blood {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><path fill="rgba(255,0,0,0.3)" d="M30,10 Q50,5 70,10 Q90,20 85,40 Q80,60 50,90 Q20,60 15,40 Q10,20 30,10 Z"/></svg>');
+            opacity: 0;
+            pointer-events: none;
+            z-index: 999;
+        }
     </style>
 </head>
 <body>
     <div class="corrupt-bg"></div>
     <div class="distortion-overlay"></div>
+    <div class="blood"></div>
     <div class="final-message">YOU SHOULDN'T HAVE LISTENED</div>
+    
+    <img src="ubba png.png" alt="Ubba" class="glitch-img" id="ubbaImage">
     
     <div class="container" id="mainContent">
         <h1>UBBA RESEARCH ARCHIVE</h1>
@@ -193,8 +209,6 @@
             WARNING: AUDIO PLAYBACK WILL TRIGGER IRREVERSIBLE EFFECTS
             <br>CONTINUE AT YOUR OWN RISK
         </div>
-        
-        <img src="ubba png.png" alt="Ubba" class="glitch-img" id="ubbaImage">
         
         <h2>Subject: Ubba</h2>
         <p>Ubba is a canine subject that first came to our attention in late 2022. Initial reports described unusual auditory phenomena associated with its vocalizations.</p>
@@ -251,12 +265,15 @@
             const corruptBg = document.querySelector('.corrupt-bg');
             const distortionOverlay = document.querySelector('.distortion-overlay');
             const finalMessage = document.querySelector('.final-message');
+            const blood = document.querySelector('.blood');
             
             let corruptionStarted = false;
             let corruptionLevel = 0;
             let corruptionInterval;
             let imageFollowing = false;
             let strobeInterval;
+            let glidingInterval;
+            let jumpscareTriggered = false;
             
             // Start corruption when audio is played
             audio.addEventListener('play', function() {
@@ -273,13 +290,13 @@
                 warning.textContent = 'CONTAINMENT BREACH DETECTED';
                 warning.style.opacity = '1';
                 
-                // Make image follow scroll
-                imageFollowing = true;
-                ubbaImage.classList.add('following');
+                // Make image appear and start gliding
+                ubbaImage.style.opacity = '0.8';
+                startGliding();
                 
                 // Start rapid strobe effect on image
                 strobeInterval = setInterval(() => {
-                    ubbaImage.style.filter = `contrast(${100 + Math.random() * 500}%) brightness(${0.5 + Math.random()})`;
+                    ubbaImage.style.filter = `contrast(${100 + Math.random() * 500}%) brightness(${0.5 + Math.random()}) grayscale(${Math.random() * 100}%)`;
                 }, 50);
                 
                 // Start gradual corruption
@@ -289,6 +306,81 @@
                 setTimeout(() => {
                     hiddenContent.classList.remove('hidden');
                 }, 8000);
+                
+                // Trigger jumpscare at random time between 10-20 seconds
+                setTimeout(() => {
+                    if (!jumpscareTriggered) {
+                        triggerJumpscare();
+                    }
+                }, 10000 + Math.random() * 10000);
+            }
+            
+            function startGliding() {
+                let x = window.innerWidth;
+                let y = window.innerHeight / 2;
+                let xSpeed = -2 - Math.random() * 3;
+                let ySpeed = (Math.random() - 0.5) * 2;
+                
+                glidingInterval = setInterval(() => {
+                    x += xSpeed;
+                    y += ySpeed;
+                    
+                    // Bounce off edges
+                    if (x < -100 || x > window.innerWidth) {
+                        xSpeed = -xSpeed * (0.9 + Math.random() * 0.2);
+                    }
+                    if (y < -100 || y > window.innerHeight) {
+                        ySpeed = -ySpeed * (0.9 + Math.random() * 0.2);
+                    }
+                    
+                    // Random direction changes
+                    if (Math.random() < 0.02) {
+                        xSpeed = (Math.random() - 0.5) * 4;
+                        ySpeed = (Math.random() - 0.5) * 4;
+                    }
+                    
+                    // Occasionally dart toward center
+                    if (Math.random() < 0.01) {
+                        const dx = window.innerWidth/2 - x;
+                        const dy = window.innerHeight/2 - y;
+                        xSpeed = dx * 0.02;
+                        ySpeed = dy * 0.02;
+                    }
+                    
+                    ubbaImage.style.left = `${x}px`;
+                    ubbaImage.style.top = `${y}px`;
+                    
+                    // Random size changes
+                    ubbaImage.style.width = `${150 + Math.random() * 100}px`;
+                    
+                }, 30);
+            }
+            
+            function triggerJumpscare() {
+                jumpscareTriggered = true;
+                clearInterval(glidingInterval);
+                
+                // Freeze everything
+                document.body.style.overflow = 'hidden';
+                
+                // Prepare jumpscare
+                ubbaImage.classList.add('jumpscare');
+                ubbaImage.style.opacity = '1';
+                
+                // Blood effect
+                blood.style.opacity = '0.7';
+                setTimeout(() => {
+                    blood.style.opacity = '0';
+                }, 1000);
+                
+                // Scream sound could be added here if you have one
+                
+                // After jumpscare, resume gliding
+                setTimeout(() => {
+                    ubbaImage.classList.remove('jumpscare');
+                    ubbaImage.style.width = '200px';
+                    startGliding();
+                }, 300);
             }
             
             function increaseCorruption() {
@@ -321,6 +413,7 @@
                     finalCorruption();
                     clearInterval(corruptionInterval);
                     clearInterval(strobeInterval);
+                    clearInterval(glidingInterval);
                 }
             }
             
@@ -414,17 +507,6 @@
                     window.location.href = "about:blank";
                 }, 10000);
             }
-            
-            // Handle scroll to keep image visible
-            window.addEventListener('scroll', function() {
-                if (imageFollowing) {
-                    // Image will stay fixed in its position due to CSS
-                    // Add additional effects when scrolling during corruption
-                    if (corruptionStarted && Math.random() < 0.1) {
-                        ubbaImage.style.transform = `translateX(${(Math.random() - 0.5) * 30}px) translateY(${(Math.random() - 0.5) * 30}px)`;
-                    }
-                }
-            });
         });
     </script>
 </body>
