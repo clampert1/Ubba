@@ -1,12 +1,15 @@
 // Game Configuration
 const CONFIG = {
-    WIDTH: 640,
-    HEIGHT: 480,
-    POWER_DRAIN_INTERVAL: 5000, // 5 seconds
+    WIDTH: 740,  // Updated to match your requirements
+    HEIGHT: 580,
+    POWER_DRAIN_INTERVAL: 12000, // 12 seconds (between 10-15)
     POWER_DRAIN_AMOUNT: 5, // 5%
-    CONSOLE_PENALTY: 15, // 15% power loss for wrong answer
-    VIEWPORT_OFFSET: 100, // Panning range
-    NIGHT_DURATION: 120000 // 2 minutes per night
+    CONSOLE_PENALTY: 15,
+    VIEWPORT_OFFSET: 100,
+    NIGHT_DURATION: 120000,
+    UBBA_APPEAR_MIN: 60000, // 1 minute
+    UBBA_APPEAR_MAX: 120000, // 2 minutes
+    PAN_SPEED: 5 // Increased for smoother panning
 };
 
 // Game State
@@ -18,13 +21,23 @@ const state = {
     currentCam: 1,
     viewOffset: { x: 0, y: 0 },
     consoleVisible: false,
+    ubbaVisible: false,
+    ubbaPosition: { x: 0, y: 0 },
+    ubbaVelocity: { x: 0, y: 0 },
     assets: {
         cameras: [],
         ubbaSprite: new Image(),
         staticSound: new Audio('assets/sounds/static.mp3'),
         jumpscareSound: new Audio('assets/sounds/jumpscare.mp3'),
         ambientSound: new Audio('assets/sounds/ambient.mp3')
-    }
+    },
+    keys: {
+        ArrowUp: false,
+        ArrowDown: false,
+        ArrowLeft: false,
+        ArrowRight: false
+    },
+    nextUbbaAppearance: 0
 };
 
 // DOM Elements
@@ -36,8 +49,10 @@ const elements = {
     camDisplay: document.getElementById('current-cam'),
     console: document.getElementById('console'),
     consoleInput: document.getElementById('console-input'),
-    staticOverlay: document.querySelector('.static-overlay'),
-    anomalyAlert: document.querySelector('.anomaly-alert')
+    staticOverlay: document.getElementById('static-overlay'),
+    anomalyAlert: document.getElementById('anomaly-alert'),
+    leftArrow: document.createElement('div'),
+    rightArrow: document.createElement('div')
 };
 
 // Initialize Game
@@ -47,6 +62,9 @@ function initGame() {
     elements.canvas.height = CONFIG.HEIGHT;
     elements.ctx.imageSmoothingEnabled = false;
 
+    // Create camera arrows
+    createCameraArrows();
+    
     // Load assets
     for (let i = 1; i <= 5; i++) {
         const img = new Image();
@@ -62,13 +80,58 @@ function initGame() {
 
     // Set first anomaly
     setNewAnomaly();
+    scheduleUbbaAppearance();
 
     // Setup controls
-    document.addEventListener('keydown', handleKeyPress);
+    setupControls();
 
     // Start systems
     startPowerDrain();
     gameLoop();
+}
+
+function createCameraArrows() {
+    // Left arrow
+    elements.leftArrow.innerHTML = '&larr;';
+    elements.leftArrow.style.position = 'absolute';
+    elements.leftArrow.style.left = '10px';
+    elements.leftArrow.style.top = '50%';
+    elements.leftArrow.style.transform = 'translateY(-50%)';
+    elements.leftArrow.style.fontSize = '30px';
+    elements.leftArrow.style.color = '#0f0';
+    elements.leftArrow.style.cursor = 'pointer';
+    elements.leftArrow.style.zIndex = '100';
+    elements.leftArrow.addEventListener('click', () => switchCamera(state.currentCam > 1 ? state.currentCam - 1 : 5));
+    
+    // Right arrow
+    elements.rightArrow.innerHTML = '&rarr;';
+    elements.rightArrow.style.position = 'absolute';
+    elements.rightArrow.style.right = '10px';
+    elements.rightArrow.style.top = '50%';
+    elements.rightArrow.style.transform = 'translateY(-50%)';
+    elements.rightArrow.style.fontSize = '30px';
+    elements.rightArrow.style.color = '#0f0';
+    elements.rightArrow.style.cursor = 'pointer';
+    elements.rightArrow.style.zIndex = '100';
+    elements.rightArrow.addEventListener('click', () => switchCamera(state.currentCam < 5 ? state.currentCam + 1 : 1));
+    
+    document.getElementById('game-container').appendChild(elements.leftArrow);
+    document.getElementById('game-container').appendChild(elements.rightArrow);
+}
+
+function setupControls() {
+    document.addEventListener('keydown', (e) => {
+        if (state.keys.hasOwnProperty(e.key)) {
+            state.keys[e.key] = true;
+        }
+        handleKeyPress(e);
+    });
+    
+    document.addEventListener('keyup', (e) => {
+        if (state.keys.hasOwnProperty(e.key)) {
+            state.keys[e.key] = false;
+        }
+    });
 }
 
 // Game Systems
@@ -78,6 +141,58 @@ function setNewAnomaly() {
         x: Math.floor(Math.random() * (CONFIG.WIDTH + CONFIG.VIEWPORT_OFFSET * 2)),
         y: Math.floor(Math.random() * (CONFIG.HEIGHT + CONFIG.VIEWPORT_OFFSET * 2))
     };
+}
+
+function scheduleUbbaAppearance() {
+    const delay = CONFIG.UBBA_APPEAR_MIN + 
+                 Math.random() * (CONFIG.UBBA_APPEAR_MAX - CONFIG.UBBA_APPEAR_MIN);
+    state.nextUbbaAppearance = Date.now() + delay;
+}
+
+function startUbbaAnomaly() {
+    state.ubbaVisible = true;
+    state.ubbaPosition = {
+        x: Math.random() * (CONFIG.WIDTH + CONFIG.VIEWPORT_OFFSET * 2),
+        y: Math.random() * (CONFIG.HEIGHT + CONFIG.VIEWPORT_OFFSET * 2)
+    };
+    state.ubbaVelocity = {
+        x: (Math.random() - 0.5) * 10,
+        y: (Math.random() - 0.5) * 10
+    };
+    
+    // Show anomaly alert
+    elements.anomalyAlert.style.opacity = '1';
+    setTimeout(() => {
+        elements.anomalyAlert.style.opacity = '0';
+    }, 2000);
+    
+    // End anomaly after random time
+    setTimeout(() => {
+        state.ubbaVisible = false;
+        scheduleUbbaAppearance();
+    }, 5000 + Math.random() * 10000);
+}
+
+function updateUbbaPosition() {
+    if (!state.ubbaVisible) return;
+    
+    // Update position
+    state.ubbaPosition.x += state.ubbaVelocity.x;
+    state.ubbaPosition.y += state.ubbaVelocity.y;
+    
+    // Bounce off edges
+    if (state.ubbaPosition.x < 0 || state.ubbaPosition.x > CONFIG.WIDTH + CONFIG.VIEWPORT_OFFSET * 2) {
+        state.ubbaVelocity.x *= -1;
+    }
+    if (state.ubbaPosition.y < 0 || state.ubbaPosition.y > CONFIG.HEIGHT + CONFIG.VIEWPORT_OFFSET * 2) {
+        state.ubbaVelocity.y *= -1;
+    }
+    
+    // Random direction changes
+    if (Math.random() < 0.05) {
+        state.ubbaVelocity.x = (Math.random() - 0.5) * 10;
+        state.ubbaVelocity.y = (Math.random() - 0.5) * 10;
+    }
 }
 
 function startPowerDrain() {
@@ -99,24 +214,27 @@ function handleKeyPress(e) {
     }
 
     switch(e.key) {
-        case 'ArrowUp': 
-            state.viewOffset.y = Math.max(-CONFIG.VIEWPORT_OFFSET, state.viewOffset.y - 10);
-            break;
-        case 'ArrowDown':
-            state.viewOffset.y = Math.min(CONFIG.VIEWPORT_OFFSET, state.viewOffset.y + 10);
-            break;
-        case 'ArrowLeft':
-            state.viewOffset.x = Math.max(-CONFIG.VIEWPORT_OFFSET, state.viewOffset.x - 10);
-            break;
-        case 'ArrowRight':
-            state.viewOffset.x = Math.min(CONFIG.VIEWPORT_OFFSET, state.viewOffset.x + 10);
-            break;
         case 'Enter':
             toggleConsole();
             break;
         case '1': case '2': case '3': case '4': case '5':
             switchCamera(parseInt(e.key));
             break;
+    }
+}
+
+function handlePanning() {
+    if (state.keys.ArrowUp) {
+        state.viewOffset.y = Math.max(-CONFIG.VIEWPORT_OFFSET, state.viewOffset.y - CONFIG.PAN_SPEED);
+    }
+    if (state.keys.ArrowDown) {
+        state.viewOffset.y = Math.min(CONFIG.VIEWPORT_OFFSET, state.viewOffset.y + CONFIG.PAN_SPEED);
+    }
+    if (state.keys.ArrowLeft) {
+        state.viewOffset.x = Math.max(-CONFIG.VIEWPORT_OFFSET, state.viewOffset.x - CONFIG.PAN_SPEED);
+    }
+    if (state.keys.ArrowRight) {
+        state.viewOffset.x = Math.min(CONFIG.VIEWPORT_OFFSET, state.viewOffset.x + CONFIG.PAN_SPEED);
     }
 }
 
@@ -165,12 +283,21 @@ function gameOver() {
 }
 
 function triggerJumpscare() {
-    const jumpscare = document.getElementById('jumpscare-overlay');
-    jumpscare.style.display = 'block';
+    const jumpscare = document.createElement('div');
+    jumpscare.style.position = 'absolute';
+    jumpscare.style.top = '0';
+    jumpscare.style.left = '0';
+    jumpscare.style.width = '100%';
+    jumpscare.style.height = '100%';
+    jumpscare.style.backgroundImage = 'url(assets/sprites/ubba.png)';
+    jumpscare.style.backgroundSize = 'cover';
+    jumpscare.style.zIndex = '1000';
+    document.getElementById('game-container').appendChild(jumpscare);
+    
     state.assets.jumpscareSound.play();
     
     setTimeout(() => {
-        jumpscare.style.display = 'none';
+        jumpscare.remove();
     }, 2000);
 }
 
@@ -180,23 +307,25 @@ function render() {
     elements.ctx.fillStyle = '#000';
     elements.ctx.fillRect(0, 0, CONFIG.WIDTH, CONFIG.HEIGHT);
     
-    // Draw current camera view
+    // Draw current camera view with offset
     if (state.assets.cameras[state.currentCam - 1].complete) {
         elements.ctx.filter = 'grayscale(100%)';
         elements.ctx.drawImage(
             state.assets.cameras[state.currentCam - 1],
-            state.viewOffset.x, state.viewOffset.y,
-            CONFIG.WIDTH, CONFIG.HEIGHT,
             0, 0,
-            CONFIG.WIDTH, CONFIG.HEIGHT
+            state.assets.cameras[state.currentCam - 1].width,
+            state.assets.cameras[state.currentCam - 1].height,
+            state.viewOffset.x, state.viewOffset.y,
+            CONFIG.WIDTH + (CONFIG.VIEWPORT_OFFSET * 2),
+            CONFIG.HEIGHT + (CONFIG.VIEWPORT_OFFSET * 2)
         );
         elements.ctx.filter = 'none';
     }
     
-    // Draw Ubba if visible
-    if (state.currentCam === state.anomaly.cam) {
-        const ubbaX = state.anomaly.x - state.viewOffset.x;
-        const ubbaY = state.anomaly.y - state.viewOffset.y;
+    // Draw Ubba if visible on this camera
+    if (state.ubbaVisible && state.currentCam === state.anomaly.cam) {
+        const ubbaX = state.ubbaPosition.x - state.viewOffset.x;
+        const ubbaY = state.ubbaPosition.y - state.viewOffset.y;
         
         if (ubbaX > -50 && ubbaX < CONFIG.WIDTH && 
             ubbaY > -50 && ubbaY < CONFIG.HEIGHT) {
@@ -227,6 +356,8 @@ function updateUI() {
     
     if (state.power < 30) {
         elements.powerDisplay.style.color = '#f00';
+    } else {
+        elements.powerDisplay.style.color = '#0f0';
     }
 }
 
@@ -252,6 +383,16 @@ function showNightComplete() {
 // Main Game Loop
 function gameLoop() {
     if (state.gameActive) {
+        // Check if Ubba should appear
+        if (!state.ubbaVisible && Date.now() > state.nextUbbaAppearance) {
+            startUbbaAnomaly();
+        }
+        
+        // Update positions
+        handlePanning();
+        updateUbbaPosition();
+        
+        // Render
         render();
         updateUI();
     }
