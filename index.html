@@ -155,13 +155,18 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            color: red;
-            font-size: 2em;
+            color: #ff0000;
+            font-size: 3em;
             text-align: center;
             opacity: 0;
-            z-index: 1001;
+            z-index: 2001; /* Above everything else */
             pointer-events: none;
-            text-shadow: 0 0 10px #ff0000;
+            text-shadow: 0 0 15px #ff0000, 0 0 30px #ff0000;
+            font-weight: bold;
+            padding: 20px;
+            background: rgba(0,0,0,0.7);
+            border: 3px solid #ff0000;
+            border-radius: 5px;
         }
         
         .audio-warning {
@@ -203,7 +208,7 @@
             height: 100%;
             background: #000;
             opacity: 0;
-            z-index: 1002;
+            z-index: 2000; /* Below final message but above everything else */
             pointer-events: none;
         }
     </style>
@@ -509,12 +514,14 @@
                 distortionOverlay.style.opacity = '0.95';
                 screenBlocker.style.opacity = '0.9';
                 
-                // Hide most content
+                // Hide all other content
                 mainContent.style.opacity = '0';
+                document.querySelector('.audio-container').style.opacity = '0';
                 
-                // Show final message
+                // Show final message with maximum visibility
                 finalMessage.style.opacity = '1';
                 finalMessage.style.fontSize = '3em';
+                finalMessage.style.zIndex = '2001'; // Ensure it's above everything
                 
                 // Add pulsing effect to final message
                 setInterval(() => {
