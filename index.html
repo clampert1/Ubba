@@ -20,7 +20,7 @@
             max-width: 800px;
             margin: 0 auto;
             position: relative;
-            padding-bottom: 200px; /* Space for audio at bottom */
+            padding-bottom: 200px;
         }
         
         h1 {
@@ -50,12 +50,34 @@
         }
         
         .warning {
-            color: #8b0000;
+            color: #ff0000;
             font-weight: bold;
             text-align: center;
             margin: 20px 0;
             font-size: 1.2em;
             text-transform: uppercase;
+            background: rgba(0,0,0,0.7);
+            padding: 15px;
+            border: 1px solid #ff0000;
+            position: relative;
+        }
+        
+        .warning::before {
+            content: "⚠";
+            font-size: 2em;
+            position: absolute;
+            left: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+        
+        .warning::after {
+            content: "⚠";
+            font-size: 2em;
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
         }
         
         .corrupt-letter {
@@ -148,6 +170,15 @@
             border: 1px solid #8b0000;
             background: rgba(0,0,0,0.5);
         }
+        
+        .flashing-text {
+            animation: flash 0.5s infinite alternate;
+        }
+        
+        @keyframes flash {
+            from { opacity: 0.5; }
+            to { opacity: 1; }
+        }
     </style>
 </head>
 <body>
@@ -157,6 +188,11 @@
     
     <div class="container" id="mainContent">
         <h1>UBBA RESEARCH ARCHIVE</h1>
+        
+        <div class="warning flashing-text">
+            WARNING: AUDIO PLAYBACK WILL TRIGGER IRREVERSIBLE EFFECTS
+            <br>CONTINUE AT YOUR OWN RISK
+        </div>
         
         <img src="ubba png.png" alt="Ubba" class="glitch-img" id="ubbaImage">
         
@@ -196,7 +232,9 @@
     </div>
 
     <div class="audio-container">
-        <div class="warning">WARNING: Audio playback may trigger irreversible effects</div>
+        <div class="warning flashing-text" style="margin-bottom: 15px;">
+            CONFIRMATION REQUIRED: YOU ARE ABOUT TO PLAY THE AUDIO
+        </div>
         <audio controls id="ubbaAudio">
             <source src="20240724_202245.mp3" type="audio/mpeg">
             Your browser does not support the audio element.
@@ -219,15 +257,6 @@
             let corruptionInterval;
             let imageFollowing = false;
             let strobeInterval;
-            
-            // Show warning when hovering over audio
-            audio.addEventListener('mouseover', function() {
-                warning.style.opacity = '1';
-            });
-            
-            audio.addEventListener('mouseout', function() {
-                warning.style.opacity = '0.7';
-            });
             
             // Start corruption when audio is played
             audio.addEventListener('play', function() {
