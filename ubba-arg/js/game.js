@@ -2,20 +2,18 @@
 const CONFIG = {
     WIDTH: 740,
     HEIGHT: 580,
-    POWER_DRAIN_INTERVAL: 15000, // 15 seconds
-    POWER_DRAIN_AMOUNT: 5, // 5%
+    POWER_DRAIN_INTERVAL: 15000,
+    POWER_DRAIN_AMOUNT: 5,
     CONSOLE_PENALTY: 15,
     VIEWPORT_OFFSET: 100,
-    UBBA_CHILL_MIN: 15000, // 15 seconds
-    UBBA_CHILL_MAX: 20000, // 20 seconds
-    UBBA_FREAKOUT_MIN: 60000, // 1 minute
-    UBBA_FREAKOUT_MAX: 120000, // 2 minutes
+    UBBA_CHILL_MIN: 15000,
+    UBBA_CHILL_MAX: 20000,
+    UBBA_FREAKOUT_MIN: 30000,
+    UBBA_FREAKOUT_MAX: 60000,
     PAN_SPEED: 8,
     UBBA_WIDTH: 64,
     UBBA_HEIGHT: 128,
-    UBBA_CENTER_RANGE: 100, // Pixel range from center for chill position
-    UBBA_FREAKOUT_DURATION_MIN: 5000, // 5 seconds
-    UBBA_FREAKOUT_DURATION_MAX: 10000 // 10 seconds
+    UBBA_CENTER_RANGE: 100
 };
 
 // Game State
@@ -27,16 +25,16 @@ const state = {
     currentCam: 1,
     viewOffset: { x: 0, y: 0 },
     consoleVisible: false,
-    ubbaState: 'hidden', // 'hidden', 'chill', 'freaking'
+    ubbaState: 'hidden',
     ubbaPosition: { x: 0, y: 0 },
     ubbaVelocity: { x: 0, y: 0 },
     assets: {
         cameras: [],
-        ubbaSprite: new Image(),
-        staticSound: document.getElementById('static-sound'),
-        jumpscareSound: document.getElementById('jumpscare-sound'),
-        ambientSound: document.getElementById('ambient-sound'),
-        freakoutSound: new Audio('assets/sounds/jumpscare.mp3')
+        ubbaSprite: null,
+        staticSound: null,
+        jumpscareSound: null,
+        ambientSound: null,
+        freakoutSound: null
     },
     keys: {
         ArrowUp: false,
@@ -47,38 +45,54 @@ const state = {
     nextUbbaStateChange: 0,
     powerDrainInterval: null,
     panInterval: null,
-    gameStartTime: Date.now(),
-    lastPanTime: Date.now(),
-    cameraUbbaPositions: {}, // Stores fixed Ubba positions for each camera
+    gameStartTime: 0,
+    lastPanTime: 0,
+    cameraUbbaPositions: {},
     canReportAnomaly: false
 };
 
 // DOM Elements
 const elements = {
-    canvas: document.getElementById('camera-view'),
-    ctx: document.getElementById('camera-view').getContext('2d'),
-    powerDisplay: document.getElementById('power-meter'),
-    nightDisplay: document.getElementById('night-counter'),
-    camDisplay: document.getElementById('current-cam'),
-    console: document.getElementById('console'),
-    consoleInput: document.getElementById('console-input'),
-    consoleSubmit: document.getElementById('console-submit'),
-    staticOverlay: document.getElementById('static-overlay'),
-    leftArrow: document.getElementById('left-arrow'),
-    rightArrow: document.getElementById('right-arrow'),
-    gameContainer: document.getElementById('game-container'),
-    restartBtn: document.getElementById('restart-btn'),
-    anomalyPrompt: document.createElement('div')
+    canvas: null,
+    ctx: null,
+    powerDisplay: null,
+    nightDisplay: null,
+    camDisplay: null,
+    console: null,
+    consoleInput: null,
+    consoleSubmit: null,
+    staticOverlay: null,
+    leftArrow: null,
+    rightArrow: null,
+    gameContainer: null,
+    restartBtn: null,
+    anomalyPrompt: null
 };
 
 // Initialize Game
-function initGame() {
+async function initGame() {
+    // Initialize DOM elements
+    elements.canvas = document.getElementById('camera-view');
+    elements.ctx = elements.canvas.getContext('2d');
+    elements.powerDisplay = document.getElementById('power-meter');
+    elements.nightDisplay = document.getElementById('night-counter');
+    elements.camDisplay = document.getElementById('current-cam');
+    elements.console = document.getElementById('console');
+    elements.consoleInput = document.getElementById('console-input');
+    elements.consoleSubmit = document.getElementById('console-submit');
+    elements.staticOverlay = document.getElementById('static-overlay');
+    elements.leftArrow = document.getElementById('left-arrow');
+    elements.rightArrow = document.getElementById('right-arrow');
+    elements.gameContainer = document.getElementById('game-container');
+    elements.restartBtn = document.getElementById('restart-btn');
+
     // Setup canvas
     elements.canvas.width = CONFIG.WIDTH;
     elements.canvas.height = CONFIG.HEIGHT;
     elements.ctx.imageSmoothingEnabled = false;
 
     // Create anomaly prompt
+    elements.anomalyPrompt = document.createElement('div');
     elements.anomalyPrompt.id = 'anomaly-prompt';
     elements.anomalyPrompt.textContent = 'Press ENTER to log anomaly';
     elements.anomalyPrompt.style.position = 'absolute';
@@ -95,29 +109,49 @@ function initGame() {
     elements.anomalyPrompt.style.borderRadius = '3px';
     elements.gameContainer.appendChild(elements.anomalyPrompt);
 
-    // Load assets and set fixed Ubba positions
+    // Load assets
+    state.assets.ubbaSprite = await loadImage('assets/sprites/ubba.png');
     for (let i = 1; i <= 5; i++) {
-        const img = new Image();
-        img.src = `assets/cameras/cam${i}.png`;
-        img.onload = function() {
-            state.cameraUbbaPositions[i] = {
-                x: (img.width/2) + (Math.random() * CONFIG.UBBA_CENTER_RANGE * 2) - CONFIG.UBBA_CENTER_RANGE,
-                y: (img.height/2) + (Math.random() * CONFIG.UBBA_CENTER_RANGE * 2) - CONFIG.UBBA_CENTER_RANGE
-            };
-        };
+        const img = await loadImage(`assets/cameras/cam${i}.png`);
         state.assets.cameras.push(img);
+        state.cameraUbbaPositions[i] = {
+            x: (img.width/2) + (Math.random() * CONFIG.UBBA_CENTER_RANGE * 2) - CONFIG.UBBA_CENTER_RANGE,
+            y: (img.height/2) + (Math.random() * CONFIG.UBBA_CENTER_RANGE * 2) - CONFIG.UBBA_CENTER_RANGE
+        };
     }
-    
-    state.assets.ubbaSprite.src = 'assets/sprites/ubba.png';
+
+    // Load sounds
+    state.assets.staticSound = document.getElementById('static-sound');
+    state.assets.jumpscareSound = document.getElementById('jumpscare-sound');
+    state.assets.ambientSound = document.getElementById('ambient-sound');
+    state.assets.freakoutSound = new Audio('assets/sounds/jumpscare.mp3');
 
     // Setup audio
     state.assets.ambientSound.loop = true;
     state.assets.ambientSound.volume = 0.3;
-    state.assets.ambientSound.play().catch(e => console.log("Audio play error:", e));
+    await state.assets.ambientSound.play().catch(e => console.log("Audio play error:", e));
     
     state.assets.freakoutSound.volume = 0.7;
     state.assets.staticSound.volume = 0.4;
     state.assets.jumpscareSound.volume = 0.8;
+
+    // Initialize game state
+    state.gameStartTime = Date.now();
+    setNewAnomaly();
+    startUbbaSystem();
+    setupControls();
+    startPowerDrain();
+    gameLoop();
+}
+
+function loadImage(src) {
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => resolve(img);
+        img.onerror = reject;
+        img.src = src;
+    });
+}
 
     // Set first anomaly
     setNewAnomaly();
@@ -517,14 +551,9 @@ function gameLoop() {
     requestAnimationFrame(gameLoop);
 }
 
-// Start the game when assets load
 window.onload = function() {
     document.getElementById('restart-btn').onclick = () => {
         location.reload();
     };
-    
-    // Start game when Ubba sprite loads
-    const ubbaImg = new Image();
-    ubbaImg.src = 'assets/sprites/ubba.png';
-    ubbaImg.onload = initGame;
+    initGame().catch(e => console.error("Game initialization failed:", e));
 };
