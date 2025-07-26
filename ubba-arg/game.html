@@ -1,21 +1,134 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Ubba Monitoring System</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UBBA MONITORING SYSTEM</title>
     <link rel="stylesheet" href="css/game.css">
+    <style>
+        /* Additional inline styles for critical elements */
+        #loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            color: #0f0;
+            font-family: 'Courier New', monospace;
+        }
+        #loading-progress {
+            width: 80%;
+            max-width: 400px;
+            height: 20px;
+            border: 2px solid #0f0;
+            margin-top: 20px;
+        }
+        #progress-bar {
+            height: 100%;
+            width: 0%;
+            background: #0f0;
+            transition: width 0.3s;
+        }
+    </style>
 </head>
 <body>
+    <div id="loading-screen">
+        <h1>UBBA MONITORING SYSTEM</h1>
+        <p>INITIALIZING SECURITY PROTOCOLS</p>
+        <div id="loading-progress">
+            <div id="progress-bar"></div>
+        </div>
+    </div>
+
     <div id="game-container">
         <canvas id="camera-view" width="640" height="480"></canvas>
         <div id="camera-select"></div>
         <div id="power-meter">POWER: 100%</div>
         <div id="night-counter">NIGHT 1</div>
+        <div id="time-display">12:00 AM</div>
+        
+        <div id="static-overlay" class="static-overlay"></div>
+        <div id="anomaly-alert" class="anomaly-alert">ANOMALY DETECTED</div>
     </div>
 
+    <div id="night-complete" style="display:none;">
+        <h1>NIGHT COMPLETE</h1>
+        <p>PREPARING NEXT SHIFT...</p>
+    </div>
+
+    <div id="game-over" style="display:none;">
+        <h1>SECURITY BREACH</h1>
+        <p>PROTOCOL UBB-4 ACTIVATED</p>
+        <button id="restart-btn">REINITIALIZE SYSTEM</button>
+    </div>
+
+    <!-- Audio Elements -->
     <audio id="static-sound" src="assets/sounds/static.mp3" preload="auto"></audio>
     <audio id="jumpscare-sound" src="assets/sounds/jumpscare.mp3" preload="auto"></audio>
+    <audio id="ambient-sound" src="assets/sounds/ambient.mp3" loop preload="auto"></audio>
 
-    <script src="js/doom-style.js"></script>
     <script src="js/game.js"></script>
+    <script>
+        // Asset loading progress tracking
+        const assets = {
+            images: [
+                'assets/sprites/ubba.png',
+                'assets/cameras/cam1.png',
+                'assets/cameras/cam2.png',
+                'assets/cameras/cam3.png',
+                'assets/cameras/cam4.png',
+                'assets/cameras/cam5.png'
+            ],
+            sounds: [
+                'assets/sounds/static.mp3',
+                'assets/sounds/jumpscare.mp3',
+                'assets/sounds/ambient.mp3'
+            ]
+        };
+
+        let loaded = 0;
+        const totalAssets = assets.images.length + assets.sounds.length;
+
+        function updateProgress() {
+            loaded++;
+            const percent = Math.floor((loaded / totalAssets) * 100);
+            document.getElementById('progress-bar').style.width = `${percent}%`;
+            
+            if (loaded === totalAssets) {
+                setTimeout(() => {
+                    document.getElementById('loading-screen').style.opacity = '0';
+                    setTimeout(() => {
+                        document.getElementById('loading-screen').style.display = 'none';
+                        initGame();
+                    }, 500);
+                }, 500);
+            }
+        }
+
+        // Preload images
+        assets.images.forEach(src => {
+            const img = new Image();
+            img.src = src;
+            img.onload = updateProgress;
+            img.onerror = updateProgress;
+        });
+
+        // Preload sounds
+        assets.sounds.forEach(src => {
+            const audio = new Audio();
+            audio.src = src;
+            audio.addEventListener('canplaythrough', updateProgress);
+            audio.addEventListener('error', updateProgress);
+        });
+
+        // Prevent right-click menu
+        document.addEventListener('contextmenu', e => e.preventDefault());
+    </script>
 </body>
 </html>
