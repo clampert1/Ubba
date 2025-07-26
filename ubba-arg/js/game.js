@@ -40,7 +40,8 @@ const state = {
         ArrowRight: false
     },
     nextUbbaAppearance: 0,
-    panInterval: null
+    panInterval: null,
+    anomalyAlertActive: false
 };
 
 // DOM Elements
@@ -49,7 +50,7 @@ const elements = {
     ctx: document.getElementById('camera-view').getContext('2d'),
     powerDisplay: document.getElementById('power-meter'),
     nightDisplay: document.getElementById('night-counter'),
-    camDisplay: document.getElementById('current-cam'),
+    camDisplay: document.createElement('div'), // New camera display element
     console: document.getElementById('console'),
     consoleInput: document.getElementById('console-input'),
     staticOverlay: document.getElementById('static-overlay'),
@@ -66,6 +67,9 @@ function initGame() {
     elements.canvas.height = CONFIG.HEIGHT;
     elements.ctx.imageSmoothingEnabled = false;
 
+    // Create camera display
+    createCameraDisplay();
+    
     // Create camera arrows
     createCameraArrows();
     
@@ -94,18 +98,39 @@ function initGame() {
     gameLoop();
 }
 
+function createCameraDisplay() {
+    elements.camDisplay.id = 'current-cam';
+    elements.camDisplay.textContent = `CAM ${state.currentCam}`;
+    elements.camDisplay.style.position = 'absolute';
+    elements.camDisplay.style.bottom = '10px';
+    elements.camDisplay.style.left = '10px';
+    elements.camDisplay.style.color = '#0f0';
+    elements.camDisplay.style.fontSize = '18px';
+    elements.camDisplay.style.background = 'rgba(0,0,0,0.7)';
+    elements.camDisplay.style.padding = '5px 10px';
+    elements.camDisplay.style.border = '1px solid #0f0';
+    elements.camDisplay.style.zIndex = '100';
+    elements.gameContainer.appendChild(elements.camDisplay);
+}
+
 function createCameraArrows() {
     // Left arrow
     elements.leftArrow.innerHTML = '&larr;';
     elements.leftArrow.className = 'camera-arrow';
     elements.leftArrow.id = 'left-arrow';
-    elements.leftArrow.addEventListener('click', () => switchCamera(state.currentCam > 1 ? state.currentCam - 1 : 5));
+    elements.leftArrow.addEventListener('click', () => {
+        const newCam = state.currentCam > 1 ? state.currentCam - 1 : 5;
+        switchCamera(newCam);
+    });
     
     // Right arrow
     elements.rightArrow.innerHTML = '&rarr;';
     elements.rightArrow.className = 'camera-arrow';
     elements.rightArrow.id = 'right-arrow';
-    elements.rightArrow.addEventListener('click', () => switchCamera(state.currentCam < 5 ? state.currentCam + 1 : 1));
+    elements.rightArrow.addEventListener('click', () => {
+        const newCam = state.currentCam < 5 ? state.currentCam + 1 : 1;
+        switchCamera(newCam);
+    });
     
     elements.gameContainer.appendChild(elements.leftArrow);
     elements.gameContainer.appendChild(elements.rightArrow);
@@ -170,11 +195,15 @@ function startUbbaAnomaly() {
         y: (Math.random() - 0.5) * 10
     };
     
-    // Show anomaly alert
-    elements.anomalyAlert.style.opacity = '1';
-    setTimeout(() => {
-        elements.anomalyAlert.style.opacity = '0';
-    }, 2000);
+    // Show anomaly alert only when Ubba appears
+    if (!state.anomalyAlertActive) {
+        state.anomalyAlertActive = true;
+        elements.anomalyAlert.style.opacity = '1';
+        setTimeout(() => {
+            elements.anomalyAlert.style.opacity = '0';
+            state.anomalyAlertActive = false;
+        }, 2000);
+    }
     
     // End anomaly after random time
     setTimeout(() => {
@@ -234,17 +263,18 @@ function handleKeyPress(e) {
 }
 
 function handlePanning() {
+    // Fixed inverted controls
     if (state.keys.ArrowUp) {
-        state.viewOffset.y = Math.max(-CONFIG.VIEWPORT_OFFSET, state.viewOffset.y - CONFIG.PAN_SPEED);
-    }
-    if (state.keys.ArrowDown) {
         state.viewOffset.y = Math.min(CONFIG.VIEWPORT_OFFSET, state.viewOffset.y + CONFIG.PAN_SPEED);
     }
+    if (state.keys.ArrowDown) {
+        state.viewOffset.y = Math.max(-CONFIG.VIEWPORT_OFFSET, state.viewOffset.y - CONFIG.PAN_SPEED);
+    }
     if (state.keys.ArrowLeft) {
-        state.viewOffset.x = Math.max(-CONFIG.VIEWPORT_OFFSET, state.viewOffset.x - CONFIG.PAN_SPEED);
+        state.viewOffset.x = Math.min(CONFIG.VIEWPORT_OFFSET, state.viewOffset.x + CONFIG.PAN_SPEED);
     }
     if (state.keys.ArrowRight) {
-        state.viewOffset.x = Math.min(CONFIG.VIEWPORT_OFFSET, state.viewOffset.x + CONFIG.PAN_SPEED);
+        state.viewOffset.x = Math.max(-CONFIG.VIEWPORT_OFFSET, state.viewOffset.x - CONFIG.PAN_SPEED);
     }
 }
 
@@ -412,14 +442,6 @@ function gameLoop() {
 }
 
 // Start the game when assets load
-window.onload = function() {
-    document.getElementById('restart-btn').onclick = () => {
-        location.reload();
-    };
-    
-    state.assets.ubbaSprite.onload = initGame;
-};
-
 window.onload = function() {
     document.getElementById('restart-btn').onclick = () => {
         location.reload();
