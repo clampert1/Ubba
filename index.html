@@ -14,13 +14,13 @@
             padding: 20px;
             overflow-x: hidden;
             transition: all 0.3s;
+            padding-bottom: 150px; /* Space for fixed audio player */
         }
         
         .container {
             max-width: 800px;
             margin: 0 auto;
             position: relative;
-            padding-bottom: 200px;
         }
         
         h1 {
@@ -32,13 +32,12 @@
         
         .audio-container {
             text-align: center;
-            margin: 50px 0;
             position: fixed;
-            bottom: 20px;
+            bottom: 0;
             left: 0;
             right: 0;
-            background: rgba(0,0,0,0.7);
-            padding: 20px;
+            background: rgba(0,0,0,0.9);
+            padding: 15px;
             border-top: 1px solid #8b0000;
             z-index: 100;
         }
@@ -373,13 +372,12 @@
                     blood.style.opacity = '0';
                 }, 1000);
                 
-                // Scream sound could be added here if you have one
-                
                 // After jumpscare, resume gliding
                 setTimeout(() => {
                     ubbaImage.classList.remove('jumpscare');
                     ubbaImage.style.width = '200px';
                     startGliding();
+                    document.body.style.overflow = '';
                 }, 300);
             }
             
