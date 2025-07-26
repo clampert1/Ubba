@@ -13,8 +13,8 @@ const CONFIG = {
     PAN_SPEED: 8, // Increased for smoother movement
     UBBA_WIDTH: 64,
     UBBA_HEIGHT: 128,
-    UBBA_CENTER_X: 370, // Center X position (740/2)
-    UBBA_CENTER_Y: 290 // Center Y position (580/2)
+    UBBA_CENTER_RANGE: 100, // How far from center Ubba can appear when chilling
+    ANOMALY_INCREASE_PER_CAM: 0.1 // 10% increase per camera switch
 };
 
 // Game State
@@ -27,7 +27,7 @@ const state = {
     viewOffset: { x: 0, y: 0 },
     consoleVisible: false,
     ubbaState: 'hidden', // 'hidden', 'chill', 'freaking'
-    ubbaPosition: { x: CONFIG.UBBA_CENTER_X, y: CONFIG.UBBA_CENTER_Y },
+    ubbaPosition: { x: 0, y: 0 },
     ubbaVelocity: { x: 0, y: 0 },
     assets: {
         cameras: [],
@@ -49,7 +49,8 @@ const state = {
     anomalyAlertActive: false,
     gameStartTime: Date.now(),
     freakoutSoundInterval: null,
-    lastPanTime: Date.now()
+    lastPanTime: Date.now(),
+    anomalyChance: 0 // Starts at 0%, increases with camera switches
 };
 
 // DOM Elements
@@ -123,10 +124,13 @@ function setUbbaState(newState) {
         state.nextUbbaStateChange = Date.now() + delay;
     }
     else if (newState === 'chill') {
-        // Fixed center position for chill state
+        // Set random position within center range of current camera
+        const camCenterX = CONFIG.WIDTH/2 + state.viewOffset.x;
+        const camCenterY = CONFIG.HEIGHT/2 + state.viewOffset.y;
+        
         state.ubbaPosition = { 
-            x: CONFIG.UBBA_CENTER_X, 
-            y: CONFIG.UBBA_CENTER_Y 
+            x: camCenterX + (Math.random() * CONFIG.UBBA_CENTER_RANGE * 2) - CONFIG.UBBA_CENTER_RANGE,
+            y: camCenterY + (Math.random() * CONFIG.UBBA_CENTER_RANGE * 2) - CONFIG.UBBA_CENTER_RANGE
         };
         state.ubbaVelocity = { x: 0, y: 0 };
         
@@ -146,12 +150,8 @@ function setUbbaState(newState) {
             y: (Math.random() - 0.5) * 10
         };
         
-        // Play freakout sound on loop
-        state.assets.freakoutSound.loop = true;
-        state.assets.freakoutSound.play();
-        
-        // Show anomaly alert
-        if (!state.anomalyAlertActive) {
+        // Only show alert if random check passes based on anomalyChance
+        if (!state.anomalyAlertActive && Math.random() < state.anomalyChance) {
             state.anomalyAlertActive = true;
             elements.anomalyAlert.style.opacity = '1';
             setTimeout(() => {
@@ -159,6 +159,10 @@ function setUbbaState(newState) {
                 state.anomalyAlertActive = false;
             }, 2000);
         }
+        
+        // Always play sound when freaking out
+        state.assets.freakoutSound.loop = true;
+        state.assets.freakoutSound.play();
     }
 }
 
@@ -311,6 +315,10 @@ function checkAnswer() {
 function switchCamera(camNum) {
     state.currentCam = camNum;
     state.viewOffset = { x: 0, y: 0 };
+    
+    // Increase anomaly chance when switching cameras
+    state.anomalyChance = Math.min(1, state.anomalyChance + CONFIG.ANOMALY_INCREASE_PER_CAM);
+    
     playStaticEffect();
     updateUI();
 }
@@ -406,9 +414,9 @@ function render() {
         let drawX, drawY;
         
         if (state.ubbaState === 'chill') {
-            // Fixed center position for chill state
-            drawX = CONFIG.UBBA_CENTER_X - (CONFIG.UBBA_WIDTH/2);
-            drawY = CONFIG.UBBA_CENTER_Y - (CONFIG.UBBA_HEIGHT/2);
+            // Draw at fixed position relative to camera image
+            drawX = state.ubbaPosition.x - state.viewOffset.x - (CONFIG.UBBA_WIDTH/2);
+            drawY = state.ubbaPosition.y - state.viewOffset.y - (CONFIG.UBBA_HEIGHT/2);
         } else {
             // Freaking out - use dynamic position
             drawX = state.ubbaPosition.x - state.viewOffset.x - (CONFIG.UBBA_WIDTH/2);
