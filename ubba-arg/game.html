@@ -231,6 +231,21 @@
             background: #0f0;
             transition: width 0.3s;
         }
+
+        #anomaly-prompt {
+            position: absolute;
+            bottom: 60px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #f00;
+            font-size: 18px;
+            display: none;
+            z-index: 100;
+            background: rgba(0,0,0,0.7);
+            padding: 5px 10px;
+            border: 1px solid #f00;
+            border-radius: 3px;
+        }
     </style>
 </head>
 <body>
@@ -251,6 +266,7 @@
         <div id="current-cam">CAM 1</div>
         <div id="static-overlay" class="static-overlay"></div>
         <div id="anomaly-alert" class="anomaly-alert">ANOMALY DETECTED</div>
+        <div id="anomaly-prompt">Press ENTER to log anomaly</div>
         <div id="console">
             <p>Enter which camera Ubba is freaking out on (e.g. "cam1"):</p>
             <input type="text" id="console-input">
@@ -271,7 +287,7 @@
 
     <audio id="static-sound" src="assets/sounds/static.mp3" preload="auto"></audio>
     <audio id="jumpscare-sound" src="assets/sounds/jumpscare.mp3" preload="auto"></audio>
-    <audio id="ambient-sound" src="assets/sounds/ambient.mp3" loop preload="auto"></audio>
+    <audio id="ambient-sound" src="assets/sounds/ambient.mp3" preload="auto" loop></audio>
 
     <script src="js/game.js"></script>
     <script>
