@@ -220,7 +220,7 @@
     <div class="screen-blocker"></div>
     <div class="final-message">YOU SHOULDN'T HAVE LISTENED</div>
     
-    <img src="ubba png.png" alt="Ubba" class="glitch-img" id="ubbaImage">
+    <img src="assets/sprites/ubba.png" alt="Ubba" class="glitch-img" id="ubbaImage">
     
     <div class="container" id="mainContent">
         <h1>UBBA RESEARCH ARCHIVE</h1>
@@ -269,7 +269,7 @@
                 CONFIRMATION REQUIRED: YOU ARE ABOUT TO PLAY THE AUDIO
             </div>
             <audio controls id="ubbaAudio">
-                <source src="20240724_202245.mp3" type="audio/mpeg">
+                <source src="assets/sounds/20240724_202245.mp3" type="audio/mpeg">
                 Your browser does not support the audio element.
             </audio>
         </div>
@@ -530,10 +530,8 @@
                 
                 // Redirect after delay
                 setTimeout(() => {
-                    window.location.href = "game.html";
-                }, 10000);
-            }
-        });
+            window.location.href = "game.html";
+        }, 10000);
     </script>
 </body>
 </html>
