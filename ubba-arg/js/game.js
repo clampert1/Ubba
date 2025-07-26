@@ -10,11 +10,10 @@ const CONFIG = {
     UBBA_CHILL_MAX: 20000, // 20 seconds
     UBBA_FREAKOUT_MIN: 60000, // 1 minute
     UBBA_FREAKOUT_MAX: 120000, // 2 minutes
-    PAN_SPEED: 8, // Increased for smoother movement
+    PAN_SPEED: 8, // Smooth panning speed
     UBBA_WIDTH: 64,
     UBBA_HEIGHT: 128,
-    UBBA_CENTER_RANGE: 100, // How far from center Ubba can appear when chilling
-    ANOMALY_INCREASE_PER_CAM: 0.1 // 10% increase per camera switch
+    UBBA_CENTER_RANGE: 100 // Pixel range from center for chill position
 };
 
 // Game State
@@ -27,7 +26,7 @@ const state = {
     viewOffset: { x: 0, y: 0 },
     consoleVisible: false,
     ubbaState: 'hidden', // 'hidden', 'chill', 'freaking'
-    ubbaPosition: { x: 0, y: 0 },
+    ubbaPosition: { x: 0, y: 0 }, // Fixed position for current camera
     ubbaVelocity: { x: 0, y: 0 },
     assets: {
         cameras: [],
@@ -48,9 +47,8 @@ const state = {
     panInterval: null,
     anomalyAlertActive: false,
     gameStartTime: Date.now(),
-    freakoutSoundInterval: null,
     lastPanTime: Date.now(),
-    anomalyChance: 0 // Starts at 0%, increases with camera switches
+    cameraUbbaPositions: {} // Stores fixed Ubba positions for each camera
 };
 
 // DOM Elements
@@ -78,18 +76,30 @@ function initGame() {
     elements.canvas.height = CONFIG.HEIGHT;
     elements.ctx.imageSmoothingEnabled = false;
 
-    // Load assets
+    // Load assets and set fixed Ubba positions
     for (let i = 1; i <= 5; i++) {
         const img = new Image();
         img.src = `assets/cameras/cam${i}.png`;
+        img.onload = function() {
+            // Set fixed random position near center for this camera
+            state.cameraUbbaPositions[i] = {
+                x: (img.width/2) + (Math.random() * CONFIG.UBBA_CENTER_RANGE * 2) - CONFIG.UBBA_CENTER_RANGE,
+                y: (img.height/2) + (Math.random() * CONFIG.UBBA_CENTER_RANGE * 2) - CONFIG.UBBA_CENTER_RANGE
+            };
+        };
         state.assets.cameras.push(img);
     }
+    
     state.assets.ubbaSprite.src = 'assets/sprites/ubba.png';
 
-    // Setup audio
+    // Setup audio with fixed volumes
     state.assets.ambientSound.loop = true;
-    state.assets.ambientSound.volume = 0.2;
+    state.assets.ambientSound.volume = 0.3; // Consistent volume
     state.assets.ambientSound.play();
+    
+    state.assets.freakoutSound.volume = 0.7;
+    state.assets.staticSound.volume = 0.4;
+    state.assets.jumpscareSound.volume = 0.8;
 
     // Set first anomaly
     setNewAnomaly();
@@ -111,7 +121,6 @@ function startUbbaSystem() {
 function setUbbaState(newState) {
     // Clean up previous state
     if (state.ubbaState === 'freaking') {
-        clearInterval(state.freakoutSoundInterval);
         state.assets.freakoutSound.pause();
         state.assets.freakoutSound.currentTime = 0;
     }
@@ -124,15 +133,10 @@ function setUbbaState(newState) {
         state.nextUbbaStateChange = Date.now() + delay;
     }
     else if (newState === 'chill') {
-        // Set random position within center range of current camera
-        const camCenterX = CONFIG.WIDTH/2 + state.viewOffset.x;
-        const camCenterY = CONFIG.HEIGHT/2 + state.viewOffset.y;
-        
-        state.ubbaPosition = { 
-            x: camCenterX + (Math.random() * CONFIG.UBBA_CENTER_RANGE * 2) - CONFIG.UBBA_CENTER_RANGE,
-            y: camCenterY + (Math.random() * CONFIG.UBBA_CENTER_RANGE * 2) - CONFIG.UBBA_CENTER_RANGE
-        };
-        state.ubbaVelocity = { x: 0, y: 0 };
+        // Use the pre-set position for this camera
+        if (state.cameraUbbaPositions[state.currentCam]) {
+            state.ubbaPosition = state.cameraUbbaPositions[state.currentCam];
+        }
         
         const delay = CONFIG.UBBA_CHILL_MIN + 
                      Math.random() * (CONFIG.UBBA_CHILL_MAX - CONFIG.UBBA_CHILL_MIN);
@@ -141,6 +145,7 @@ function setUbbaState(newState) {
         setNewAnomaly();
     }
     else if (newState === 'freaking') {
+        // Random position for freaking out
         state.ubbaPosition = {
             x: Math.random() * (CONFIG.WIDTH + CONFIG.VIEWPORT_OFFSET * 2),
             y: Math.random() * (CONFIG.HEIGHT + CONFIG.VIEWPORT_OFFSET * 2)
@@ -150,17 +155,15 @@ function setUbbaState(newState) {
             y: (Math.random() - 0.5) * 10
         };
         
-        // Only show alert if random check passes based on anomalyChance
-        if (!state.anomalyAlertActive && Math.random() < state.anomalyChance) {
-            state.anomalyAlertActive = true;
-            elements.anomalyAlert.style.opacity = '1';
-            setTimeout(() => {
-                elements.anomalyAlert.style.opacity = '0';
-                state.anomalyAlertActive = false;
-            }, 2000);
-        }
+        // Show anomaly alert ONLY when freaking out
+        state.anomalyAlertActive = true;
+        elements.anomalyAlert.style.opacity = '1';
+        setTimeout(() => {
+            elements.anomalyAlert.style.opacity = '0';
+            state.anomalyAlertActive = false;
+        }, 2000);
         
-        // Always play sound when freaking out
+        // Play looping freakout sound
         state.assets.freakoutSound.loop = true;
         state.assets.freakoutSound.play();
     }
@@ -315,10 +318,6 @@ function checkAnswer() {
 function switchCamera(camNum) {
     state.currentCam = camNum;
     state.viewOffset = { x: 0, y: 0 };
-    
-    // Increase anomaly chance when switching cameras
-    state.anomalyChance = Math.min(1, state.anomalyChance + CONFIG.ANOMALY_INCREASE_PER_CAM);
-    
     playStaticEffect();
     updateUI();
 }
@@ -327,7 +326,6 @@ function endGame(success) {
     state.gameActive = false;
     clearInterval(state.powerDrainInterval);
     clearInterval(state.panInterval);
-    clearInterval(state.freakoutSoundInterval);
     
     // Stop all sounds
     state.assets.ambientSound.pause();
@@ -414,9 +412,10 @@ function render() {
         let drawX, drawY;
         
         if (state.ubbaState === 'chill') {
-            // Draw at fixed position relative to camera image
-            drawX = state.ubbaPosition.x - state.viewOffset.x - (CONFIG.UBBA_WIDTH/2);
-            drawY = state.ubbaPosition.y - state.viewOffset.y - (CONFIG.UBBA_HEIGHT/2);
+            // Fixed position relative to camera image (not affected by panning)
+            const fixedPos = state.cameraUbbaPositions[state.currentCam];
+            drawX = fixedPos.x - (CONFIG.UBBA_WIDTH/2);
+            drawY = fixedPos.y - (CONFIG.UBBA_HEIGHT/2);
         } else {
             // Freaking out - use dynamic position
             drawX = state.ubbaPosition.x - state.viewOffset.x - (CONFIG.UBBA_WIDTH/2);
