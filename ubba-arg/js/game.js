@@ -1,6 +1,6 @@
 // Game Configuration
 const CONFIG = {
-    WIDTH: 740,  // Updated to match your requirements
+    WIDTH: 740,
     HEIGHT: 580,
     POWER_DRAIN_INTERVAL: 12000, // 12 seconds (between 10-15)
     POWER_DRAIN_AMOUNT: 5, // 5%
@@ -9,7 +9,9 @@ const CONFIG = {
     NIGHT_DURATION: 120000,
     UBBA_APPEAR_MIN: 60000, // 1 minute
     UBBA_APPEAR_MAX: 120000, // 2 minutes
-    PAN_SPEED: 5 // Increased for smoother panning
+    PAN_SPEED: 5,
+    UBBA_WIDTH: 64,
+    UBBA_HEIGHT: 128
 };
 
 // Game State
@@ -37,7 +39,8 @@ const state = {
         ArrowLeft: false,
         ArrowRight: false
     },
-    nextUbbaAppearance: 0
+    nextUbbaAppearance: 0,
+    panInterval: null
 };
 
 // DOM Elements
@@ -52,7 +55,8 @@ const elements = {
     staticOverlay: document.getElementById('static-overlay'),
     anomalyAlert: document.getElementById('anomaly-alert'),
     leftArrow: document.createElement('div'),
-    rightArrow: document.createElement('div')
+    rightArrow: document.createElement('div'),
+    gameContainer: document.getElementById('game-container')
 };
 
 // Initialize Game
@@ -93,36 +97,26 @@ function initGame() {
 function createCameraArrows() {
     // Left arrow
     elements.leftArrow.innerHTML = '&larr;';
-    elements.leftArrow.style.position = 'absolute';
-    elements.leftArrow.style.left = '10px';
-    elements.leftArrow.style.top = '50%';
-    elements.leftArrow.style.transform = 'translateY(-50%)';
-    elements.leftArrow.style.fontSize = '30px';
-    elements.leftArrow.style.color = '#0f0';
-    elements.leftArrow.style.cursor = 'pointer';
-    elements.leftArrow.style.zIndex = '100';
+    elements.leftArrow.className = 'camera-arrow';
+    elements.leftArrow.id = 'left-arrow';
     elements.leftArrow.addEventListener('click', () => switchCamera(state.currentCam > 1 ? state.currentCam - 1 : 5));
     
     // Right arrow
     elements.rightArrow.innerHTML = '&rarr;';
-    elements.rightArrow.style.position = 'absolute';
-    elements.rightArrow.style.right = '10px';
-    elements.rightArrow.style.top = '50%';
-    elements.rightArrow.style.transform = 'translateY(-50%)';
-    elements.rightArrow.style.fontSize = '30px';
-    elements.rightArrow.style.color = '#0f0';
-    elements.rightArrow.style.cursor = 'pointer';
-    elements.rightArrow.style.zIndex = '100';
+    elements.rightArrow.className = 'camera-arrow';
+    elements.rightArrow.id = 'right-arrow';
     elements.rightArrow.addEventListener('click', () => switchCamera(state.currentCam < 5 ? state.currentCam + 1 : 1));
     
-    document.getElementById('game-container').appendChild(elements.leftArrow);
-    document.getElementById('game-container').appendChild(elements.rightArrow);
+    elements.gameContainer.appendChild(elements.leftArrow);
+    elements.gameContainer.appendChild(elements.rightArrow);
 }
 
 function setupControls() {
+    // Keyboard controls
     document.addEventListener('keydown', (e) => {
         if (state.keys.hasOwnProperty(e.key)) {
             state.keys[e.key] = true;
+            startPanning();
         }
         handleKeyPress(e);
     });
@@ -130,8 +124,24 @@ function setupControls() {
     document.addEventListener('keyup', (e) => {
         if (state.keys.hasOwnProperty(e.key)) {
             state.keys[e.key] = false;
+            stopPanning();
         }
     });
+}
+
+function startPanning() {
+    if (!state.panInterval) {
+        state.panInterval = setInterval(() => {
+            handlePanning();
+        }, 16); // ~60fps
+    }
+}
+
+function stopPanning() {
+    if (state.panInterval) {
+        clearInterval(state.panInterval);
+        state.panInterval = null;
+    }
 }
 
 // Game Systems
@@ -298,6 +308,9 @@ function triggerJumpscare() {
     
     setTimeout(() => {
         jumpscare.remove();
+        if (state.power <= 0) {
+            gameOver();
+        }
     }, 2000);
 }
 
@@ -327,12 +340,12 @@ function render() {
         const ubbaX = state.ubbaPosition.x - state.viewOffset.x;
         const ubbaY = state.ubbaPosition.y - state.viewOffset.y;
         
-        if (ubbaX > -50 && ubbaX < CONFIG.WIDTH && 
-            ubbaY > -50 && ubbaY < CONFIG.HEIGHT) {
+        if (ubbaX > -CONFIG.UBBA_WIDTH && ubbaX < CONFIG.WIDTH && 
+            ubbaY > -CONFIG.UBBA_HEIGHT && ubbaY < CONFIG.HEIGHT) {
             elements.ctx.drawImage(
                 state.assets.ubbaSprite,
                 ubbaX, ubbaY,
-                64, 128
+                CONFIG.UBBA_WIDTH, CONFIG.UBBA_HEIGHT
             );
         }
     }
@@ -389,7 +402,6 @@ function gameLoop() {
         }
         
         // Update positions
-        handlePanning();
         updateUbbaPosition();
         
         // Render
@@ -400,6 +412,14 @@ function gameLoop() {
 }
 
 // Start the game when assets load
+window.onload = function() {
+    document.getElementById('restart-btn').onclick = () => {
+        location.reload();
+    };
+    
+    state.assets.ubbaSprite.onload = initGame;
+};
+
 window.onload = function() {
     document.getElementById('restart-btn').onclick = () => {
         location.reload();
