@@ -1,87 +1,3 @@
-// DOOM Renderer (included directly for GitHub Pages compatibility)
-class DOOMRenderer {
-    constructor(canvas) {
-        this.ctx = canvas.getContext('2d');
-        this.width = canvas.width;
-        this.height = canvas.height;
-        this.ctx.imageSmoothingEnabled = false;
-    }
-
-    drawPixelBackground(color1 = '#111', color2 = '#0a0') {
-        this.ctx.fillStyle = color1;
-        this.ctx.fillRect(0, 0, this.width, this.height);
-        for (let x = 0; x < this.width; x += 4) {
-            for (let y = 0; y < this.height; y += 4) {
-                if (Math.random() > 0.7) {
-                    this.ctx.fillStyle = color2;
-                    this.ctx.fillRect(x, y, 4, 4);
-                }
-            }
-        }
-    }
-
-    drawScanLines(opacity = 0.3) {
-        this.ctx.strokeStyle = `rgba(0, 255, 0, ${opacity})`;
-        this.ctx.lineWidth = 1;
-        for (let y = 0; y < this.height; y += 2) {
-            this.ctx.beginPath();
-            this.ctx.moveTo(0, y);
-            this.ctx.lineTo(this.width, y);
-            this.ctx.stroke();
-        }
-    }
-
-    drawSprite(img, x, y, width, height, pixelSize = 2) {
-        if (!img.complete) return;
-        this.ctx.save();
-        this.ctx.scale(pixelSize, pixelSize);
-        this.ctx.drawImage(
-            img,
-            0, 0, img.width, img.height,
-            Math.floor(x/pixelSize), Math.floor(y/pixelSize),
-            Math.floor(width/pixelSize), Math.floor(height/pixelSize)
-        );
-        this.ctx.restore();
-    }
-
-    drawHealthBar(x, y, width, height, percent, color = '#f00') {
-        const fillWidth = (width * percent) / 100;
-        this.ctx.fillStyle = '#333';
-        this.ctx.fillRect(x, y, width, height);
-        this.ctx.fillStyle = color;
-        this.ctx.fillRect(x, y, fillWidth, height);
-        this.ctx.strokeStyle = '#0f0';
-        this.ctx.lineWidth = 2;
-        this.ctx.strokeRect(x, y, width, height);
-        if (percent < 30) {
-            this.ctx.fillStyle = `rgba(255, 0, 0, ${Math.random() * 0.3})`;
-            this.ctx.fillRect(x, y, width, height);
-        }
-    }
-
-    drawText(text, x, y, color = '#0f0', size = 16, centered = false) {
-        this.ctx.font = `${size}px 'Courier New', monospace`;
-        this.ctx.fillStyle = color;
-        this.ctx.textAlign = centered ? 'center' : 'left';
-        this.ctx.fillText(text, x, y);
-    }
-
-    applyCRTEffect() {
-        const gradient = this.ctx.createRadialGradient(
-            this.width/2, this.height/2, this.height*0.4,
-            this.width/2, this.height/2, this.height*0.8
-        );
-        gradient.addColorStop(0, 'transparent');
-        gradient.addColorStop(1, 'rgba(0, 0, 0, 0.7)');
-        this.ctx.fillStyle = gradient;
-        this.ctx.fillRect(0, 0, this.width, this.height);
-        if (Math.random() < 0.02) {
-            this.ctx.fillStyle = 'rgba(0, 255, 0, 0.3)';
-            this.ctx.fillRect(0, 0, this.width, this.height);
-        }
-    }
-}
-
 // Game Configuration
 const CONFIG = {
     WIDTH: 640,
@@ -89,114 +5,264 @@ const CONFIG = {
     POWER_DRAIN_INTERVAL: 5000, // 5 seconds
     POWER_DRAIN_AMOUNT: 5, // 5%
     CONSOLE_PENALTY: 15, // 15% power loss for wrong answer
-    VIEWPORT_OFFSET: 100 // How much you can pan
+    VIEWPORT_OFFSET: 100, // Panning range
+    NIGHT_DURATION: 120000 // 2 minutes per night
 };
 
 // Game State
 const state = {
     currentNight: 1,
-    currentCamera: 0,
     power: 100,
-    time: 0,
     gameActive: true,
-    ubbaVisible: false,
-    ubbaPosition: { x: 0, y: 0, w: 64, h: 128 },
-    cameras: [
-        { name: "LOBBY", anomalyChance: 0.1 },
-        { name: "WEST HALL", anomalyChance: 0.2 },
-        { name: "EAST HALL", anomalyChance: 0.3 },
-        { name: "STORAGE", anomalyChance: 0.4 },
-        { name: "BACKSTAGE", anomalyChance: 0.5 }
-    ],
+    anomaly: null,
+    currentCam: 1,
+    viewOffset: { x: 0, y: 0 },
+    consoleVisible: false,
     assets: {
+        cameras: [],
         ubbaSprite: new Image(),
-        cameraBackgrounds: [],
         staticSound: new Audio('assets/sounds/static.mp3'),
         jumpscareSound: new Audio('assets/sounds/jumpscare.mp3'),
         ambientSound: new Audio('assets/sounds/ambient.mp3')
     }
 };
 
-// Initialize DOOM Renderer
-const renderer = new DOOMRenderer(document.getElementById('camera-view'));
+// DOM Elements
+const elements = {
+    canvas: document.getElementById('camera-view'),
+    ctx: document.getElementById('camera-view').getContext('2d'),
+    powerDisplay: document.getElementById('power-meter'),
+    nightDisplay: document.getElementById('night-counter'),
+    camDisplay: document.getElementById('current-cam'),
+    console: document.getElementById('console'),
+    consoleInput: document.getElementById('console-input'),
+    staticOverlay: document.querySelector('.static-overlay'),
+    anomalyAlert: document.querySelector('.anomaly-alert')
+};
 
 // Initialize Game
 function initGame() {
-    loadAssets();
-    createCameraButtons();
-    createOverlays();
+    // Setup canvas
+    elements.canvas.width = CONFIG.WIDTH;
+    elements.canvas.height = CONFIG.HEIGHT;
+    elements.ctx.imageSmoothingEnabled = false;
+
+    // Load assets
+    for (let i = 1; i <= 5; i++) {
+        const img = new Image();
+        img.src = `assets/cameras/cam${i}.png`;
+        state.assets.cameras.push(img);
+    }
+    state.assets.ubbaSprite.src = 'assets/sprites/ubba.png';
+
+    // Setup audio
     state.assets.ambientSound.loop = true;
     state.assets.ambientSound.volume = 0.2;
     state.assets.ambientSound.play();
+
+    // Set first anomaly
+    setNewAnomaly();
+
+    // Setup controls
+    document.addEventListener('keydown', handleKeyPress);
+
+    // Start systems
+    startPowerDrain();
     gameLoop();
 }
 
-// [Rest of your existing game functions remain exactly the same until render()]
+// Game Systems
+function setNewAnomaly() {
+    state.anomaly = {
+        cam: Math.floor(Math.random() * 5) + 1,
+        x: Math.floor(Math.random() * (CONFIG.WIDTH + CONFIG.VIEWPORT_OFFSET * 2)),
+        y: Math.floor(Math.random() * (CONFIG.HEIGHT + CONFIG.VIEWPORT_OFFSET * 2))
+    };
+}
 
-function render() {
-    // Clear and draw background
-    renderer.drawPixelBackground('#111', '#0a0');
+function startPowerDrain() {
+    setInterval(() => {
+        if (!state.gameActive) return;
+        state.power = Math.max(0, state.power - CONFIG.POWER_DRAIN_AMOUNT);
+        updateUI();
+        if (state.power <= 0) gameOver();
+    }, CONFIG.POWER_DRAIN_INTERVAL);
+}
+
+// Input Handling
+function handleKeyPress(e) {
+    if (!state.gameActive) return;
+
+    if (state.consoleVisible) {
+        if (e.key === 'Enter') checkAnswer();
+        return;
+    }
+
+    switch(e.key) {
+        case 'ArrowUp': 
+            state.viewOffset.y = Math.max(-CONFIG.VIEWPORT_OFFSET, state.viewOffset.y - 10);
+            break;
+        case 'ArrowDown':
+            state.viewOffset.y = Math.min(CONFIG.VIEWPORT_OFFSET, state.viewOffset.y + 10);
+            break;
+        case 'ArrowLeft':
+            state.viewOffset.x = Math.max(-CONFIG.VIEWPORT_OFFSET, state.viewOffset.x - 10);
+            break;
+        case 'ArrowRight':
+            state.viewOffset.x = Math.min(CONFIG.VIEWPORT_OFFSET, state.viewOffset.x + 10);
+            break;
+        case 'Enter':
+            toggleConsole();
+            break;
+        case '1': case '2': case '3': case '4': case '5':
+            switchCamera(parseInt(e.key));
+            break;
+    }
+}
+
+function toggleConsole() {
+    state.consoleVisible = !state.consoleVisible;
+    elements.console.style.display = state.consoleVisible ? 'block' : 'none';
+    if (state.consoleVisible) {
+        elements.consoleInput.focus();
+    }
+}
+
+function checkAnswer() {
+    const answer = elements.consoleInput.value.trim().toLowerCase();
+    const correct = answer === `cam${state.anomaly.cam}`;
     
-    // Draw camera background
-    if (state.assets.cameraBackgrounds[state.currentCamera].complete) {
-        renderer.drawSprite(
-            state.assets.cameraBackgrounds[state.currentCamera],
-            0, 0, CONFIG.WIDTH, CONFIG.HEIGHT, 2
-        );
+    if (correct) {
+        advanceNight();
+    } else {
+        state.power = Math.max(0, state.power - CONFIG.CONSOLE_PENALTY);
+        if (Math.random() < 0.3) triggerJumpscare();
     }
     
-    // Draw Ubba
-    if (state.ubbaVisible && state.assets.ubbaSprite.complete) {
-        renderer.drawSprite(
-            state.assets.ubbaSprite,
-            state.ubbaPosition.x,
-            state.ubbaPosition.y,
-            state.ubbaPosition.w,
-            state.ubbaPosition.h,
-            3
+    toggleConsole();
+    elements.consoleInput.value = '';
+    updateUI();
+}
+
+// Game Logic
+function switchCamera(camNum) {
+    state.currentCam = camNum;
+    state.viewOffset = { x: 0, y: 0 };
+    playStaticEffect();
+    updateUI();
+}
+
+function advanceNight() {
+    state.currentNight++;
+    state.power = 100;
+    setNewAnomaly();
+    showNightComplete();
+}
+
+function gameOver() {
+    state.gameActive = false;
+    document.getElementById('game-over').style.display = 'flex';
+}
+
+function triggerJumpscare() {
+    const jumpscare = document.getElementById('jumpscare-overlay');
+    jumpscare.style.display = 'block';
+    state.assets.jumpscareSound.play();
+    
+    setTimeout(() => {
+        jumpscare.style.display = 'none';
+    }, 2000);
+}
+
+// Rendering
+function render() {
+    // Clear canvas
+    elements.ctx.fillStyle = '#000';
+    elements.ctx.fillRect(0, 0, CONFIG.WIDTH, CONFIG.HEIGHT);
+    
+    // Draw current camera view
+    if (state.assets.cameras[state.currentCam - 1].complete) {
+        elements.ctx.filter = 'grayscale(100%)';
+        elements.ctx.drawImage(
+            state.assets.cameras[state.currentCam - 1],
+            state.viewOffset.x, state.viewOffset.y,
+            CONFIG.WIDTH, CONFIG.HEIGHT,
+            0, 0,
+            CONFIG.WIDTH, CONFIG.HEIGHT
         );
+        elements.ctx.filter = 'none';
+    }
+    
+    // Draw Ubba if visible
+    if (state.currentCam === state.anomaly.cam) {
+        const ubbaX = state.anomaly.x - state.viewOffset.x;
+        const ubbaY = state.anomaly.y - state.viewOffset.y;
         
-        // Eyes glow
-        if (Math.random() > 0.9) {
-            renderer.ctx.fillStyle = '#f00';
-            renderer.ctx.fillRect(
-                state.ubbaPosition.x + 20,
-                state.ubbaPosition.y + 30,
-                8, 8
-            );
-            renderer.ctx.fillRect(
-                state.ubbaPosition.x + 36,
-                state.ubbaPosition.y + 30,
-                8, 8
+        if (ubbaX > -50 && ubbaX < CONFIG.WIDTH && 
+            ubbaY > -50 && ubbaY < CONFIG.HEIGHT) {
+            elements.ctx.drawImage(
+                state.assets.ubbaSprite,
+                ubbaX, ubbaY,
+                64, 128
             );
         }
     }
     
-    // Apply effects
-    renderer.drawScanLines();
-    renderer.applyCRTEffect();
-    
-    // Draw UI
-    renderer.drawText(`NIGHT ${state.currentNight}`, 20, 30, '#0f0', 18);
-    renderer.drawHealthBar(
-        CONFIG.WIDTH - 220, 20,
-        200, 20,
-        state.power,
-        state.power > 30 ? '#0f0' : '#f00'
-    );
+    // Draw scanlines
+    elements.ctx.strokeStyle = 'rgba(0, 255, 0, 0.1)';
+    elements.ctx.lineWidth = 1;
+    for (let y = 0; y < CONFIG.HEIGHT; y += 2) {
+        elements.ctx.beginPath();
+        elements.ctx.moveTo(0, y);
+        elements.ctx.lineTo(CONFIG.WIDTH, y);
+        elements.ctx.stroke();
+    }
 }
 
-// [Keep all other existing functions exactly the same]
+// UI Updates
+function updateUI() {
+    elements.powerDisplay.textContent = `POWER: ${state.power}%`;
+    elements.nightDisplay.textContent = `NIGHT ${state.currentNight}`;
+    elements.camDisplay.textContent = `CAM ${state.currentCam}`;
+    
+    if (state.power < 30) {
+        elements.powerDisplay.style.color = '#f00';
+    }
+}
+
+function playStaticEffect() {
+    elements.staticOverlay.style.opacity = '0.5';
+    state.assets.staticSound.currentTime = 0;
+    state.assets.staticSound.play();
+    
+    setTimeout(() => {
+        elements.staticOverlay.style.opacity = '0';
+    }, 300);
+}
+
+function showNightComplete() {
+    const screen = document.getElementById('night-complete');
+    screen.style.display = 'flex';
+    
+    setTimeout(() => {
+        screen.style.display = 'none';
+    }, 3000);
+}
+
+// Main Game Loop
+function gameLoop() {
+    if (state.gameActive) {
+        render();
+        updateUI();
+    }
+    requestAnimationFrame(gameLoop);
+}
 
 // Start the game when assets load
 window.onload = function() {
-    state.assets.ubbaSprite.onload = initGame;
-    state.assets.ubbaSprite.src = 'assets/sprites/ubba.png';
+    document.getElementById('restart-btn').onclick = () => {
+        location.reload();
+    };
     
-    // Load camera backgrounds
-    for (let i = 0; i < state.cameras.length; i++) {
-        const img = new Image();
-        img.src = `assets/cameras/cam${i+1}.png`;
-        state.assets.cameraBackgrounds.push(img);
-    }
+    state.assets.ubbaSprite.onload = initGame;
 };
