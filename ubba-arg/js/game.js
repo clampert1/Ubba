@@ -14,6 +14,8 @@ const CONFIG = {
     UBBA_WIDTH: 64,
     UBBA_HEIGHT: 128,
     UBBA_CENTER_RANGE: 100 // Pixel range from center for chill position
+    UBBA_FREAKOUT_DURATION_MIN: 5000, // 5 seconds
+    UBBA_FREAKOUT_DURATION_MAX: 10000 // 10 seconds
 };
 
 // Game State
@@ -140,7 +142,7 @@ function setUbbaState(newState) {
         state.assets.freakoutSound.pause();
         state.assets.freakoutSound.currentTime = 0;
         state.canReportAnomaly = false;
-        elements.anomalyPrompt.style.display = 'none';
+        elements.anomalyPrompt.style.display = 'none'; // Hide prompt when not freaking
     }
 
     state.ubbaState = newState;
@@ -151,7 +153,6 @@ function setUbbaState(newState) {
         state.nextUbbaStateChange = Date.now() + delay;
     }
     else if (newState === 'chill') {
-        // Use the pre-set position for this camera
         if (state.cameraUbbaPositions[state.currentCam]) {
             state.ubbaPosition = state.cameraUbbaPositions[state.currentCam];
         }
@@ -163,7 +164,6 @@ function setUbbaState(newState) {
         setNewAnomaly();
     }
     else if (newState === 'freaking') {
-        // Random position for freaking out
         state.ubbaPosition = {
             x: Math.random() * (CONFIG.WIDTH + CONFIG.VIEWPORT_OFFSET * 2),
             y: Math.random() * (CONFIG.HEIGHT + CONFIG.VIEWPORT_OFFSET * 2)
@@ -173,13 +173,15 @@ function setUbbaState(newState) {
             y: (Math.random() - 0.5) * 10
         };
         
-        // Enable anomaly reporting
+        // Only enable anomaly reporting during freakout
         state.canReportAnomaly = true;
         elements.anomalyPrompt.style.display = 'block';
         
-        // Play freakout sound
         state.assets.freakoutSound.loop = true;
         state.assets.freakoutSound.play();
+
+        // Set duration for freakout state (5-10 seconds)
+        state.nextUbbaStateChange = Date.now() + 5000 + Math.random() * 5000;
     }
 }
 
@@ -189,13 +191,20 @@ function updateUbbaState() {
             setUbbaState('chill');
         }
         else if (state.ubbaState === 'chill') {
-            // After enough time, start freaking out
-            if (Date.now() - state.gameStartTime > CONFIG.UBBA_FREAKOUT_MIN && 
-                Math.random() < 0.3) {
+            // Modified this condition to trigger freakout more reliably
+            const timeSinceStart = Date.now() - state.gameStartTime;
+            const shouldFreakout = timeSinceStart > CONFIG.UBBA_FREAKOUT_MIN || 
+                                 Math.random() < 0.5;
+            
+            if (shouldFreakout) {
                 setUbbaState('freaking');
             } else {
                 setUbbaState('hidden');
             }
+        }
+        else if (state.ubbaState === 'freaking') {
+            // After freaking out, go back to hidden
+            setUbbaState('hidden');
         }
     }
 }
@@ -462,8 +471,10 @@ function updateUI() {
     
     if (state.power < 30) {
         elements.powerDisplay.style.color = '#f00';
+        elements.powerDisplay.style.animation = 'pulse 0.5s infinite alternate';
     } else {
         elements.powerDisplay.style.color = '#0f0';
+        elements.powerDisplay.style.animation = 'none';
     }
 }
 
