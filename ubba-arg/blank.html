@@ -259,40 +259,38 @@
         
         // Simple Ubba silhouette sections (first 5 colors)
         const simpleSections = [
-            { number: 1, path: [{x:100,y:100}, {x:500,y:100}, {x:550,y:400}, {x:50,y:400}] }, // Body (red)
-            { number: 2, path: [{x:200,y:100}, {x:300,y:25}, {x:400,y:100}] }, // Head (black)
-            { number: 3, path: [{x:50,y:400}, {x:25,y:500}, {x:100,y:550}, {x:200,y:450}] }, // Left leg (green)
-            { number: 4, path: [{x:550,y:400}, {x:575,y:500}, {x:500,y:550}, {x:400,y:450}] }, // Right leg (gray)
-            { number: 5, path: [{x:300,y:25}, {x:325,y:10}, {x:350,y:25}] } // Ear (gold)
+            { number: 1, path: [{x:50,y:150}, {x:550,y:150}, {x:550,y:450}, {x:50,y:450}] }, // Body (red)
+            { number: 2, path: [{x:200,y:50}, {x:400,y:50}, {x:400,y:150}, {x:200,y:150}] }, // Head (black)
+            { number: 3, path: [{x:50,y:300}, {x:150,y:450}, {x:50,y:450}] }, // Left leg (green)
+            { number: 4, path: [{x:550,y:300}, {x:450,y:450}, {x:550,y:450}] }, // Right leg (gray)
+            { number: 5, path: [{x:300,y:50}, {x:350,y:25}, {x:400,y:50}] } // Ear (gold)
         ];
         
-        // Complex Ubba shape (all 8 colors, large sections)
+        // Complex Ubba shape (all 8 colors, large connected sections)
         const complexSections = [
-            // Body (split into two red sections)
-            { number: 1, path: [{x:100,y:100}, {x:300,y:50}, {x:500,y:100}, {x:550,y:300}, {x:500,y:400}, {x:300,y:450}, {x:100,y:400}, {x:50,y:300}] }, // Main body
-            { number: 1, path: [{x:300,y:100}, {x:350,y:75}, {x:400,y:100}, {x:375,y:200}, {x:300,y:250}] }, // Chest
+            // Body (red - takes up most space)
+            { number: 1, path: [{x:50,y:100}, {x:300,y:50}, {x:550,y:100}, {x:550,y:400}, {x:300,y:450}, {x:50,y:400}] },
             
-            // Head (black)
-            { number: 2, path: [{x:200,y:100}, {x:300,y:25}, {x:400,y:100}, {x:300,y:200}] }, 
+            // Head (black - connected to body)
+            { number: 2, path: [{x:200,y:50}, {x:400,y:50}, {x:400,y:150}, {x:300,y:150}, {x:300,y:100}, {x:200,y:100}] },
             
-            // Legs (green left, gray right)
-            { number: 3, path: [{x:100,y:400}, {x:75,y:500}, {x:150,y:550}, {x:250,y:450}] }, // Left leg front
-            { number: 3, path: [{x:50,y:300}, {x:25,y:400}, {x:100,y:450}, {x:200,y:400}] }, // Left leg back
+            // Left leg (green - connected to body)
+            { number: 3, path: [{x:50,y:300}, {x:150,y:450}, {x:200,y:450}, {x:100,y:300}, {x:50,y:300}] },
             
-            { number: 4, path: [{x:500,y:400}, {x:525,y:500}, {x:450,y:550}, {x:350,y:450}] }, // Right leg front
-            { number: 4, path: [{x:550,y:300}, {x:575,y:400}, {x:500,y:450}, {x:400,y:400}] }, // Right leg back
+            // Right leg (gray - connected to body)
+            { number: 4, path: [{x:550,y:300}, {x:450,y:450}, {x:400,y:450}, {x:500,y:300}, {x:550,y:300}] },
             
-            // Ear (gold)
-            { number: 5, path: [{x:300,y:25}, {x:325,y:10}, {x:350,y:25}, {x:325,y:40}] },
+            // Ear (gold - connected to head)
+            { number: 5, path: [{x:300,y:50}, {x:350,y:25}, {x:400,y:50}, {x:350,y:75}, {x:300,y:50}] },
             
-            // Tail (purple)
-            { number: 6, path: [{x:100,y:100}, {x:50,y:150}, {x:75,y:200}, {x:150,y:150}] },
+            // Tail (purple - connected to body)
+            { number: 6, path: [{x:50,y:200}, {x:25,y:150}, {x:50,y:100}, {x:100,y:150}, {x:50,y:200}] },
             
-            // Eyes (orange)
+            // Eyes (orange - inside head)
             { number: 7, path: [{x:250,y:75}, {x:275,y:60}, {x:300,y:75}, {x:275,y:90}] }, // Left eye
             { number: 7, path: [{x:350,y:75}, {x:325,y:60}, {x:300,y:75}, {x:325,y:90}] }, // Right eye
             
-            // Mouth (cyan)
+            // Mouth (cyan - inside head)
             { number: 8, path: [{x:275,y:125}, {x:300,y:150}, {x:325,y:125}, {x:300,y:100}] }
         ];
         
@@ -354,9 +352,11 @@
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             
-            currentSections.forEach(section => {
+            currentSections.forEach((section, index) => {
+                const sectionId = `${section.number}-${index}`;
+                
                 // Skip drawing if already filled
-                if (completedSections.includes(`${section.number}-${currentSections.indexOf(section)}`)) return;
+                if (completedSections.includes(sectionId)) return;
                 
                 ctx.beginPath();
                 ctx.moveTo(section.path[0].x, section.path[0].y);
@@ -418,8 +418,9 @@
                 // Keep track of completed sections
                 const newCompleted = [];
                 complexSections.forEach((section, index) => {
-                    if (completedSections.includes(`${section.number}-${index}`)) {
-                        newCompleted.push(`${section.number}-${index}`);
+                    const sectionId = `${section.number}-${index}`;
+                    if (completedSections.includes(`${section.number}-0`)) { // Match by number only
+                        newCompleted.push(sectionId);
                         
                         // Redraw already completed sections
                         ctx.fillStyle = colors.find(c => c.number === section.number).color;
