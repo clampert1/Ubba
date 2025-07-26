@@ -3,34 +3,360 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>UBBA MONITORING SYSTEM - ARCHIVE</title>
+    <title>UBBA COLORING ACTIVITY</title>
     <style>
         body {
             margin: 0;
-            padding: 0;
-            background-color: #000;
-            color: #8b0000;
-            font-family: 'Courier New', monospace;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
+            padding: 20px;
+            background-color: #111;
+            font-family: 'Comic Sans MS', cursive, sans-serif;
+            color: #ddd;
+            overflow-x: hidden;
             text-align: center;
         }
         
-        .content {
-            padding: 20px;
-            border: 2px solid #8b0000;
-            background: rgba(0,0,0,0.7);
+        h1 {
+            color: #8b0000;
+            text-shadow: 0 0 5px #ff0000;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            color: #aaa;
+            margin-bottom: 20px;
+            font-style: italic;
+        }
+        
+        .game-container {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+        
+        .coloring-area {
+            position: relative;
+            width: 500px;
+            height: 500px;
+            border: 3px solid #8b0000;
+            background-color: #222;
+        }
+        
+        #coloring-canvas {
+            width: 100%;
+            height: 100%;
+            cursor: crosshair;
+        }
+        
+        .colors-palette {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            width: 100px;
+        }
+        
+        .color-option {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            border: 3px solid #333;
+            cursor: grab;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            font-size: 20px;
+            user-select: none;
+            transition: transform 0.2s;
+        }
+        
+        .color-option:hover {
+            transform: scale(1.1);
+            border-color: #8b0000;
+        }
+        
+        .color-option:active {
+            cursor: grabbing;
+        }
+        
+        .instructions {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: rgba(139, 0, 0, 0.2);
+            border-left: 3px solid #8b0000;
+            text-align: left;
             max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        .hidden-message {
+            opacity: 0;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #8b0000;
+            font-size: 24px;
+            text-shadow: 0 0 10px #000;
+            pointer-events: none;
+            transition: opacity 2s;
+            z-index: 100;
+        }
+        
+        .scanlines {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+                to bottom,
+                rgba(0, 255, 0, 0.05) 50%,
+                transparent 50%
+            );
+            background-size: 100% 4px;
+            pointer-events: none;
+            z-index: 10;
+        }
+        
+        .completion-message {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 50;
+            color: #8b0000;
+            font-size: 24px;
+        }
+        
+        .completion-message button {
+            margin-top: 20px;
+            padding: 10px 20px;
+            background: #8b0000;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 18px;
         }
     </style>
 </head>
 <body>
-    <div class="content">
-        <h1>ARCHIVE ACCESSED</h1>
-        <p>This section is currently being prepared...</p>
-        <p>More will be revealed soon.</p>
+    <div class="scanlines"></div>
+    <div class="hidden-message" id="hidden-message">GOOD DOG</div>
+    
+    <h1>UBBA COLORING ACTIVITY</h1>
+    <div class="subtitle">Color by numbers! Drag colors to matching numbered areas</div>
+    
+    <div class="game-container">
+        <div class="coloring-area">
+            <canvas id="coloring-canvas" width="500" height="500"></canvas>
+        </div>
+        
+        <div class="colors-palette" id="colors-palette">
+            <!-- Colors will be added by JavaScript -->
+        </div>
     </div>
+    
+    <div class="instructions">
+        <p><strong>How to play:</strong></p>
+        <p>1. Drag a color from the palette to the matching numbered area</p>
+        <p>2. Fill in all sections to complete the picture</p>
+        <p>3. Discover what Ubba really looks like</p>
+    </div>
+    
+    <div class="completion-message" id="completion-message">
+        <h2>PAINTING COMPLETE</h2>
+        <p>You've revealed Ubba's true form...</p>
+        <button id="continue-btn">CONTINUE</button>
+    </div>
+
+    <script>
+        // Canvas setup
+        const canvas = document.getElementById('coloring-canvas');
+        const ctx = canvas.getContext('2d');
+        const palette = document.getElementById('colors-palette');
+        const hiddenMessage = document.getElementById('hidden-message');
+        const completionMessage = document.getElementById('completion-message');
+        
+        // Colors with numbers (number will be displayed on the color)
+        const colors = [
+            { number: 1, color: '#8b0000', name: 'Blood Red' },
+            { number: 2, color: '#000000', name: 'Void Black' },
+            { number: 3, color: '#556b2f', name: 'Sickly Green' },
+            { number: 4, color: '#d3d3d3', name: 'Ashen Gray' },
+            { number: 5, color: '#ffd700', name: 'Unnatural Gold' }
+        ];
+        
+        // Ubba's silhouette sections (number corresponds to color)
+        const sections = [
+            { number: 1, path: [{x:150,y:100}, {x:350,y:100}, {x:400,y:300}, {x:100,y:300}] }, // Body
+            { number: 2, path: [{x:200,y:100}, {x:250,y:50}, {x:300,y:100}] }, // Head
+            { number: 3, path: [{x:100,y:300}, {x:50,y:400}, {x:100,y:450}, {x:150,y:400}] }, // Left leg
+            { number: 4, path: [{x:400,y:300}, {x:450,y:400}, {x:400,y:450}, {x:350,y:400}] }, // Right leg
+            { number: 5, path: [{x:250,y:50}, {x:275,y:25}, {x:300,y:50}] } // Ear
+        ];
+        
+        // Track completed sections
+        let completedSections = [];
+        let currentColor = null;
+        
+        // Initialize the game
+        function initGame() {
+            // Draw the outline with numbers
+            drawOutline();
+            
+            // Create color palette
+            colors.forEach(color => {
+                const colorDiv = document.createElement('div');
+                colorDiv.className = 'color-option';
+                colorDiv.style.backgroundColor = color.color;
+                colorDiv.textContent = color.number;
+                colorDiv.dataset.number = color.number;
+                colorDiv.dataset.color = color.color;
+                colorDiv.draggable = true;
+                
+                colorDiv.addEventListener('dragstart', dragStart);
+                palette.appendChild(colorDiv);
+            });
+            
+            // Set up canvas event listeners
+            canvas.addEventListener('dragover', dragOver);
+            canvas.addEventListener('drop', drop);
+            
+            // Set up completion button
+            document.getElementById('continue-btn').addEventListener('click', () => {
+                // Redirect to next part of your ARG
+                window.location.href = "next-stage.html";
+            });
+        }
+        
+        // Draw the numbered outline
+        function drawOutline() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.strokeStyle = '#8b0000';
+            ctx.lineWidth = 2;
+            ctx.font = '20px Arial';
+            ctx.fillStyle = '#8b0000';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            
+            sections.forEach(section => {
+                ctx.beginPath();
+                ctx.moveTo(section.path[0].x, section.path[0].y);
+                for (let i = 1; i < section.path.length; i++) {
+                    ctx.lineTo(section.path[i].x, section.path[i].y);
+                }
+                ctx.closePath();
+                ctx.stroke();
+                
+                // Calculate center for number
+                const center = getCenter(section.path);
+                ctx.fillText(section.number, center.x, center.y);
+            });
+        }
+        
+        // Calculate center point of a polygon
+        function getCenter(points) {
+            let x = 0, y = 0;
+            points.forEach(point => {
+                x += point.x;
+                y += point.y;
+            });
+            return {
+                x: x / points.length,
+                y: y / points.length
+            };
+        }
+        
+        // Check if point is inside a polygon
+        function isPointInPath(path, x, y) {
+            ctx.beginPath();
+            ctx.moveTo(path[0].x, path[0].y);
+            for (let i = 1; i < path.length; i++) {
+                ctx.lineTo(path[i].x, path[i].y);
+            }
+            ctx.closePath();
+            return ctx.isPointInPath(x, y);
+        }
+        
+        // Drag and drop functions
+        function dragStart(e) {
+            currentColor = {
+                number: parseInt(e.target.dataset.number),
+                color: e.target.dataset.color
+            };
+            e.dataTransfer.setData('text/plain', e.target.dataset.number);
+        }
+        
+        function dragOver(e) {
+            e.preventDefault();
+        }
+        
+        function drop(e) {
+            e.preventDefault();
+            if (!currentColor) return;
+            
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            // Find which section was clicked
+            const section = sections.find(s => 
+                s.number === currentColor.number && 
+                isPointInPath(s.path, x, y) &&
+                !completedSections.includes(s.number)
+            );
+            
+            if (section) {
+                // Fill the section
+                ctx.fillStyle = currentColor.color;
+                ctx.beginPath();
+                ctx.moveTo(section.path[0].x, section.path[0].y);
+                for (let i = 1; i < section.path.length; i++) {
+                    ctx.lineTo(section.path[i].x, section.path[i].y);
+                }
+                ctx.closePath();
+                ctx.fill();
+                
+                // Redraw the outline over the fill
+                ctx.strokeStyle = '#8b0000';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+                
+                // Mark as completed
+                completedSections.push(section.number);
+                
+                // Show hidden message randomly
+                if (Math.random() < 0.3) {
+                    hiddenMessage.style.opacity = '1';
+                    setTimeout(() => {
+                        hiddenMessage.style.opacity = '0';
+                    }, 1000);
+                }
+                
+                // Check if all sections are completed
+                if (completedSections.length === sections.length) {
+                    setTimeout(() => {
+                        completionMessage.style.display = 'flex';
+                        // Play creepy sound if you want
+                        // new Audio('assets/sounds/creepy.mp3').play();
+                    }, 1000);
+                }
+            }
+            
+            currentColor = null;
+        }
+        
+        // Start the game
+        initGame();
+    </script>
 </body>
 </html>
