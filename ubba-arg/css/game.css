@@ -1,4 +1,4 @@
-/* Main Game Container */
+/* Main Game Styles */
 body {
     margin: 0;
     padding: 0;
@@ -6,43 +6,12 @@ body {
     overflow: hidden;
     font-family: 'Courier New', monospace;
     color: #0f0;
-    user-select: none;
     image-rendering: pixelated;
+    image-rendering: crisp-edges;
+    user-select: none;
 }
 
-#anomaly-prompt {
-    background: rgba(0,0,0,0.7);
-    padding: 5px 10px;
-    border: 1px solid #f00;
-    border-radius: 3px;
-    text-shadow: 0 0 5px #f00;
-}
-
-.camera-arrow {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    font-size: 30px;
-    color: #0f0;
-    cursor: pointer;
-    z-index: 100;
-    background: rgba(0,0,0,0.5);
-    padding: 10px;
-    border-radius: 5px;
-}
-
-.camera-arrow:hover {
-    color: #8b0000;
-}
-
-#left-arrow {
-    left: 10px;
-}
-
-#right-arrow {
-    right: 10px;
-}
-
+/* Game Container */
 #game-container {
     position: relative;
     width: 640px;
@@ -53,79 +22,85 @@ body {
     overflow: hidden;
 }
 
-/* Camera View */
+/* Camera View Canvas */
 #camera-view {
     width: 100%;
     height: 100%;
     display: block;
     background-color: #000;
-    cursor: move;
 }
 
-/* UI Elements */
+/* Camera Selection Panel */
+#camera-select {
+    position: absolute;
+    bottom: 10px;
+    left: 10px;
+    background: rgba(0, 0, 0, 0.7);
+    padding: 8px;
+    border: 2px solid #0f0;
+    border-radius: 4px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    max-width: 300px;
+}
+
+/* Camera Buttons */
+.camera-btn {
+    background: #111;
+    color: #0f0;
+    border: 1px solid #0f0;
+    padding: 5px 10px;
+    margin: 2px;
+    cursor: pointer;
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+    text-transform: uppercase;
+    transition: all 0.2s;
+}
+
+.camera-btn:hover {
+    background: #8b0000;
+    color: #fff;
+    border-color: #f00;
+}
+
+.camera-btn:active {
+    background: #f00;
+}
+
+.camera-btn.disabled {
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+/* Power Meter */
 #power-meter {
     position: absolute;
     bottom: 10px;
     right: 10px;
     color: #0f0;
     font-size: 18px;
-    background: rgba(0,0,0,0.7);
+    background: rgba(0, 0, 0, 0.7);
     padding: 5px 10px;
     border: 1px solid #0f0;
+    border-radius: 4px;
 }
 
+/* Night Counter */
 #night-counter {
     position: absolute;
     top: 10px;
     left: 10px;
     color: #0f0;
     font-size: 18px;
-    background: rgba(0,0,0,0.7);
+    background: rgba(0, 0, 0, 0.7);
     padding: 5px 10px;
     border: 1px solid #0f0;
+    border-radius: 4px;
 }
 
-#current-cam {
-    position: absolute;
-    bottom: 10px;
-    left: 10px;
-    color: #0f0;
-    font-size: 18px;
-    background: rgba(0,0,0,0.7);
-    padding: 5px 10px;
-    border: 1px solid #0f0;
-}
-
-/* Console */
-#console {
-    position: absolute;
-    bottom: 50px;
-    left: 10px;
-    background: rgba(0,0,0,0.9);
-    padding: 10px;
-    border: 2px solid #0f0;
-    display: none;
-}
-
-#console-input {
-    background: #111;
-    color: #0f0;
-    border: 1px solid #0f0;
-    padding: 5px;
-    font-family: 'Courier New', monospace;
-    width: 200px;
-}
-
-#console button {
-    background: #8b0000;
-    color: #fff;
-    border: 1px solid #f00;
-    padding: 5px 10px;
-    margin-left: 5px;
-    cursor: pointer;
-}
-
-/* Effects */
+/* Static Effect */
 .static-overlay {
     position: absolute;
     top: 0;
@@ -144,6 +119,77 @@ body {
     z-index: 100;
 }
 
+/* Jumpscare Effect */
+.jumpscare-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: #f00;
+    z-index: 1000;
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* Game Over Screen */
+#game-over {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.9);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+    color: #f00;
+    font-size: 32px;
+    text-align: center;
+    display: none;
+}
+
+#game-over h1 {
+    font-size: 48px;
+    margin-bottom: 20px;
+    text-shadow: 0 0 10px #f00;
+}
+
+#restart-btn {
+    background: #8b0000;
+    color: #fff;
+    border: 2px solid #f00;
+    padding: 10px 20px;
+    font-size: 20px;
+    margin-top: 30px;
+    cursor: pointer;
+    font-family: 'Courier New', monospace;
+}
+
+#restart-btn:hover {
+    background: #f00;
+}
+
+/* CRT Screen Effects */
+.crt-effect {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+        rgba(0, 255, 0, 0.1),
+        rgba(0, 255, 0, 0.1) 50%,
+        transparent 50%
+    );
+    background-size: 100% 4px;
+    z-index: 10;
+    pointer-events: none;
+}
+
+/* Anomaly Alert */
 .anomaly-alert {
     position: absolute;
     top: 50%;
@@ -163,50 +209,46 @@ body {
     to { opacity: 1; }
 }
 
-/* Game States */
+/* Night Complete Screen */
 #night-complete {
     position: absolute;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0,0,0,0.9);
-    display: none;
+    background-color: rgba(0, 0, 0, 0.9);
+    display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
+    z-index: 2000;
     color: #0f0;
-    font-size: 24px;
-    z-index: 1000;
-}
-
-#game-over {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0,0,0,0.9);
+    font-size: 32px;
+    text-align: center;
     display: none;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    color: #f00;
-    font-size: 24px;
-    z-index: 1000;
 }
 
-#game-over button {
-    background: #8b0000;
-    color: #fff;
-    border: 2px solid #f00;
-    padding: 10px 20px;
-    margin-top: 20px;
-    cursor: pointer;
-    font-family: 'Courier New', monospace;
-}
-
-/* Loading Screen */
-#loading-screen {
-    /* ... keep your existing loading styles ... */
+/* Mobile Responsiveness */
+@media (max-width: 700px) {
+    #game-container {
+        width: 100%;
+        height: auto;
+        aspect-ratio: 4/3;
+        margin: 0;
+        border: none;
+    }
+    
+    #camera-select {
+        max-width: 200px;
+        font-size: 12px;
+    }
+    
+    .camera-btn {
+        padding: 3px 6px;
+        font-size: 12px;
+    }
+    
+    #power-meter, #night-counter {
+        font-size: 14px;
+    }
 }
