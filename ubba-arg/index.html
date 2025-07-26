@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ubba Research Archive</title>
+    <title>UBBA RESEARCH ARCHIVE</title>
     <style>
         body {
             font-family: 'Courier New', monospace;
@@ -21,7 +21,7 @@
             max-width: 800px;
             margin: 0 auto;
             position: relative;
-            padding-bottom: 150px; /* Space for audio player */
+            padding-bottom: 150px;
         }
         
         h1 {
@@ -119,6 +119,7 @@
             opacity: 0;
             transition: all 0.5s;
             pointer-events: none;
+            image-rendering: pixelated;
         }
         
         .glitch-img.jumpscare {
@@ -159,7 +160,7 @@
             font-size: 3em;
             text-align: center;
             opacity: 0;
-            z-index: 2001; /* Above everything else */
+            z-index: 2001;
             pointer-events: none;
             text-shadow: 0 0 15px #ff0000, 0 0 30px #ff0000;
             font-weight: bold;
@@ -208,7 +209,7 @@
             height: 100%;
             background: #000;
             opacity: 0;
-            z-index: 2000; /* Below final message but above everything else */
+            z-index: 2000;
             pointer-events: none;
         }
     </style>
@@ -291,9 +292,13 @@
             let corruptionStarted = false;
             let corruptionLevel = 0;
             let corruptionInterval;
+            let imageFollowing = false;
             let strobeInterval;
             let glidingInterval;
             let jumpscareTriggered = false;
+            
+            // Preload important assets
+            new Audio('assets/sounds/jumpscare.mp3').load();
             
             // Start corruption when audio is played
             audio.addEventListener('play', function() {
@@ -396,6 +401,11 @@
                 setTimeout(() => {
                     blood.style.opacity = '0';
                 }, 1000);
+                
+                // Play jumpscare sound
+                const js = new Audio('assets/sounds/jumpscare.mp3');
+                js.volume = 0.7;
+                js.play();
                 
                 // After jumpscare, resume gliding
                 setTimeout(() => {
@@ -521,17 +531,19 @@
                 // Show final message with maximum visibility
                 finalMessage.style.opacity = '1';
                 finalMessage.style.fontSize = '3em';
-                finalMessage.style.zIndex = '2001'; // Ensure it's above everything
+                finalMessage.style.zIndex = '2001';
                 
                 // Add pulsing effect to final message
                 setInterval(() => {
                     finalMessage.style.fontSize = `${3 + Math.random()}em`;
                 }, 100);
                 
-                // Redirect after delay
+                // Redirect to game after delay
                 setTimeout(() => {
-            window.location.href = "game.html";
-        }, 10000);
+                    window.location.href = "game.html";
+                }, 10000);
+            }
+        });
     </script>
 </body>
 </html>
