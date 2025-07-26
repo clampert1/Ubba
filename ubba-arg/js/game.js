@@ -6,14 +6,15 @@ const CONFIG = {
     POWER_DRAIN_AMOUNT: 5, // 5%
     CONSOLE_PENALTY: 15,
     VIEWPORT_OFFSET: 100,
-    NIGHT_DURATION: 120000,
     UBBA_CHILL_MIN: 15000, // 15 seconds
     UBBA_CHILL_MAX: 20000, // 20 seconds
     UBBA_FREAKOUT_MIN: 60000, // 1 minute
     UBBA_FREAKOUT_MAX: 120000, // 2 minutes
-    PAN_SPEED: 5,
+    PAN_SPEED: 8, // Increased for smoother movement
     UBBA_WIDTH: 64,
-    UBBA_HEIGHT: 128
+    UBBA_HEIGHT: 128,
+    UBBA_CENTER_X: 370, // Center X position (740/2)
+    UBBA_CENTER_Y: 290 // Center Y position (580/2)
 };
 
 // Game State
@@ -26,14 +27,15 @@ const state = {
     viewOffset: { x: 0, y: 0 },
     consoleVisible: false,
     ubbaState: 'hidden', // 'hidden', 'chill', 'freaking'
-    ubbaPosition: { x: 0, y: 0 },
+    ubbaPosition: { x: CONFIG.UBBA_CENTER_X, y: CONFIG.UBBA_CENTER_Y },
     ubbaVelocity: { x: 0, y: 0 },
     assets: {
         cameras: [],
         ubbaSprite: new Image(),
         staticSound: document.getElementById('static-sound'),
         jumpscareSound: document.getElementById('jumpscare-sound'),
-        ambientSound: document.getElementById('ambient-sound')
+        ambientSound: document.getElementById('ambient-sound'),
+        freakoutSound: new Audio('assets/sounds/jumpscare.mp3')
     },
     keys: {
         ArrowUp: false,
@@ -45,7 +47,9 @@ const state = {
     powerDrainInterval: null,
     panInterval: null,
     anomalyAlertActive: false,
-    gameStartTime: Date.now()
+    gameStartTime: Date.now(),
+    freakoutSoundInterval: null,
+    lastPanTime: Date.now()
 };
 
 // DOM Elements
@@ -104,6 +108,13 @@ function startUbbaSystem() {
 }
 
 function setUbbaState(newState) {
+    // Clean up previous state
+    if (state.ubbaState === 'freaking') {
+        clearInterval(state.freakoutSoundInterval);
+        state.assets.freakoutSound.pause();
+        state.assets.freakoutSound.currentTime = 0;
+    }
+
     state.ubbaState = newState;
     
     if (newState === 'hidden') {
@@ -112,9 +123,10 @@ function setUbbaState(newState) {
         state.nextUbbaStateChange = Date.now() + delay;
     }
     else if (newState === 'chill') {
-        state.ubbaPosition = {
-            x: Math.random() * (CONFIG.WIDTH + CONFIG.VIEWPORT_OFFSET * 2),
-            y: Math.random() * (CONFIG.HEIGHT + CONFIG.VIEWPORT_OFFSET * 2)
+        // Fixed center position for chill state
+        state.ubbaPosition = { 
+            x: CONFIG.UBBA_CENTER_X, 
+            y: CONFIG.UBBA_CENTER_Y 
         };
         state.ubbaVelocity = { x: 0, y: 0 };
         
@@ -122,7 +134,6 @@ function setUbbaState(newState) {
                      Math.random() * (CONFIG.UBBA_CHILL_MAX - CONFIG.UBBA_CHILL_MIN);
         state.nextUbbaStateChange = Date.now() + delay;
         
-        // Set new anomaly camera for chill state
         setNewAnomaly();
     }
     else if (newState === 'freaking') {
@@ -134,6 +145,10 @@ function setUbbaState(newState) {
             x: (Math.random() - 0.5) * 10,
             y: (Math.random() - 0.5) * 10
         };
+        
+        // Play freakout sound on loop
+        state.assets.freakoutSound.loop = true;
+        state.assets.freakoutSound.play();
         
         // Show anomaly alert
         if (!state.anomalyAlertActive) {
@@ -227,7 +242,7 @@ function startPowerDrain() {
         if (!state.gameActive) return;
         state.power = Math.max(0, state.power - CONFIG.POWER_DRAIN_AMOUNT);
         updateUI();
-        if (state.power <= 0) gameOver();
+        if (state.power <= 0) endGame(false);
     }, CONFIG.POWER_DRAIN_INTERVAL);
 }
 
@@ -250,17 +265,21 @@ function handleKeyPress(e) {
 }
 
 function handlePanning() {
+    const now = Date.now();
+    const deltaTime = Math.min(now - state.lastPanTime, 100) / 16;
+    state.lastPanTime = now;
+
     if (state.keys.ArrowUp) {
-        state.viewOffset.y = Math.min(CONFIG.VIEWPORT_OFFSET, state.viewOffset.y + CONFIG.PAN_SPEED);
+        state.viewOffset.y = Math.min(CONFIG.VIEWPORT_OFFSET, state.viewOffset.y + CONFIG.PAN_SPEED * deltaTime);
     }
     if (state.keys.ArrowDown) {
-        state.viewOffset.y = Math.max(-CONFIG.VIEWPORT_OFFSET, state.viewOffset.y - CONFIG.PAN_SPEED);
+        state.viewOffset.y = Math.max(-CONFIG.VIEWPORT_OFFSET, state.viewOffset.y - CONFIG.PAN_SPEED * deltaTime);
     }
     if (state.keys.ArrowLeft) {
-        state.viewOffset.x = Math.min(CONFIG.VIEWPORT_OFFSET, state.viewOffset.x + CONFIG.PAN_SPEED);
+        state.viewOffset.x = Math.min(CONFIG.VIEWPORT_OFFSET, state.viewOffset.x + CONFIG.PAN_SPEED * deltaTime);
     }
     if (state.keys.ArrowRight) {
-        state.viewOffset.x = Math.max(-CONFIG.VIEWPORT_OFFSET, state.viewOffset.x - CONFIG.PAN_SPEED);
+        state.viewOffset.x = Math.max(-CONFIG.VIEWPORT_OFFSET, state.viewOffset.x - CONFIG.PAN_SPEED * deltaTime);
     }
 }
 
@@ -277,7 +296,8 @@ function checkAnswer() {
     const correct = answer === `cam${state.anomaly.cam}`;
     
     if (correct) {
-        advanceNight();
+        // End game after night 1 with success
+        endGame(true);
     } else {
         state.power = Math.max(0, state.power - CONFIG.CONSOLE_PENALTY);
         if (Math.random() < 0.3) triggerJumpscare();
@@ -295,16 +315,48 @@ function switchCamera(camNum) {
     updateUI();
 }
 
-function advanceNight() {
-    state.currentNight++;
-    state.power = 100;
-    setNewAnomaly();
-    showNightComplete();
-}
-
-function gameOver() {
+function endGame(success) {
     state.gameActive = false;
-    document.getElementById('game-over').style.display = 'flex';
+    clearInterval(state.powerDrainInterval);
+    clearInterval(state.panInterval);
+    clearInterval(state.freakoutSoundInterval);
+    
+    // Stop all sounds
+    state.assets.ambientSound.pause();
+    state.assets.freakoutSound.pause();
+    state.assets.staticSound.pause();
+    
+    if (success) {
+        const endingScreen = document.createElement('div');
+        endingScreen.style.position = 'absolute';
+        endingScreen.style.top = '0';
+        endingScreen.style.left = '0';
+        endingScreen.style.width = '100%';
+        endingScreen.style.height = '100%';
+        endingScreen.style.backgroundColor = 'black';
+        endingScreen.style.color = '#0f0';
+        endingScreen.style.display = 'flex';
+        endingScreen.style.flexDirection = 'column';
+        endingScreen.style.justifyContent = 'center';
+        endingScreen.style.alignItems = 'center';
+        endingScreen.style.zIndex = '1000';
+        endingScreen.style.fontSize = '24px';
+        endingScreen.innerHTML = `
+            <h1>UBBA CONTAINED</h1>
+            <p>SECURITY PROTOCOLS COMPLETE</p>
+            <p>Thank you for your service</p>
+            <button id="restart-button" style="margin-top: 20px; padding: 10px 20px; background: #8b0000; color: white; border: 1px solid red; cursor: pointer;">
+                Play Again
+            </button>
+        `;
+        elements.gameContainer.appendChild(endingScreen);
+        
+        document.getElementById('restart-button').addEventListener('click', () => {
+            location.reload();
+        });
+    } else {
+        document.getElementById('game-over').style.display = 'flex';
+    }
 }
 
 function triggerJumpscare() {
@@ -324,7 +376,7 @@ function triggerJumpscare() {
     setTimeout(() => {
         jumpscare.remove();
         if (state.power <= 0) {
-            gameOver();
+            endGame(false);
         }
     }, 2000);
 }
@@ -351,14 +403,23 @@ function render() {
     
     // Draw Ubba if visible on this camera
     if (state.ubbaState !== 'hidden' && state.currentCam === state.anomaly.cam) {
-        const ubbaX = state.ubbaPosition.x - state.viewOffset.x;
-        const ubbaY = state.ubbaPosition.y - state.viewOffset.y;
+        let drawX, drawY;
         
-        if (ubbaX > -CONFIG.UBBA_WIDTH && ubbaX < CONFIG.WIDTH && 
-            ubbaY > -CONFIG.UBBA_HEIGHT && ubbaY < CONFIG.HEIGHT) {
+        if (state.ubbaState === 'chill') {
+            // Fixed center position for chill state
+            drawX = CONFIG.UBBA_CENTER_X - (CONFIG.UBBA_WIDTH/2);
+            drawY = CONFIG.UBBA_CENTER_Y - (CONFIG.UBBA_HEIGHT/2);
+        } else {
+            // Freaking out - use dynamic position
+            drawX = state.ubbaPosition.x - state.viewOffset.x - (CONFIG.UBBA_WIDTH/2);
+            drawY = state.ubbaPosition.y - state.viewOffset.y - (CONFIG.UBBA_HEIGHT/2);
+        }
+        
+        if (drawX > -CONFIG.UBBA_WIDTH && drawX < CONFIG.WIDTH && 
+            drawY > -CONFIG.UBBA_HEIGHT && drawY < CONFIG.HEIGHT) {
             elements.ctx.drawImage(
                 state.assets.ubbaSprite,
-                ubbaX, ubbaY,
+                drawX, drawY,
                 CONFIG.UBBA_WIDTH, CONFIG.UBBA_HEIGHT
             );
         }
@@ -395,15 +456,6 @@ function playStaticEffect() {
     setTimeout(() => {
         elements.staticOverlay.style.opacity = '0';
     }, 300);
-}
-
-function showNightComplete() {
-    const screen = document.getElementById('night-complete');
-    screen.style.display = 'flex';
-    
-    setTimeout(() => {
-        screen.style.display = 'none';
-    }, 3000);
 }
 
 function gameLoop() {
