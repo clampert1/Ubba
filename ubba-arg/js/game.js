@@ -10,7 +10,7 @@ const CONFIG = {
     UBBA_CHILL_MAX: 20000, // 20 seconds
     UBBA_FREAKOUT_MIN: 60000, // 1 minute
     UBBA_FREAKOUT_MAX: 120000, // 2 minutes
-    PAN_SPEED: 8, // Smooth panning speed
+    PAN_SPEED: 8,
     UBBA_WIDTH: 64,
     UBBA_HEIGHT: 128,
     UBBA_CENTER_RANGE: 100 // Pixel range from center for chill position
@@ -26,7 +26,7 @@ const state = {
     viewOffset: { x: 0, y: 0 },
     consoleVisible: false,
     ubbaState: 'hidden', // 'hidden', 'chill', 'freaking'
-    ubbaPosition: { x: 0, y: 0 }, // Fixed position for current camera
+    ubbaPosition: { x: 0, y: 0 },
     ubbaVelocity: { x: 0, y: 0 },
     assets: {
         cameras: [],
@@ -45,10 +45,10 @@ const state = {
     nextUbbaStateChange: 0,
     powerDrainInterval: null,
     panInterval: null,
-    anomalyAlertActive: false,
     gameStartTime: Date.now(),
     lastPanTime: Date.now(),
-    cameraUbbaPositions: {} // Stores fixed Ubba positions for each camera
+    cameraUbbaPositions: {}, // Stores fixed Ubba positions for each camera
+    canReportAnomaly: false
 };
 
 // DOM Elements
@@ -62,11 +62,11 @@ const elements = {
     consoleInput: document.getElementById('console-input'),
     consoleSubmit: document.getElementById('console-submit'),
     staticOverlay: document.getElementById('static-overlay'),
-    anomalyAlert: document.getElementById('anomaly-alert'),
     leftArrow: document.getElementById('left-arrow'),
     rightArrow: document.getElementById('right-arrow'),
     gameContainer: document.getElementById('game-container'),
-    restartBtn: document.getElementById('restart-btn')
+    restartBtn: document.getElementById('restart-btn'),
+    anomalyPrompt: document.createElement('div')
 };
 
 // Initialize Game
@@ -76,12 +76,28 @@ function initGame() {
     elements.canvas.height = CONFIG.HEIGHT;
     elements.ctx.imageSmoothingEnabled = false;
 
+    // Create anomaly prompt
+    elements.anomalyPrompt.id = 'anomaly-prompt';
+    elements.anomalyPrompt.textContent = 'Press ENTER to log anomaly';
+    elements.anomalyPrompt.style.position = 'absolute';
+    elements.anomalyPrompt.style.bottom = '60px';
+    elements.anomalyPrompt.style.left = '50%';
+    elements.anomalyPrompt.style.transform = 'translateX(-50%)';
+    elements.anomalyPrompt.style.color = '#f00';
+    elements.anomalyPrompt.style.fontSize = '18px';
+    elements.anomalyPrompt.style.display = 'none';
+    elements.anomalyPrompt.style.zIndex = '100';
+    elements.anomalyPrompt.style.backgroundColor = 'rgba(0,0,0,0.7)';
+    elements.anomalyPrompt.style.padding = '5px 10px';
+    elements.anomalyPrompt.style.border = '1px solid #f00';
+    elements.anomalyPrompt.style.borderRadius = '3px';
+    elements.gameContainer.appendChild(elements.anomalyPrompt);
+
     // Load assets and set fixed Ubba positions
     for (let i = 1; i <= 5; i++) {
         const img = new Image();
         img.src = `assets/cameras/cam${i}.png`;
         img.onload = function() {
-            // Set fixed random position near center for this camera
             state.cameraUbbaPositions[i] = {
                 x: (img.width/2) + (Math.random() * CONFIG.UBBA_CENTER_RANGE * 2) - CONFIG.UBBA_CENTER_RANGE,
                 y: (img.height/2) + (Math.random() * CONFIG.UBBA_CENTER_RANGE * 2) - CONFIG.UBBA_CENTER_RANGE
@@ -92,9 +108,9 @@ function initGame() {
     
     state.assets.ubbaSprite.src = 'assets/sprites/ubba.png';
 
-    // Setup audio with fixed volumes
+    // Setup audio
     state.assets.ambientSound.loop = true;
-    state.assets.ambientSound.volume = 0.3; // Consistent volume
+    state.assets.ambientSound.volume = 0.3;
     state.assets.ambientSound.play();
     
     state.assets.freakoutSound.volume = 0.7;
@@ -123,6 +139,8 @@ function setUbbaState(newState) {
     if (state.ubbaState === 'freaking') {
         state.assets.freakoutSound.pause();
         state.assets.freakoutSound.currentTime = 0;
+        state.canReportAnomaly = false;
+        elements.anomalyPrompt.style.display = 'none';
     }
 
     state.ubbaState = newState;
@@ -155,15 +173,11 @@ function setUbbaState(newState) {
             y: (Math.random() - 0.5) * 10
         };
         
-        // Show anomaly alert ONLY when freaking out
-        state.anomalyAlertActive = true;
-        elements.anomalyAlert.style.opacity = '1';
-        setTimeout(() => {
-            elements.anomalyAlert.style.opacity = '0';
-            state.anomalyAlertActive = false;
-        }, 2000);
+        // Enable anomaly reporting
+        state.canReportAnomaly = true;
+        elements.anomalyPrompt.style.display = 'block';
         
-        // Play looping freakout sound
+        // Play freakout sound
         state.assets.freakoutSound.loop = true;
         state.assets.freakoutSound.play();
     }
@@ -207,12 +221,12 @@ function setupControls() {
     elements.leftArrow.addEventListener('click', () => {
         const newCam = state.currentCam > 1 ? state.currentCam - 1 : 5;
         switchCamera(newCam);
-    });
+    }, false);
     
     elements.rightArrow.addEventListener('click', () => {
         const newCam = state.currentCam < 5 ? state.currentCam + 1 : 1;
         switchCamera(newCam);
-    });
+    }, false);
 
     // Console submit
     elements.consoleSubmit.addEventListener('click', checkAnswer);
@@ -235,9 +249,7 @@ function stopPanning() {
 
 function setNewAnomaly() {
     state.anomaly = {
-        cam: Math.floor(Math.random() * 5) + 1,
-        x: Math.floor(Math.random() * (CONFIG.WIDTH + CONFIG.VIEWPORT_OFFSET * 2)),
-        y: Math.floor(Math.random() * (CONFIG.HEIGHT + CONFIG.VIEWPORT_OFFSET * 2))
+        cam: Math.floor(Math.random() * 5) + 1
     };
 }
 
@@ -256,15 +268,16 @@ function startPowerDrain() {
 function handleKeyPress(e) {
     if (!state.gameActive) return;
 
-    if (state.consoleVisible) {
-        if (e.key === 'Enter') checkAnswer();
+    // Only allow console during freakout
+    if (e.key === 'Enter') {
+        if (state.canReportAnomaly) {
+            toggleConsole();
+        }
         return;
     }
 
+    // Camera number keys
     switch(e.key) {
-        case 'Enter':
-            toggleConsole();
-            break;
         case '1': case '2': case '3': case '4': case '5':
             switchCamera(parseInt(e.key));
             break;
@@ -303,7 +316,6 @@ function checkAnswer() {
     const correct = answer === `cam${state.anomaly.cam}`;
     
     if (correct) {
-        // End game after night 1 with success
         endGame(true);
     } else {
         state.power = Math.max(0, state.power - CONFIG.CONSOLE_PENALTY);
@@ -412,7 +424,7 @@ function render() {
         let drawX, drawY;
         
         if (state.ubbaState === 'chill') {
-            // Fixed position relative to camera image (not affected by panning)
+            // Fixed position relative to camera image
             const fixedPos = state.cameraUbbaPositions[state.currentCam];
             drawX = fixedPos.x - (CONFIG.UBBA_WIDTH/2);
             drawY = fixedPos.y - (CONFIG.UBBA_HEIGHT/2);
