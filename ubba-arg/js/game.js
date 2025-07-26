@@ -13,7 +13,7 @@ const CONFIG = {
     PAN_SPEED: 8,
     UBBA_WIDTH: 64,
     UBBA_HEIGHT: 128,
-    UBBA_CENTER_RANGE: 100 // Pixel range from center for chill position
+    UBBA_CENTER_RANGE: 100, // Pixel range from center for chill position
     UBBA_FREAKOUT_DURATION_MIN: 5000, // 5 seconds
     UBBA_FREAKOUT_DURATION_MAX: 10000 // 10 seconds
 };
@@ -113,7 +113,7 @@ function initGame() {
     // Setup audio
     state.assets.ambientSound.loop = true;
     state.assets.ambientSound.volume = 0.3;
-    state.assets.ambientSound.play();
+    state.assets.ambientSound.play().catch(e => console.log("Audio play error:", e));
     
     state.assets.freakoutSound.volume = 0.7;
     state.assets.staticSound.volume = 0.4;
@@ -142,7 +142,7 @@ function setUbbaState(newState) {
         state.assets.freakoutSound.pause();
         state.assets.freakoutSound.currentTime = 0;
         state.canReportAnomaly = false;
-        elements.anomalyPrompt.style.display = 'none'; // Hide prompt when not freaking
+        elements.anomalyPrompt.style.display = 'none';
     }
 
     state.ubbaState = newState;
@@ -153,6 +153,7 @@ function setUbbaState(newState) {
         state.nextUbbaStateChange = Date.now() + delay;
     }
     else if (newState === 'chill') {
+        // Use the pre-set position for this camera
         if (state.cameraUbbaPositions[state.currentCam]) {
             state.ubbaPosition = state.cameraUbbaPositions[state.currentCam];
         }
@@ -164,6 +165,7 @@ function setUbbaState(newState) {
         setNewAnomaly();
     }
     else if (newState === 'freaking') {
+        // Random position for freaking out
         state.ubbaPosition = {
             x: Math.random() * (CONFIG.WIDTH + CONFIG.VIEWPORT_OFFSET * 2),
             y: Math.random() * (CONFIG.HEIGHT + CONFIG.VIEWPORT_OFFSET * 2)
@@ -173,15 +175,18 @@ function setUbbaState(newState) {
             y: (Math.random() - 0.5) * 10
         };
         
-        // Only enable anomaly reporting during freakout
+        // Enable anomaly reporting
         state.canReportAnomaly = true;
         elements.anomalyPrompt.style.display = 'block';
         
+        // Play freakout sound
         state.assets.freakoutSound.loop = true;
-        state.assets.freakoutSound.play();
-
-        // Set duration for freakout state (5-10 seconds)
-        state.nextUbbaStateChange = Date.now() + 5000 + Math.random() * 5000;
+        state.assets.freakoutSound.play().catch(e => console.log("Freakout sound error:", e));
+        
+        // Set duration for freakout state
+        state.nextUbbaStateChange = Date.now() + 
+            CONFIG.UBBA_FREAKOUT_DURATION_MIN + 
+            Math.random() * (CONFIG.UBBA_FREAKOUT_DURATION_MAX - CONFIG.UBBA_FREAKOUT_DURATION_MIN);
     }
 }
 
@@ -191,7 +196,6 @@ function updateUbbaState() {
             setUbbaState('chill');
         }
         else if (state.ubbaState === 'chill') {
-            // Modified this condition to trigger freakout more reliably
             const timeSinceStart = Date.now() - state.gameStartTime;
             const shouldFreakout = timeSinceStart > CONFIG.UBBA_FREAKOUT_MIN || 
                                  Math.random() < 0.5;
@@ -203,7 +207,6 @@ function updateUbbaState() {
             }
         }
         else if (state.ubbaState === 'freaking') {
-            // After freaking out, go back to hidden
             setUbbaState('hidden');
         }
     }
@@ -398,7 +401,7 @@ function triggerJumpscare() {
     jumpscare.style.zIndex = '1000';
     elements.gameContainer.appendChild(jumpscare);
     
-    state.assets.jumpscareSound.play();
+    state.assets.jumpscareSound.play().catch(e => console.log("Jumpscare sound error:", e));
     
     setTimeout(() => {
         jumpscare.remove();
@@ -481,7 +484,7 @@ function updateUI() {
 function playStaticEffect() {
     elements.staticOverlay.style.opacity = '0.5';
     state.assets.staticSound.currentTime = 0;
-    state.assets.staticSound.play();
+    state.assets.staticSound.play().catch(e => console.log("Static sound error:", e));
     
     setTimeout(() => {
         elements.staticOverlay.style.opacity = '0';
