@@ -1,237 +1,172 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>UBBA MONITORING SYSTEM</title>
-    <style>
-        body { margin: 0; padding: 0; background: #000; overflow: hidden; }
-        #game-container {
-            position: relative;
-            width: 740px;
-            height: 580px;
-            margin: 20px auto;
-            border: 4px solid #8b0000;
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UBBA MONITORING SYSTEM</title>
+<style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #000;
+            overflow: hidden;
+            font-family: 'Courier New', monospace;
+            color: #0f0;
+            user-select: none;
+            image-rendering: pixelated;
         }
+
+        body { margin: 0; padding: 0; background: #000; overflow: hidden; }
+#game-container {
+position: relative;
+width: 740px;
+height: 580px;
+margin: 20px auto;
+border: 4px solid #8b0000;
+            box-shadow: 0 0 20px #8b0000;
+            overflow: hidden;
+        }
+
+        #camera-view {
+            width: 100%;
+            height: 100%;
+            display: block;
+            background-color: #000;
+            cursor: move;
+}
         #camera-view { width: 100%; height: 100%; background: #000; }
 
-        #power-meter {
-            position: absolute;
-            bottom: 10px;
-            right: 10px;
-            color: #0f0;
-            font-size: 18px;
-            background: rgba(0,0,0,0.7);
-            padding: 5px 10px;
-            border: 1px solid #0f0;
-        }
-
-        #night-counter {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            color: #0f0;
-            font-size: 18px;
-            background: rgba(0,0,0,0.7);
-            padding: 5px 10px;
-            border: 1px solid #0f0;
-        }
-
-        #current-cam {
-            position: absolute;
-            bottom: 10px;
-            left: 10px;
-            color: #0f0;
-            font-size: 18px;
-            background: rgba(0,0,0,0.7);
-            padding: 5px 10px;
-            border: 1px solid #0f0;
-        }
-
-        .camera-arrow {
-            position: absolute;
-            top: 50%;
-            transform: translateY(-50%);
-            font-size: 30px;
-            color: #0f0;
-            cursor: pointer;
-            z-index: 100;
-            background: rgba(0,0,0,0.5);
-            padding: 10px;
-            border-radius: 5px;
-            user-select: none;
-        }
-
-        .camera-arrow:hover {
-            color: #8b0000;
-        }
-
-        #left-arrow {
-            left: 10px;
-        }
-
-        #right-arrow {
-            right: 10px;
-        }
-
-        .static-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: repeating-linear-gradient(
-                0deg,
-                rgba(0, 255, 0, 0.1),
-                rgba(0, 255, 0, 0.1) 1px,
-                transparent 1px,
-                transparent 2px
-            );
-            pointer-events: none;
-            opacity: 0;
-            z-index: 100;
-        }
-
-        .anomaly-alert {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            color: #f00;
-            font-size: 24px;
-            text-shadow: 0 0 10px #f00;
-            z-index: 50;
-            opacity: 0;
-            pointer-events: none;
-            animation: pulse 1s infinite alternate;
-        }
-
-        @keyframes pulse {
-            from { opacity: 0.5; }
-            to { opacity: 1; }
-        }
-
-        #console {
-            position: absolute;
-            bottom: 50px;
-            left: 10px;
-            background: rgba(0,0,0,0.9);
-            padding: 10px;
-            border: 2px solid #0f0;
-            z-index: 100;
-            display: none;
-        }
-
-        #console-input {
-            background: #111;
-            color: #0f0;
-            border: 1px solid #0f0;
-            padding: 5px;
-            font-family: 'Courier New', monospace;
-            width: 200px;
-        }
-
-        #console button {
-            background: #8b0000;
-            color: #fff;
-            border: 1px solid #f00;
-            padding: 5px 10px;
-            margin-left: 5px;
-            cursor: pointer;
-        }
-
-        #night-complete {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.9);
-            display: none;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            color: #0f0;
-            font-size: 24px;
-            z-index: 1000;
-        }
-
-        #game-over {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.9);
-            display: none;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            color: #f00;
-            font-size: 24px;
-            z-index: 1000;
-        }
-
-        #game-over button {
-            background: #8b0000;
-            color: #fff;
-            border: 2px solid #f00;
-            padding: 10px 20px;
-            margin-top: 20px;
-            cursor: pointer;
-            font-family: 'Courier New', monospace;
-        }
-
-        #loading-screen {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: #000;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            z-index: 9999;
-            color: #0f0;
-            font-family: 'Courier New', monospace;
-        }
-
-        #loading-progress {
-            width: 80%;
-            max-width: 400px;
-            height: 20px;
-            border: 2px solid #0f0;
-            margin-top: 20px;
-        }
-
-        #progress-bar {
-            height: 100%;
-            width: 0%;
-            background: #0f0;
-            transition: width 0.3s;
-        }
+#power-meter {
+position: absolute;
+@@ -231,133 +212,26 @@
+background: #0f0;
+transition: width 0.3s;
+}
+    </style>
 </style>
 </head>
 <body>
-    <div id="game-container">
-        <canvas id="camera-view"></canvas>
-        <div id="left-arrow" class="camera-arrow">&larr;</div>
-        <div id="right-arrow" class="camera-arrow">&rarr;</div>
-        <div id="power-meter">POWER: 100%</div>
-        <div id="current-cam">CAM 1</div>
-        <div id="static-overlay" class="static-overlay"></div>
-        <div id="console">
-            <input type="text" id="console-input">
-            <button id="console-submit">Submit</button>
+    <div id="loading-screen">
+        <h1>UBBA MONITORING SYSTEM</h1>
+        <p>INITIALIZING SECURITY PROTOCOLS</p>
+        <div id="loading-progress">
+            <div id="progress-bar"></div>
         </div>
     </div>
 
-    <audio id="static-sound" src="assets/sounds/static.mp3" preload="auto"></audio>
-    <audio id="jumpscare-sound" src="assets/sounds/jumpscare.mp3" preload="auto"></audio>
-    <audio id="ambient-sound" src="assets/sounds/ambient.mp3" preload="auto" loop></audio>
+<div id="game-container">
+        <canvas id="camera-view" width="740" height="580"></canvas>
+        <canvas id="camera-view"></canvas>
+<div id="left-arrow" class="camera-arrow">&larr;</div>
+<div id="right-arrow" class="camera-arrow">&rarr;</div>
+<div id="power-meter">POWER: 100%</div>
+        <div id="night-counter">NIGHT 1</div>
+<div id="current-cam">CAM 1</div>
+<div id="static-overlay" class="static-overlay"></div>
+        <div id="anomaly-alert" class="anomaly-alert">ANOMALY DETECTED</div>
+<div id="console">
+            <p>Enter which camera Ubba is freaking out on (e.g. "cam1"):</p>
+<input type="text" id="console-input">
+<button id="console-submit">Submit</button>
+</div>
+</div>
 
-    <script src="js/game.js"></script>
+    <div id="night-complete" style="display:none;">
+        <h1>NIGHT COMPLETE</h1>
+        <p>PREPARING NEXT SHIFT...</p>
+    </div>
+
+    <div id="game-over" style="display:none;">
+        <h1>SECURITY BREACH</h1>
+        <p>PROTOCOL UBB-4 ACTIVATED</p>
+        <button id="restart-btn">REINITIALIZE SYSTEM</button>
+    </div>
+
+    <!-- Audio elements with preload -->
+<audio id="static-sound" src="assets/sounds/static.mp3" preload="auto"></audio>
+<audio id="jumpscare-sound" src="assets/sounds/jumpscare.mp3" preload="auto"></audio>
+<audio id="ambient-sound" src="assets/sounds/ambient.mp3" preload="auto" loop></audio>
+
+<script src="js/game.js"></script>
+    <script>
+        // Asset loading progress tracking
+        const assets = {
+            images: [
+                'assets/sprites/ubba.png',
+                'assets/cameras/cam1.png',
+                'assets/cameras/cam2.png',
+                'assets/cameras/cam3.png',
+                'assets/cameras/cam4.png',
+                'assets/cameras/cam5.png'
+            ],
+            sounds: [
+                'assets/sounds/static.mp3',
+                'assets/sounds/jumpscare.mp3',
+                'assets/sounds/ambient.mp3'
+            ]
+        };
+
+        let loaded = 0;
+        const totalAssets = assets.images.length + assets.sounds.length;
+
+        function updateProgress() {
+            loaded++;
+            const percent = Math.floor((loaded / totalAssets) * 100);
+            document.getElementById('progress-bar').style.width = `${percent}%`;
+            
+            if (loaded === totalAssets) {
+                setTimeout(() => {
+                    document.getElementById('loading-screen').style.opacity = '0';
+                    setTimeout(() => {
+                        document.getElementById('loading-screen').style.display = 'none';
+                    }, 500);
+                }, 500);
+            }
+        }
+
+        // Preload images
+        assets.images.forEach(src => {
+            const img = new Image();
+            img.src = src;
+            img.onload = updateProgress;
+            img.onerror = updateProgress;
+        });
+
+        // Preload sounds
+        assets.sounds.forEach(src => {
+            const audio = new Audio();
+            audio.src = src;
+            audio.addEventListener('canplaythrough', updateProgress);
+            audio.addEventListener('error', updateProgress);
+        });
+
+        // Prevent right-click menu
+        document.addEventListener('contextmenu', e => e.preventDefault());
+    </script>
 </body>
 </html>
+<script>
+    // Clear any cached state from previous sessions
+    if (window.performance && performance.navigation.type === performance.navigation.TYPE_RELOAD) {
+        console.log("Page was reloaded");
+    } else {
+        console.log("Page was loaded fresh");
+        // Clear any potential stuck state
+        sessionStorage.removeItem('gameState');
+    }
+
+    // Force reload if coming from index.html without refresh
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.has(Date.now())) {
+        window.location.href = "game.html";
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        document.getElementById('restart-btn').onclick = () => {
+            location.reload();
+        };
+        
+        // Initialize game with error handling
+        initGame().catch(e => {
+            console.error("Game initialization failed:", e);
+            // Attempt recovery by reloading
+            setTimeout(() => location.reload(), 1000);
+        });
+    });
+</script>
