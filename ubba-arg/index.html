@@ -212,6 +212,16 @@
             z-index: 2000;
             pointer-events: none;
         }
+        .glitch-img.jumpscare {
+        width: 100vw;
+        height: 100vh;
+        object-fit: cover;
+        position: fixed;
+        left: 0;
+        top: 0;
+        z-index: 9999;
+        animation: none; /* Remove animation for full coverage */
+    }
     </style>
 </head>
 <body>
@@ -386,35 +396,35 @@
             }
             
             function triggerJumpscare() {
-                jumpscareTriggered = true;
-                clearInterval(glidingInterval);
-                
+        jumpscareTriggered = true;
+        clearInterval(glidingInterval);
                 // Freeze everything
                 document.body.style.overflow = 'hidden';
-                
-                // Prepare jumpscare
-                ubbaImage.classList.add('jumpscare');
-                ubbaImage.style.opacity = '1';
                 
                 // Blood effect
                 blood.style.opacity = '0.7';
                 setTimeout(() => {
                     blood.style.opacity = '0';
                 }, 1000);
-                
-                // Play jumpscare sound
-                const js = new Audio('assets/sounds/jumpscare.mp3');
-                js.volume = 0.7;
-                js.play();
-                
-                // After jumpscare, resume gliding
-                setTimeout(() => {
-                    ubbaImage.classList.remove('jumpscare');
-                    ubbaImage.style.width = '200px';
-                    startGliding();
-                    document.body.style.overflow = '';
-                }, 300);
-            }
+        
+        // Fullscreen coverage
+        const ubbaImage = document.getElementById('ubbaImage');
+        ubbaImage.style.width = '100vw';
+        ubbaImage.style.height = '100vh';
+        ubbaImage.style.left = '0';
+        ubbaImage.style.top = '0';
+        ubbaImage.style.objectFit = 'cover';
+        ubbaImage.classList.add('jumpscare');
+        
+        // Play sound
+        new Audio('assets/sounds/jumpscare.mp3').play();
+        
+        // Reset after 2 seconds
+        setTimeout(() => {
+            ubbaImage.classList.remove('jumpscare');
+            startGliding();
+        }, 2000);
+    }
             
             function increaseCorruption() {
                 corruptionLevel++;
