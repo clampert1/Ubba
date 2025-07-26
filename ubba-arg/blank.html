@@ -37,8 +37,8 @@
         
         .coloring-area {
             position: relative;
-            width: 500px;
-            height: 500px;
+            width: 600px;
+            height: 600px;
             border: 3px solid #8b0000;
             background-color: #222;
         }
@@ -50,10 +50,10 @@
         }
         
         .colors-palette {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            width: 100px;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            width: 200px;
         }
         
         .color-option {
@@ -66,29 +66,32 @@
             justify-content: center;
             align-items: center;
             font-weight: bold;
-            font-size: 20px;
+            font-size: 24px;
             user-select: none;
-            transition: transform 0.2s;
+            transition: all 0.2s;
             position: relative;
+            margin: 0 auto;
         }
         
         .color-option .number {
             color: white;
             text-shadow: 
-                -1px -1px 0 #000,
-                1px -1px 0 #000,
-                -1px 1px 0 #000,
-                1px 1px 0 #000;
+                -2px -2px 0 #000,
+                2px -2px 0 #000,
+                -2px 2px 0 #000,
+                2px 2px 0 #000;
             pointer-events: none;
         }
         
         .color-option:hover {
             transform: scale(1.1);
             border-color: #8b0000;
+            box-shadow: 0 0 15px currentColor;
         }
         
         .color-option:active {
             cursor: grabbing;
+            transform: scale(0.95);
         }
         
         .instructions {
@@ -109,11 +112,12 @@
             left: 50%;
             transform: translate(-50%, -50%);
             color: #8b0000;
-            font-size: 24px;
+            font-size: 32px;
             text-shadow: 0 0 10px #000;
             pointer-events: none;
-            transition: opacity 2s;
+            transition: opacity 1s;
             z-index: 100;
+            font-weight: bold;
         }
         
         .scanlines {
@@ -139,23 +143,31 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(0, 0, 0, 0.9);
+            background-color: rgba(0, 0, 0, 0.95);
             flex-direction: column;
             justify-content: center;
             align-items: center;
             z-index: 50;
             color: #8b0000;
-            font-size: 24px;
+            font-size: 32px;
+            text-align: center;
         }
         
         .completion-message button {
-            margin-top: 20px;
-            padding: 10px 20px;
+            margin-top: 30px;
+            padding: 15px 30px;
             background: #8b0000;
             color: white;
             border: none;
             cursor: pointer;
-            font-size: 18px;
+            font-size: 24px;
+            border-radius: 5px;
+            transition: all 0.3s;
+        }
+        
+        .completion-message button:hover {
+            background: #ff0000;
+            transform: scale(1.1);
         }
         
         /* Glitch effect */
@@ -180,6 +192,17 @@
             80% { transform: translate(5px, -5px); }
             100% { transform: translate(0); }
         }
+        
+        /* Pulsing effect for attention */
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+        .pulse {
+            animation: pulse 2s infinite;
+        }
     </style>
 </head>
 <body>
@@ -192,7 +215,7 @@
     
     <div class="game-container">
         <div class="coloring-area">
-            <canvas id="coloring-canvas" width="500" height="500"></canvas>
+            <canvas id="coloring-canvas" width="600" height="600"></canvas>
         </div>
         
         <div class="colors-palette" id="colors-palette">
@@ -222,47 +245,55 @@
         const completionMessage = document.getElementById('completion-message');
         const glitchEffect = document.getElementById('glitch-effect');
         
-        // Colors with numbers (number will be displayed on the color)
+        // Colors with numbers (using all 8 colors)
         const colors = [
-            { number: 1, color: '#8b0000', name: 'Blood Red' },
-            { number: 2, color: '#000000', name: 'Void Black' },
-            { number: 3, color: '#556b2f', name: 'Sickly Green' },
-            { number: 4, color: '#d3d3d3', name: 'Ashen Gray' },
-            { number: 5, color: '#ffd700', name: 'Unnatural Gold' },
-            { number: 6, color: '#4b0082', name: 'Eldritch Purple' },
-            { number: 7, color: '#ff4500', name: 'Infected Orange' },
-            { number: 8, color: '#00ffff', name: 'Toxic Cyan' }
+            { number: 1, color: '#8b0000', name: 'Blood Red' },       // Body
+            { number: 2, color: '#000000', name: 'Void Black' },      // Head
+            { number: 3, color: '#556b2f', name: 'Sickly Green' },    // Left Leg
+            { number: 4, color: '#d3d3d3', name: 'Ashen Gray' },      // Right Leg
+            { number: 5, color: '#ffd700', name: 'Unnatural Gold' },  // Ear
+            { number: 6, color: '#4b0082', name: 'Eldritch Purple' }, // Tail
+            { number: 7, color: '#ff4500', name: 'Infected Orange' }, // Eyes
+            { number: 8, color: '#00ffff', name: 'Toxic Cyan' }       // Mouth
         ];
         
         // Simple Ubba silhouette sections (first 5 colors)
         const simpleSections = [
-            { number: 1, path: [{x:100,y:100}, {x:400,y:100}, {x:450,y:350}, {x:50,y:350}] }, // Body
-            { number: 2, path: [{x:175,y:100}, {x:250,y:25}, {x:325,y:100}] }, // Head
-            { number: 3, path: [{x:50,y:350}, {x:25,y:450}, {x:100,y:475}, {x:150,y:400}] }, // Left leg
-            { number: 4, path: [{x:450,y:350}, {x:475,y:450}, {x:400,y:475}, {x:350,y:400}] }, // Right leg
-            { number: 5, path: [{x:250,y:25}, {x:275,y:10}, {x:300,y:25}] } // Ear
+            { number: 1, path: [{x:100,y:100}, {x:500,y:100}, {x:550,y:400}, {x:50,y:400}] }, // Body (red)
+            { number: 2, path: [{x:200,y:100}, {x:300,y:25}, {x:400,y:100}] }, // Head (black)
+            { number: 3, path: [{x:50,y:400}, {x:25,y:500}, {x:100,y:550}, {x:200,y:450}] }, // Left leg (green)
+            { number: 4, path: [{x:550,y:400}, {x:575,y:500}, {x:500,y:550}, {x:400,y:450}] }, // Right leg (gray)
+            { number: 5, path: [{x:300,y:25}, {x:325,y:10}, {x:350,y:25}] } // Ear (gold)
         ];
         
-        // Complex Ubba shape (all 8 colors, larger sections)
+        // Complex Ubba shape (all 8 colors, large sections)
         const complexSections = [
-            // Main body parts (reusing some colors)
-            { number: 1, path: [{x:100,y:100}, {x:250,y:50}, {x:400,y:100}, {x:450,y:350}, {x:400,y:400}, {x:250,y:450}, {x:100,y:400}, {x:50,y:350}] }, // Body (red)
-            { number: 1, path: [{x:250,y:100}, {x:300,y:75}, {x:350,y:100}, {x:325,y:150}, {x:250,y:175}] }, // Chest (red)
+            // Body (split into two red sections)
+            { number: 1, path: [{x:100,y:100}, {x:300,y:50}, {x:500,y:100}, {x:550,y:300}, {x:500,y:400}, {x:300,y:450}, {x:100,y:400}, {x:50,y:300}] }, // Main body
+            { number: 1, path: [{x:300,y:100}, {x:350,y:75}, {x:400,y:100}, {x:375,y:200}, {x:300,y:250}] }, // Chest
             
-            // Head and features
-            { number: 2, path: [{x:175,y:100}, {x:250,y:25}, {x:325,y:100}, {x:250,y:150}] }, // Head (black)
-            { number: 5, path: [{x:250,y:25}, {x:260,y:10}, {x:275,y:15}, {x:290,y:10}, {x:300,y:25}] }, // Ear (gold)
+            // Head (black)
+            { number: 2, path: [{x:200,y:100}, {x:300,y:25}, {x:400,y:100}, {x:300,y:200}] }, 
             
-            // Legs (multiple sections per leg)
-            { number: 3, path: [{x:100,y:400}, {x:75,y:450}, {x:100,y:475}, {x:150,y:450}] }, // Left leg front (green)
-            { number: 6, path: [{x:50,y:350}, {x:25,y:400}, {x:50,y:425}, {x:100,y:400}] }, // Left leg back (purple)
+            // Legs (green left, gray right)
+            { number: 3, path: [{x:100,y:400}, {x:75,y:500}, {x:150,y:550}, {x:250,y:450}] }, // Left leg front
+            { number: 3, path: [{x:50,y:300}, {x:25,y:400}, {x:100,y:450}, {x:200,y:400}] }, // Left leg back
             
-            { number: 4, path: [{x:400,y:400}, {x:425,y:450}, {x:400,y:475}, {x:350,y:450}] }, // Right leg front (gray)
-            { number: 7, path: [{x:450,y:350}, {x:475,y:400}, {x:450,y:425}, {x:400,y:400}] }, // Right leg back (orange)
+            { number: 4, path: [{x:500,y:400}, {x:525,y:500}, {x:450,y:550}, {x:350,y:450}] }, // Right leg front
+            { number: 4, path: [{x:550,y:300}, {x:575,y:400}, {x:500,y:450}, {x:400,y:400}] }, // Right leg back
             
-            // Facial features
-            { number: 8, path: [{x:200,y:75}, {x:225,y:65}, {x:250,y:75}, {x:225,y:85}] }, // Left eye (cyan)
-            { number: 8, path: [{x:300,y:75}, {x:275,y:65}, {x:250,y:75}, {x:275,y:85}] }  // Right eye (cyan)
+            // Ear (gold)
+            { number: 5, path: [{x:300,y:25}, {x:325,y:10}, {x:350,y:25}, {x:325,y:40}] },
+            
+            // Tail (purple)
+            { number: 6, path: [{x:100,y:100}, {x:50,y:150}, {x:75,y:200}, {x:150,y:150}] },
+            
+            // Eyes (orange)
+            { number: 7, path: [{x:250,y:75}, {x:275,y:60}, {x:300,y:75}, {x:275,y:90}] }, // Left eye
+            { number: 7, path: [{x:350,y:75}, {x:325,y:60}, {x:300,y:75}, {x:325,y:90}] }, // Right eye
+            
+            // Mouth (cyan)
+            { number: 8, path: [{x:275,y:125}, {x:300,y:150}, {x:325,y:125}, {x:300,y:100}] }
         ];
         
         // Game state
@@ -296,7 +327,7 @@
             for (let i = 0; i < count; i++) {
                 const color = colors[i];
                 const colorDiv = document.createElement('div');
-                colorDiv.className = 'color-option';
+                colorDiv.className = 'color-option pulse';
                 colorDiv.style.backgroundColor = color.color;
                 colorDiv.innerHTML = `<span class="number">${color.number}</span>`;
                 colorDiv.dataset.number = color.number;
@@ -305,6 +336,11 @@
                 
                 colorDiv.addEventListener('dragstart', dragStart);
                 palette.appendChild(colorDiv);
+                
+                // Remove pulse after first interaction
+                colorDiv.addEventListener('mousedown', () => {
+                    colorDiv.classList.remove('pulse');
+                });
             }
         }
         
@@ -312,15 +348,15 @@
         function drawOutline() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             ctx.strokeStyle = '#8b0000';
-            ctx.lineWidth = 2;
-            ctx.font = 'bold 20px Arial';
+            ctx.lineWidth = 3;
+            ctx.font = 'bold 28px Arial';
             ctx.fillStyle = '#8b0000';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             
             currentSections.forEach(section => {
                 // Skip drawing if already filled
-                if (completedSections.includes(section.number)) return;
+                if (completedSections.includes(`${section.number}-${currentSections.indexOf(section)}`)) return;
                 
                 ctx.beginPath();
                 ctx.moveTo(section.path[0].x, section.path[0].y);
@@ -336,7 +372,7 @@
                 // Draw number with outline
                 ctx.save();
                 ctx.strokeStyle = '#000';
-                ctx.lineWidth = 4;
+                ctx.lineWidth = 6;
                 ctx.strokeText(section.number, center.x, center.y);
                 ctx.fillText(section.number, center.x, center.y);
                 ctx.restore();
@@ -379,11 +415,22 @@
                 currentSections = complexSections;
                 createPalette(8); // Show all colors
                 
-                // Keep track of which numbers were completed
+                // Keep track of completed sections
                 const newCompleted = [];
-                complexSections.forEach(section => {
-                    if (completedSections.includes(section.number)) {
-                        newCompleted.push(section.number);
+                complexSections.forEach((section, index) => {
+                    if (completedSections.includes(`${section.number}-${index}`)) {
+                        newCompleted.push(`${section.number}-${index}`);
+                        
+                        // Redraw already completed sections
+                        ctx.fillStyle = colors.find(c => c.number === section.number).color;
+                        ctx.beginPath();
+                        ctx.moveTo(section.path[0].x, section.path[0].y);
+                        for (let i = 1; i < section.path.length; i++) {
+                            ctx.lineTo(section.path[i].x, section.path[i].y);
+                        }
+                        ctx.closePath();
+                        ctx.fill();
+                        ctx.stroke();
                     }
                 });
                 completedSections = newCompleted;
@@ -396,7 +443,7 @@
                 }, 500);
                 
                 // Show creepy message
-                hiddenMessage.textContent = "UBBA IS EVOLVING...";
+                hiddenMessage.textContent = "UBBA IS TRANSFORMING...";
                 hiddenMessage.style.opacity = '1';
                 setTimeout(() => {
                     hiddenMessage.style.opacity = '0';
@@ -426,47 +473,55 @@
             const y = e.clientY - rect.top;
             
             // Find which section was clicked
-            const section = currentSections.find(s => 
-                s.number === currentColor.number && 
-                isPointInPath(s.path, x, y) &&
-                !completedSections.includes(s.number)
-            );
+            let filledSection = false;
             
-            if (section) {
-                // Fill the section
-                ctx.fillStyle = currentColor.color;
-                ctx.beginPath();
-                ctx.moveTo(section.path[0].x, section.path[0].y);
-                for (let i = 1; i < section.path.length; i++) {
-                    ctx.lineTo(section.path[i].x, section.path[i].y);
+            currentSections.forEach((section, index) => {
+                const sectionId = `${section.number}-${index}`;
+                
+                if (section.number === currentColor.number && 
+                    isPointInPath(section.path, x, y) &&
+                    !completedSections.includes(sectionId)) {
+                    
+                    // Fill the section
+                    ctx.fillStyle = currentColor.color;
+                    ctx.beginPath();
+                    ctx.moveTo(section.path[0].x, section.path[0].y);
+                    for (let i = 1; i < section.path.length; i++) {
+                        ctx.lineTo(section.path[i].x, section.path[i].y);
+                    }
+                    ctx.closePath();
+                    ctx.fill();
+                    
+                    // Redraw the outline over the fill
+                    ctx.strokeStyle = '#8b0000';
+                    ctx.lineWidth = 3;
+                    ctx.stroke();
+                    
+                    // Mark as completed
+                    completedSections.push(sectionId);
+                    filledSection = true;
+                    
+                    // Show hidden message randomly
+                    if (Math.random() < 0.3) {
+                        hiddenMessage.style.opacity = '1';
+                        setTimeout(() => {
+                            hiddenMessage.style.opacity = '0';
+                        }, 1000);
+                    }
                 }
-                ctx.closePath();
-                ctx.fill();
-                
-                // Redraw the outline over the fill
-                ctx.strokeStyle = '#8b0000';
-                ctx.lineWidth = 2;
-                ctx.stroke();
-                
-                // Mark as completed
-                completedSections.push(section.number);
-                
-                // Show hidden message randomly
-                if (Math.random() < 0.3) {
-                    hiddenMessage.style.opacity = '1';
-                    setTimeout(() => {
-                        hiddenMessage.style.opacity = '0';
-                    }, 1000);
-                }
-                
-                // Check if we should transform (4/5 sections filled in simple form)
-                if (!hasTransformed && currentSections === simpleSections && completedSections.length >= 4) {
-                    transformToComplexShape();
+            });
+            
+            if (filledSection) {
+                // Check if we should transform (4/5 unique numbers filled in simple form)
+                if (!hasTransformed && currentSections === simpleSections) {
+                    const uniqueCompleted = [...new Set(completedSections.map(id => id.split('-')[0]))];
+                    if (uniqueCompleted.length >= 4) {
+                        transformToComplexShape();
+                    }
                 }
                 
                 // Check if all sections are completed
-                const uniqueCompleted = [...new Set(completedSections)];
-                if (uniqueCompleted.length === [...new Set(currentSections.map(s => s.number))].length) {
+                if (completedSections.length === currentSections.length) {
                     setTimeout(() => {
                         completionMessage.style.display = 'flex';
                     }, 1000);
