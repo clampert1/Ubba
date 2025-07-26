@@ -322,6 +322,7 @@ function endGame(success) {
     state.assets.staticSound.pause();
     
     if (success) {
+        // Show completion screen briefly
         const endingScreen = document.createElement('div');
         endingScreen.style.position = 'absolute';
         endingScreen.style.top = '0';
@@ -339,16 +340,14 @@ function endGame(success) {
         endingScreen.innerHTML = `
             <h1>UBBA CONTAINED</h1>
             <p>SECURITY PROTOCOLS COMPLETE</p>
-            <p>Thank you for your service</p>
-            <button id="restart-button" style="margin-top: 20px; padding: 10px 20px; background: #8b0000; color: white; border: 1px solid red; cursor: pointer;">
-                Play Again
-            </button>
+            <p>Accessing security footage...</p>
         `;
         elements.gameContainer.appendChild(endingScreen);
         
-        document.getElementById('restart-button').addEventListener('click', () => {
-            location.reload();
-        });
+        // Redirect to video page after delay
+        setTimeout(() => {
+            window.location.href = "video.html";
+        }, 3000);
     } else {
         document.getElementById('game-over').style.display = 'flex';
     }
