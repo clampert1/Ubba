@@ -332,3 +332,32 @@
     </script>
 </body>
 </html>
+<script>
+    // Clear any cached state from previous sessions
+    if (window.performance && performance.navigation.type === performance.navigation.TYPE_RELOAD) {
+        console.log("Page was reloaded");
+    } else {
+        console.log("Page was loaded fresh");
+        // Clear any potential stuck state
+        sessionStorage.removeItem('gameState');
+    }
+
+    // Force reload if coming from index.html without refresh
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.has(Date.now())) {
+        window.location.href = "game.html";
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        document.getElementById('restart-btn').onclick = () => {
+            location.reload();
+        };
+        
+        // Initialize game with error handling
+        initGame().catch(e => {
+            console.error("Game initialization failed:", e);
+            // Attempt recovery by reloading
+            setTimeout(() => location.reload(), 1000);
+        });
+    });
+</script>
