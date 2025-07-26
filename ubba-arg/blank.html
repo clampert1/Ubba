@@ -229,31 +229,40 @@
             { number: 3, color: '#556b2f', name: 'Sickly Green' },
             { number: 4, color: '#d3d3d3', name: 'Ashen Gray' },
             { number: 5, color: '#ffd700', name: 'Unnatural Gold' },
-            // Additional colors for complex form
             { number: 6, color: '#4b0082', name: 'Eldritch Purple' },
             { number: 7, color: '#ff4500', name: 'Infected Orange' },
             { number: 8, color: '#00ffff', name: 'Toxic Cyan' }
         ];
         
-        // Simple Ubba silhouette sections
+        // Simple Ubba silhouette sections (first 5 colors)
         const simpleSections = [
-            { number: 1, path: [{x:150,y:100}, {x:350,y:100}, {x:400,y:300}, {x:100,y:300}] }, // Body
-            { number: 2, path: [{x:200,y:100}, {x:250,y:50}, {x:300,y:100}] }, // Head
-            { number: 3, path: [{x:100,y:300}, {x:50,y:400}, {x:100,y:450}, {x:150,y:400}] }, // Left leg
-            { number: 4, path: [{x:400,y:300}, {x:450,y:400}, {x:400,y:450}, {x:350,y:400}] }, // Right leg
-            { number: 5, path: [{x:250,y:50}, {x:275,y:25}, {x:300,y:50}] } // Ear
+            { number: 1, path: [{x:100,y:100}, {x:400,y:100}, {x:450,y:350}, {x:50,y:350}] }, // Body
+            { number: 2, path: [{x:175,y:100}, {x:250,y:25}, {x:325,y:100}] }, // Head
+            { number: 3, path: [{x:50,y:350}, {x:25,y:450}, {x:100,y:475}, {x:150,y:400}] }, // Left leg
+            { number: 4, path: [{x:450,y:350}, {x:475,y:450}, {x:400,y:475}, {x:350,y:400}] }, // Right leg
+            { number: 5, path: [{x:250,y:25}, {x:275,y:10}, {x:300,y:25}] } // Ear
         ];
         
-        // Complex Ubba shape (revealed after glitch)
+        // Complex Ubba shape (all 8 colors, larger sections)
         const complexSections = [
-            { number: 1, path: [{x:150,y:100}, {x:350,y:100}, {x:375,y:150}, {x:350,y:200}, {x:400,y:300}, {x:350,y:350}, {x:300,y:300}, {x:250,y:350}, {x:200,y:300}, {x:150,y:350}, {x:100,y:300}, {x:125,y:150}] }, // Body
-            { number: 2, path: [{x:200,y:100}, {x:225,y:75}, {x:250,y:50}, {x:275,y:75}, {x:300,y:100}] }, // Head
-            { number: 3, path: [{x:100,y:300}, {x:75,y:350}, {x:50,y:400}, {x:75,y:450}, {x:100,y:425}, {x:125,y:450}, {x:150,y:400}] }, // Left leg
-            { number: 4, path: [{x:400,y:300}, {x:425,y:350}, {x:450,y:400}, {x:425,y:450}, {x:400,y:425}, {x:375,y:450}, {x:350,y:400}] }, // Right leg
-            { number: 5, path: [{x:250,y:50}, {x:260,y:30}, {x:275,y:25}, {x:290,y:30}, {x:300,y:50}] }, // Ear
-            { number: 6, path: [{x:225,y:75}, {x:235,y:65}, {x:245,y:70}, {x:255,y:65}, {x:265,y:70}, {x:275,y:75}] }, // Mouth
-            { number: 7, path: [{x:220,y:60}, {x:225,y:55}, {x:230,y:60}, {x:225,y:65}] }, // Left eye
-            { number: 8, path: [{x:270,y:60}, {x:275,y:55}, {x:280,y:60}, {x:275,y:65}] }  // Right eye
+            // Main body parts (reusing some colors)
+            { number: 1, path: [{x:100,y:100}, {x:250,y:50}, {x:400,y:100}, {x:450,y:350}, {x:400,y:400}, {x:250,y:450}, {x:100,y:400}, {x:50,y:350}] }, // Body (red)
+            { number: 1, path: [{x:250,y:100}, {x:300,y:75}, {x:350,y:100}, {x:325,y:150}, {x:250,y:175}] }, // Chest (red)
+            
+            // Head and features
+            { number: 2, path: [{x:175,y:100}, {x:250,y:25}, {x:325,y:100}, {x:250,y:150}] }, // Head (black)
+            { number: 5, path: [{x:250,y:25}, {x:260,y:10}, {x:275,y:15}, {x:290,y:10}, {x:300,y:25}] }, // Ear (gold)
+            
+            // Legs (multiple sections per leg)
+            { number: 3, path: [{x:100,y:400}, {x:75,y:450}, {x:100,y:475}, {x:150,y:450}] }, // Left leg front (green)
+            { number: 6, path: [{x:50,y:350}, {x:25,y:400}, {x:50,y:425}, {x:100,y:400}] }, // Left leg back (purple)
+            
+            { number: 4, path: [{x:400,y:400}, {x:425,y:450}, {x:400,y:475}, {x:350,y:450}] }, // Right leg front (gray)
+            { number: 7, path: [{x:450,y:350}, {x:475,y:400}, {x:450,y:425}, {x:400,y:400}] }, // Right leg back (orange)
+            
+            // Facial features
+            { number: 8, path: [{x:200,y:75}, {x:225,y:65}, {x:250,y:75}, {x:225,y:85}] }, // Left eye (cyan)
+            { number: 8, path: [{x:300,y:75}, {x:275,y:65}, {x:250,y:75}, {x:275,y:85}] }  // Right eye (cyan)
         ];
         
         // Game state
@@ -267,7 +276,7 @@
             // Draw the initial outline
             drawOutline();
             
-            // Create color palette (only first 5 colors initially)
+            // Create color palette (first 5 colors initially)
             createPalette(5);
             
             // Set up canvas event listeners
@@ -365,13 +374,20 @@
             // Show glitch effect
             glitchEffect.style.opacity = '0.7';
             
-            // Play glitch sound if available
-            // new Audio('assets/sounds/glitch.mp3').play();
-            
             // After glitch, transform the shape
             setTimeout(() => {
                 currentSections = complexSections;
                 createPalette(8); // Show all colors
+                
+                // Keep track of which numbers were completed
+                const newCompleted = [];
+                complexSections.forEach(section => {
+                    if (completedSections.includes(section.number)) {
+                        newCompleted.push(section.number);
+                    }
+                });
+                completedSections = newCompleted;
+                
                 drawOutline();
                 
                 // Hide glitch
@@ -380,7 +396,7 @@
                 }, 500);
                 
                 // Show creepy message
-                hiddenMessage.textContent = "WHAT HAVE YOU DONE?";
+                hiddenMessage.textContent = "UBBA IS EVOLVING...";
                 hiddenMessage.style.opacity = '1';
                 setTimeout(() => {
                     hiddenMessage.style.opacity = '0';
@@ -449,11 +465,10 @@
                 }
                 
                 // Check if all sections are completed
-                if (completedSections.length === currentSections.length) {
+                const uniqueCompleted = [...new Set(completedSections)];
+                if (uniqueCompleted.length === [...new Set(currentSections.map(s => s.number))].length) {
                     setTimeout(() => {
                         completionMessage.style.display = 'flex';
-                        // Play creepy sound if you want
-                        // new Audio('assets/sounds/creepy.mp3').play();
                     }, 1000);
                 }
             }
