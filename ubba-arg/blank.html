@@ -48,7 +48,7 @@
         #coloring-canvas {
             width: 100%;
             height: 100%;
-            cursor: crosshair;
+            cursor: url('assets/sprites/paintbrush.png') 0 24, crosshair;
         }
         
         .colors-palette {
@@ -63,7 +63,7 @@
             height: 80px;
             border-radius: 50%;
             border: 3px solid #333;
-            cursor: grab;
+            cursor: pointer;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -89,11 +89,6 @@
             transform: scale(1.1);
             border-color: #8b0000;
             box-shadow: 0 0 15px currentColor;
-        }
-        
-        .color-option:active {
-            cursor: grabbing;
-            transform: scale(0.95);
         }
         
         .instructions {
@@ -195,55 +190,28 @@
             100% { transform: translate(0); }
         }
         
-        /* Explosive transition effects */
-        .transition-overlay {
+        /* Paint stage styles */
+        .submit-btn {
+            display: none;
             position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: #000;
-            z-index: 30;
-            opacity: 0;
-            pointer-events: none;
+            bottom: 20px;
+            right: 20px;
+            padding: 15px 30px;
+            background: #ff0000;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 20px;
+            font-weight: bold;
+            cursor: pointer;
+            z-index: 100;
+            box-shadow: 0 0 15px #ff0000;
+            animation: pulse 1s infinite alternate;
         }
         
-        .pixel-explosion {
-            position: absolute;
-            width: 10px;
-            height: 10px;
-            background: #8b0000;
-            z-index: 40;
-            pointer-events: none;
-        }
-        
-        .color-burst {
-            position: absolute;
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            z-index: 40;
-            pointer-events: none;
-        }
-        
-        @keyframes explode {
-            0% { transform: scale(1); opacity: 1; }
-            100% { transform: scale(20); opacity: 0; }
-        }
-        
-        @keyframes implode {
-            0% { transform: scale(1); opacity: 1; }
-            100% { transform: scale(0); opacity: 0; }
-        }
-        
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            10%, 30%, 50%, 70%, 90% { transform: translateX(-10px); }
-            20%, 40%, 60%, 80% { transform: translateX(10px); }
-        }
-        
-        .shake {
-            animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            100% { transform: scale(1.05); }
         }
         
         /* Input blocker */
@@ -262,11 +230,11 @@
     <div class="scanlines"></div>
     <div class="glitch" id="glitch-effect"></div>
     <div class="hidden-message" id="hidden-message">GOOD DOG</div>
-    <div class="transition-overlay" id="transition-overlay"></div>
     <div class="input-blocker" id="input-blocker"></div>
+    <button class="submit-btn" id="submit-btn">SUBMIT DRAWING</button>
     
     <h1>UBBA COLORING ACTIVITY</h1>
-    <div class="subtitle">Color by numbers! Drag colors to matching numbered areas</div>
+    <div class="subtitle" id="stage-subtitle">Color by numbers! Drag colors to matching numbered areas</div>
     
     <div class="game-container">
         <div class="coloring-area">
@@ -278,7 +246,7 @@
         </div>
     </div>
     
-    <div class="instructions">
+    <div class="instructions" id="instructions">
         <p><strong>How to play:</strong></p>
         <p>1. Drag a color from the palette to the matching numbered area</p>
         <p>2. Fill in all sections to complete the picture</p>
@@ -299,11 +267,31 @@
         const hiddenMessage = document.getElementById('hidden-message');
         const completionMessage = document.getElementById('completion-message');
         const glitchEffect = document.getElementById('glitch-effect');
-        const transitionOverlay = document.getElementById('transition-overlay');
         const inputBlocker = document.getElementById('input-blocker');
+        const submitBtn = document.getElementById('submit-btn');
+        const stageSubtitle = document.getElementById('stage-subtitle');
+        const instructions = document.getElementById('instructions');
+
+        // Game states
+        const STATE = {
+            NUMBER_FILL: 1,
+            PAINT: 2
+        };
         
-        // Colors with numbers (using all 8 colors)
-        const colors = [
+        // Colors for paint stage (ROYGBIV + Black)
+        const paintColors = [
+            { number: 1, color: '#ff0000', name: 'Red' },
+            { number: 2, color: '#ff7f00', name: 'Orange' },
+            { number: 3, color: '#ffff00', name: 'Yellow' },
+            { number: 4, color: '#00ff00', name: 'Green' },
+            { number: 5, color: '#0000ff', name: 'Blue' },
+            { number: 6, color: '#4b0082', name: 'Indigo' },
+            { number: 7, color: '#9400d3', name: 'Violet' },
+            { number: 8, color: '#000000', name: 'Black' }
+        ];
+
+        // Colors for number stages
+        const numberColors = [
             { number: 1, color: '#8b0000', name: 'Blood Red' },
             { number: 2, color: '#000000', name: 'Void Black' },
             { number: 3, color: '#556b2f', name: 'Sickly Green' },
@@ -314,80 +302,197 @@
             { number: 8, color: '#00ffff', name: 'Toxic Cyan' }
         ];
         
-        // Simple Ubba silhouette sections (first 5 colors)
-        const simpleSections = [
-            { number: 1, path: [{x:150,y:150}, {x:450,y:150}, {x:450,y:450}, {x:150,y:450}] }, // Body
-            { number: 2, path: [{x:225,y:75}, {x:375,y:75}, {x:375,y:150}, {x:225,y:150}] }, // Head
-            { number: 3, path: [{x:150,y:300}, {x:75,y:450}, {x:150,y:450}] }, // Left leg
-            { number: 4, path: [{x:450,y:300}, {x:525,y:450}, {x:450,y:450}] }, // Right leg
-            { number: 5, path: [{x:300,y:75}, {x:325,y:50}, {x:350,y:75}] } // Ear
+        // Game stages
+        const stages = [
+            // Stage 1 - Simple numbered fill
+            {
+                sections: [
+                    { number: 1, path: [{x:150,y:150}, {x:450,y:150}, {x:450,y:450}, {x:150,y:450}] }, // Body
+                    { number: 2, path: [{x:225,y:75}, {x:375,y:75}, {x:375,y:150}, {x:225,y:150}] }, // Head
+                    { number: 3, path: [{x:150,y:300}, {x:75,y:450}, {x:150,y:450}] }, // Left leg
+                    { number: 4, path: [{x:450,y:300}, {x:525,y:450}, {x:450,y:450}] }, // Right leg
+                    { number: 5, path: [{x:300,y:75}, {x:325,y:50}, {x:350,y:75}] } // Ear
+                ],
+                colors: numberColors.slice(0, 5),
+                state: STATE.NUMBER_FILL
+            },
+            
+            // Stage 2 - Complex numbered fill
+            {
+                sections: [
+                    { number: 1, path: [{x:100,y:200}, {x:500,y:200}, {x:500,y:400}, {x:100,y:400}] }, // Body
+                    { number: 2, path: [{x:200,y:100}, {x:400,y:100}, {x:400,y:200}, {x:200,y:200}] }, // Head
+                    { number: 3, path: [{x:100,y:300}, {x:50,y:450}, {x:150,y:450}] }, // Left leg
+                    { number: 4, path: [{x:500,y:300}, {x:550,y:450}, {x:450,y:450}] }, // Right leg
+                    { number: 5, path: [{x:300,y:100}, {x:325,y:75}, {x:350,y:100}] }, // Ear
+                    { number: 6, path: [{x:100,y:200}, {x:50,y:150}, {x:100,y:100}, {x:150,y:150}] }, // Tail
+                    { number: 7, path: [{x:250,y:125}, {x:275,y:150}, {x:300,y:125}, {x:275,y:100}] }, // Left eye
+                    { number: 8, path: [{x:350,y:125}, {x:325,y:150}, {x:300,y:125}, {x:325,y:100}] }  // Right eye
+                ],
+                colors: numberColors,
+                state: STATE.NUMBER_FILL
+            },
+            
+            // Stage 3 - Free paint
+            {
+                sections: [], // No sections for paint stage
+                colors: paintColors,
+                state: STATE.PAINT
+            }
         ];
-        
-        // Complex Ubba shape (all 8 colors)
-        const complexSections = [
-            // Body parts
-            { number: 1, path: [{x:100,y:200}, {x:500,y:200}, {x:500,y:400}, {x:100,y:400}] }, // Main body
-            { number: 2, path: [{x:200,y:100}, {x:400,y:100}, {x:400,y:200}, {x:200,y:200}] }, // Head
-            { number: 3, path: [{x:100,y:300}, {x:50,y:450}, {x:150,y:450}] }, // Left leg
-            { number: 4, path: [{x:500,y:300}, {x:550,y:450}, {x:450,y:450}] }, // Right leg
-            { number: 5, path: [{x:300,y:100}, {x:325,y:75}, {x:350,y:100}] }, // Ear
-            { number: 6, path: [{x:100,y:200}, {x:50,y:150}, {x:100,y:100}, {x:150,y:150}] }, // Tail
-            { number: 7, path: [{x:250,y:125}, {x:275,y:150}, {x:300,y:125}, {x:275,y:100}] }, // Left eye
-            { number: 8, path: [{x:350,y:125}, {x:325,y:150}, {x:300,y:125}, {x:325,y:100}] }  // Right eye
-        ];
-        
+
         // Game state
-        let currentSections = simpleSections;
+        let currentStage = 0;
         let completedSections = [];
         let currentColor = null;
-        let hasTransformed = false;
         let isTransitioning = false;
-        
+        let isPainting = false;
+        let dogOutline = new Image();
+        dogOutline.src = 'assets/sprites/dogoutline.png';
+
         // Initialize the game
         function initGame() {
-            // Draw the initial outline
-            drawOutline();
-            
-            // Create color palette (first 5 colors initially)
-            createPalette(5);
-            
-            // Set up canvas event listeners
-            canvas.addEventListener('dragover', dragOver);
-            canvas.addEventListener('drop', drop);
+            // Load the dog outline image
+            dogOutline.onload = function() {
+                setupStage();
+            };
             
             // Set up completion button
             document.getElementById('continue-btn').addEventListener('click', () => {
                 window.location.href = "next-stage.html";
             });
+            
+            // Set up submit button for paint stage
+            submitBtn.addEventListener('click', completePaintStage);
         }
-        
+
+        // Set up the current stage
+        function setupStage() {
+            const stage = stages[currentStage];
+            completedSections = [];
+            currentColor = null;
+            
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Set up color palette
+            createPalette(stage.colors);
+            
+            // Set up canvas based on stage type
+            if (stage.state === STATE.NUMBER_FILL) {
+                setupNumberFillStage();
+            } else if (stage.state === STATE.PAINT) {
+                setupPaintStage();
+            }
+            
+            // Update instructions
+            updateInstructions();
+        }
+
+        // Set up number fill stage
+        function setupNumberFillStage() {
+            // Remove paint cursor
+            canvas.style.cursor = 'default';
+            
+            // Hide submit button
+            submitBtn.style.display = 'none';
+            
+            // Set up event listeners
+            canvas.removeEventListener('mousedown', startPainting);
+            canvas.removeEventListener('mousemove', paint);
+            canvas.removeEventListener('mouseup', stopPainting);
+            canvas.removeEventListener('mouseleave', stopPainting);
+            
+            canvas.addEventListener('dragover', dragOver);
+            canvas.addEventListener('drop', drop);
+            
+            // Draw the initial outline
+            drawNumberOutline();
+        }
+
+        // Set up paint stage
+        function setupPaintStage() {
+            // Set paint cursor
+            canvas.style.cursor = 'url("assets/sprites/paintbrush.png") 0 24, crosshair';
+            
+            // Show submit button
+            submitBtn.style.display = 'block';
+            
+            // Remove number fill event listeners
+            canvas.removeEventListener('dragover', dragOver);
+            canvas.removeEventListener('drop', drop);
+            
+            // Add paint event listeners
+            canvas.addEventListener('mousedown', startPainting);
+            canvas.addEventListener('mousemove', paint);
+            canvas.addEventListener('mouseup', stopPainting);
+            canvas.addEventListener('mouseleave', stopPainting);
+            
+            // Draw the dog outline
+            drawDogOutline();
+        }
+
+        // Update instructions based on current stage
+        function updateInstructions() {
+            const stage = stages[currentStage];
+            
+            if (stage.state === STATE.NUMBER_FILL) {
+                stageSubtitle.textContent = "Color by numbers! Drag colors to matching numbered areas";
+                instructions.innerHTML = `
+                    <p><strong>How to play:</strong></p>
+                    <p>1. Drag a color from the palette to the matching numbered area</p>
+                    <p>2. Fill in all sections to complete the picture</p>
+                    <p>3. Discover what Ubba really looks like</p>
+                `;
+            } else if (stage.state === STATE.PAINT) {
+                stageSubtitle.textContent = "Paint Ubba! Click colors and paint freely";
+                instructions.innerHTML = `
+                    <p><strong>How to play:</strong></p>
+                    <p>1. Click a color from the palette to select it</p>
+                    <p>2. Click and drag on the canvas to paint</p>
+                    <p>3. Click SUBMIT DRAWING when finished</p>
+                `;
+            }
+        }
+
         // Create the color palette
-        function createPalette(count) {
+        function createPalette(colors) {
             palette.innerHTML = '';
-            for (let i = 0; i < count; i++) {
-                const color = colors[i];
+            colors.forEach(color => {
                 const colorDiv = document.createElement('div');
                 colorDiv.className = 'color-option';
                 colorDiv.style.backgroundColor = color.color;
-                colorDiv.innerHTML = `<span class="number">${color.number}</span>`;
-                colorDiv.dataset.number = color.number;
-                colorDiv.dataset.color = color.color;
-                colorDiv.draggable = true;
                 
-                colorDiv.addEventListener('dragstart', dragStart);
+                // Only show numbers for number fill stages
+                if (stages[currentStage].state === STATE.NUMBER_FILL) {
+                    colorDiv.innerHTML = `<span class="number">${color.number}</span>`;
+                }
+                
+                colorDiv.dataset.color = color.color;
+                colorDiv.addEventListener('click', () => selectColor(color.color));
                 palette.appendChild(colorDiv);
-            }
+            });
         }
-        
+
+        // Select color for painting
+        function selectColor(color) {
+            currentColor = color;
+            
+            // Highlight selected color
+            document.querySelectorAll('.color-option').forEach(option => {
+                option.style.borderColor = option.dataset.color === color ? '#ff0000' : '#333';
+            });
+        }
+
         // Draw the numbered outline
-        function drawOutline() {
+        function drawNumberOutline() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             
             // First draw all filled sections
-            currentSections.forEach((section, index) => {
+            stages[currentStage].sections.forEach((section, index) => {
                 const sectionId = `${section.number}-${index}`;
                 if (completedSections.includes(sectionId)) {
-                    ctx.fillStyle = colors.find(c => c.number === section.number).color;
+                    ctx.fillStyle = stages[currentStage].colors.find(c => c.number === section.number).color;
                     ctx.beginPath();
                     ctx.moveTo(section.path[0].x, section.path[0].y);
                     for (let i = 1; i < section.path.length; i++) {
@@ -406,7 +511,7 @@
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             
-            currentSections.forEach((section, index) => {
+            stages[currentStage].sections.forEach((section, index) => {
                 ctx.beginPath();
                 ctx.moveTo(section.path[0].x, section.path[0].y);
                 for (let i = 1; i < section.path.length; i++) {
@@ -428,7 +533,13 @@
                 ctx.restore();
             });
         }
-        
+
+        // Draw the dog outline for paint stage
+        function drawDogOutline() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(dogOutline, 0, 0, canvas.width, canvas.height);
+        }
+
         // Calculate center point of a polygon
         function getCenter(points) {
             let x = 0, y = 0;
@@ -441,7 +552,7 @@
                 y: y / points.length
             };
         }
-        
+
         // Check if point is inside a polygon
         function isPointInPath(path, x, y) {
             ctx.beginPath();
@@ -452,140 +563,45 @@
             ctx.closePath();
             return ctx.isPointInPath(x, y);
         }
-        
-        // Create explosive pixel effect
-        function createExplosion(x, y, color) {
-            for (let i = 0; i < 50; i++) {
-                const particle = document.createElement('div');
-                particle.className = 'pixel-explosion';
-                particle.style.left = `${x}px`;
-                particle.style.top = `${y}px`;
-                particle.style.background = color;
-                particle.style.transform = `translate(${Math.random() * 100 - 50}px, ${Math.random() * 100 - 50}px)`;
-                particle.style.animation = `explode ${Math.random() * 0.5 + 0.5}s forwards`;
-                document.querySelector('.coloring-area').appendChild(particle);
-                
-                // Remove after animation
-                setTimeout(() => {
-                    particle.remove();
-                }, 1000);
-            }
+
+        // Start painting
+        function startPainting(e) {
+            if (!currentColor) return;
+            isPainting = true;
+            paint(e);
         }
-        
-        // Create color burst effect
-        function createColorBurst() {
-            const colors = ['#8b0000', '#ff0000', '#ff4500', '#ffd700', '#00ffff', '#4b0082'];
-            const area = document.querySelector('.coloring-area');
-            const rect = area.getBoundingClientRect();
+
+        // Paint on canvas
+        function paint(e) {
+            if (!isPainting || !currentColor) return;
             
-            for (let i = 0; i < 30; i++) {
-                const burst = document.createElement('div');
-                burst.className = 'color-burst';
-                burst.style.background = colors[Math.floor(Math.random() * colors.length)];
-                burst.style.left = `${Math.random() * rect.width}px`;
-                burst.style.top = `${Math.random() * rect.height}px`;
-                burst.style.animation = `implode ${Math.random() * 0.5 + 0.5}s forwards`;
-                area.appendChild(burst);
-                
-                setTimeout(() => {
-                    burst.remove();
-                }, 1000);
-            }
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            ctx.fillStyle = currentColor;
+            ctx.beginPath();
+            ctx.arc(x, y, 10, 0, Math.PI * 2);
+            ctx.fill();
         }
-        
-        // Trigger the transformation to complex shape
-        function transformToComplexShape() {
-            if (isTransitioning) return;
-            isTransitioning = true;
-            hasTransformed = true;
-            
-            // Block input during transition
-            inputBlocker.style.display = 'block';
-            
-            // Shake the canvas violently
-            document.querySelector('.coloring-area').classList.add('shake');
-            
-            // Show glitch effect
-            glitchEffect.style.opacity = '0.7';
-            
-            // Create explosive effects from filled sections
-            currentSections.forEach((section, index) => {
-                const sectionId = `${section.number}-${index}`;
-                if (completedSections.includes(sectionId)) {
-                    const center = getCenter(section.path);
-                    const rect = canvas.getBoundingClientRect();
-                    const x = rect.left + center.x;
-                    const y = rect.top + center.y;
-                    createExplosion(x, y, colors.find(c => c.number === section.number).color);
-                }
-            });
-            
-            // Global color burst
-            createColorBurst();
-            
-            // After effects, transform the shape
-            setTimeout(() => {
-                currentSections = complexSections;
-                createPalette(8); // Show all colors
-                
-                // Keep track of completed sections
-                const newCompleted = [];
-                complexSections.forEach((section, index) => {
-                    if (completedSections.includes(`${section.number}-0`)) {
-                        newCompleted.push(`${section.number}-${index}`);
-                    }
-                });
-                completedSections = newCompleted;
-                
-                // Reset visual effects
-                document.querySelector('.coloring-area').classList.remove('shake');
-                glitchEffect.style.opacity = '0';
-                transitionOverlay.style.opacity = '0';
-                
-                // Draw new outline
-                drawOutline();
-                
-                // Show creepy message
-                hiddenMessage.textContent = "UBBA HAS TRANSFORMED";
-                hiddenMessage.style.opacity = '1';
-                setTimeout(() => {
-                    hiddenMessage.style.opacity = '0';
-                }, 2000);
-                
-                // Re-enable input
-                setTimeout(() => {
-                    inputBlocker.style.display = 'none';
-                    isTransitioning = false;
-                }, 500);
-            }, 1500);
+
+        // Stop painting
+        function stopPainting() {
+            isPainting = false;
         }
-        
-        // Drag and drop functions
-        function dragStart(e) {
-            if (isTransitioning) {
-                e.preventDefault();
-                return;
-            }
-            currentColor = {
-                number: parseInt(e.target.dataset.number),
-                color: e.target.dataset.color
-            };
-            e.dataTransfer.setData('text/plain', e.target.dataset.number);
+
+        // Complete paint stage
+        function completePaintStage() {
+            // Show completion message
+            completionMessage.style.display = 'flex';
         }
-        
+
+        // Drag and drop functions for number fill stages
         function dragOver(e) {
-            if (isTransitioning) {
-                e.preventDefault();
-                return;
-            }
             e.preventDefault();
         }
-        
+
         function drop(e) {
-            if (isTransitioning) {
-                e.preventDefault();
-                return;
-            }
             e.preventDefault();
             if (!currentColor || isTransitioning) return;
             
@@ -596,7 +612,7 @@
             // Find which section was clicked
             let filledSection = false;
             
-            currentSections.forEach((section, index) => {
+            stages[currentStage].sections.forEach((section, index) => {
                 const sectionId = `${section.number}-${index}`;
                 
                 if (section.number === currentColor.number && 
@@ -608,7 +624,7 @@
                     filledSection = true;
                     
                     // Redraw to show changes
-                    drawOutline();
+                    drawNumberOutline();
                     
                     // Show hidden message randomly
                     if (Math.random() < 0.3) {
@@ -621,25 +637,30 @@
             });
             
             if (filledSection) {
-                // Check if we should transform (4/5 unique numbers filled in simple form)
-                if (!hasTransformed && currentSections === simpleSections) {
-                    const uniqueCompleted = [...new Set(completedSections.map(id => id.split('-')[0]))];
-                    if (uniqueCompleted.length >= 4) {
-                        transformToComplexShape();
-                    }
+                // Check if we should transform to next stage
+                if (currentStage === 0 && completedSections.length >= 4) {
+                    // Transition to stage 2
+                    currentStage = 1;
+                    setTimeout(() => {
+                        setupStage();
+                    }, 1000);
+                } else if (currentStage === 1 && completedSections.length >= 7) {
+                    // Transition to paint stage
+                    currentStage = 2;
+                    setTimeout(() => {
+                        setupStage();
+                    }, 1000);
                 }
                 
                 // Check if all sections are completed
-                if (completedSections.length === currentSections.length) {
+                if (completedSections.length === stages[currentStage].sections.length) {
                     setTimeout(() => {
                         completionMessage.style.display = 'flex';
                     }, 1000);
                 }
             }
-            
-            currentColor = null;
         }
-        
+
         // Start the game
         initGame();
     </script>
