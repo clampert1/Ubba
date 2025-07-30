@@ -256,6 +256,34 @@
             z-index: 1000;
             display: none;
         }
+        
+        /* Paint mode styles */
+        .paint-brush {
+            cursor: url('assets/sprites/paintbrush.png'), auto;
+        }
+        
+        .submit-btn {
+            display: none;
+            margin: 20px auto;
+            padding: 15px 30px;
+            background: #8b0000;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 24px;
+            border-radius: 5px;
+            transition: all 0.3s;
+            font-weight: bold;
+        }
+        
+        .submit-btn:hover {
+            background: #ff0000;
+            transform: scale(1.1);
+        }
+        
+        .submit-btn:active {
+            transform: scale(0.95);
+        }
     </style>
 </head>
 <body>
@@ -277,6 +305,8 @@
             <!-- Colors will be added by JavaScript -->
         </div>
     </div>
+    
+    <button class="submit-btn" id="submit-btn">SUBMIT DRAWING</button>
     
     <div class="instructions">
         <p><strong>How to play:</strong></p>
@@ -301,6 +331,12 @@
         const glitchEffect = document.getElementById('glitch-effect');
         const transitionOverlay = document.getElementById('transition-overlay');
         const inputBlocker = document.getElementById('input-blocker');
+        const submitBtn = document.getElementById('submit-btn');
+        
+        // Game states
+        const STATE_NUMBERED = 0;
+        const STATE_COMPLEX = 1;
+        const STATE_PAINT = 2;
         
         // Colors with numbers (using all 8 colors)
         const colors = [
@@ -312,6 +348,17 @@
             { number: 6, color: '#4b0082', name: 'Eldritch Purple' },
             { number: 7, color: '#ff4500', name: 'Infected Orange' },
             { number: 8, color: '#00ffff', name: 'Toxic Cyan' }
+        ];
+        
+        // ROYGBIV colors for paint mode
+        const paintColors = [
+            { color: '#FF0000', name: 'Red' },
+            { color: '#FF7F00', name: 'Orange' },
+            { color: '#FFFF00', name: 'Yellow' },
+            { color: '#00FF00', name: 'Green' },
+            { color: '#0000FF', name: 'Blue' },
+            { color: '#4B0082', name: 'Indigo' },
+            { color: '#9400D3', name: 'Violet' }
         ];
         
         // Simple Ubba silhouette sections (first 5 colors)
@@ -337,51 +384,124 @@
         ];
         
         // Game state
+        let currentState = STATE_NUMBERED;
         let currentSections = simpleSections;
         let completedSections = [];
         let currentColor = null;
-        let hasTransformed = false;
         let isTransitioning = false;
+        let isPainting = false;
+        let selectedPaintColor = null;
+        let brushSize = 10;
+        let dogImage = new Image();
         
         // Initialize the game
         function initGame() {
+            // Load the dog outline image
+            dogImage.src = 'assets/sprites/dogoutline.png';
+            dogImage.onload = function() {
+                drawCurrentState();
+            };
+            
             // Draw the initial outline
-            drawOutline();
+            drawCurrentState();
             
             // Create color palette (first 5 colors initially)
             createPalette(5);
             
             // Set up canvas event listeners
-            canvas.addEventListener('dragover', dragOver);
-            canvas.addEventListener('drop', drop);
+            setupCanvasListeners();
             
             // Set up completion button
             document.getElementById('continue-btn').addEventListener('click', () => {
                 window.location.href = "next-stage.html";
             });
+            
+            // Set up submit button
+            submitBtn.addEventListener('click', submitDrawing);
         }
         
-        // Create the color palette
-        function createPalette(count) {
-            palette.innerHTML = '';
-            for (let i = 0; i < count; i++) {
-                const color = colors[i];
-                const colorDiv = document.createElement('div');
-                colorDiv.className = 'color-option';
-                colorDiv.style.backgroundColor = color.color;
-                colorDiv.innerHTML = `<span class="number">${color.number}</span>`;
-                colorDiv.dataset.number = color.number;
-                colorDiv.dataset.color = color.color;
-                colorDiv.draggable = true;
-                
-                colorDiv.addEventListener('dragstart', dragStart);
-                palette.appendChild(colorDiv);
+        // Set up appropriate canvas listeners based on current state
+        function setupCanvasListeners() {
+            // Remove all existing listeners
+            canvas.removeEventListener('dragover', dragOver);
+            canvas.removeEventListener('drop', drop);
+            canvas.removeEventListener('mousedown', startPainting);
+            canvas.removeEventListener('mousemove', paint);
+            canvas.removeEventListener('mouseup', stopPainting);
+            canvas.removeEventListener('mouseleave', stopPainting);
+            
+            if (currentState === STATE_PAINT) {
+                // Paint mode listeners
+                canvas.addEventListener('mousedown', startPainting);
+                canvas.addEventListener('mousemove', paint);
+                canvas.addEventListener('mouseup', stopPainting);
+                canvas.addEventListener('mouseleave', stopPainting);
+                canvas.classList.add('paint-brush');
+            } else {
+                // Numbered coloring listeners
+                canvas.addEventListener('dragover', dragOver);
+                canvas.addEventListener('drop', drop);
+                canvas.classList.remove('paint-brush');
             }
         }
         
-        // Draw the numbered outline
-        function drawOutline() {
+        // Create the color palette
+        function createPalette(count, isPaintMode = false) {
+            palette.innerHTML = '';
+            
+            if (isPaintMode) {
+                // Create ROYGBIV palette for paint mode
+                paintColors.forEach((color, index) => {
+                    const colorDiv = document.createElement('div');
+                    colorDiv.className = 'color-option';
+                    colorDiv.style.backgroundColor = color.color;
+                    colorDiv.dataset.color = color.color;
+                    colorDiv.title = color.name;
+                    
+                    colorDiv.addEventListener('click', () => {
+                        selectedPaintColor = color.color;
+                        // Highlight selected color
+                        document.querySelectorAll('.color-option').forEach(opt => {
+                            opt.style.borderColor = '#333';
+                        });
+                        colorDiv.style.borderColor = '#ff0000';
+                    });
+                    
+                    palette.appendChild(colorDiv);
+                });
+                
+                // Select first color by default
+                if (paintColors.length > 0) {
+                    selectedPaintColor = paintColors[0].color;
+                    palette.firstChild.style.borderColor = '#ff0000';
+                }
+            } else {
+                // Create numbered palette
+                for (let i = 0; i < count; i++) {
+                    const color = colors[i];
+                    const colorDiv = document.createElement('div');
+                    colorDiv.className = 'color-option';
+                    colorDiv.style.backgroundColor = color.color;
+                    colorDiv.innerHTML = `<span class="number">${color.number}</span>`;
+                    colorDiv.dataset.number = color.number;
+                    colorDiv.dataset.color = color.color;
+                    colorDiv.draggable = true;
+                    
+                    colorDiv.addEventListener('dragstart', dragStart);
+                    palette.appendChild(colorDiv);
+                }
+            }
+        }
+        
+        // Draw based on current state
+        function drawCurrentState() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            if (currentState === STATE_PAINT) {
+                // Draw the dog outline image
+                ctx.drawImage(dogImage, 0, 0, canvas.width, canvas.height);
+                return;
+            }
             
             // First draw all filled sections
             currentSections.forEach((section, index) => {
@@ -398,35 +518,37 @@
                 }
             });
             
-            // Then draw all outlines and numbers
-            ctx.strokeStyle = '#8b0000';
-            ctx.lineWidth = 3;
-            ctx.font = 'bold 28px Arial';
-            ctx.fillStyle = '#8b0000';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            
-            currentSections.forEach((section, index) => {
-                ctx.beginPath();
-                ctx.moveTo(section.path[0].x, section.path[0].y);
-                for (let i = 1; i < section.path.length; i++) {
-                    ctx.lineTo(section.path[i].x, section.path[i].y);
-                }
-                ctx.closePath();
-                ctx.stroke();
+            // Then draw all outlines and numbers (except in paint mode)
+            if (currentState !== STATE_PAINT) {
+                ctx.strokeStyle = '#8b0000';
+                ctx.lineWidth = 3;
+                ctx.font = 'bold 28px Arial';
+                ctx.fillStyle = '#8b0000';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
                 
-                // Calculate center for number
-                const center = getCenter(section.path);
-                
-                // Draw number with outline (always visible)
-                ctx.save();
-                ctx.strokeStyle = '#000';
-                ctx.lineWidth = 6;
-                ctx.strokeText(section.number, center.x, center.y);
-                ctx.fillStyle = '#fff'; // White numbers for visibility
-                ctx.fillText(section.number, center.x, center.y);
-                ctx.restore();
-            });
+                currentSections.forEach((section, index) => {
+                    ctx.beginPath();
+                    ctx.moveTo(section.path[0].x, section.path[0].y);
+                    for (let i = 1; i < section.path.length; i++) {
+                        ctx.lineTo(section.path[i].x, section.path[i].y);
+                    }
+                    ctx.closePath();
+                    ctx.stroke();
+                    
+                    // Calculate center for number
+                    const center = getCenter(section.path);
+                    
+                    // Draw number with outline (always visible)
+                    ctx.save();
+                    ctx.strokeStyle = '#000';
+                    ctx.lineWidth = 6;
+                    ctx.strokeText(section.number, center.x, center.y);
+                    ctx.fillStyle = '#fff'; // White numbers for visibility
+                    ctx.fillText(section.number, center.x, center.y);
+                    ctx.restore();
+                });
+            }
         }
         
         // Calculate center point of a polygon
@@ -497,7 +619,6 @@
         function transformToComplexShape() {
             if (isTransitioning) return;
             isTransitioning = true;
-            hasTransformed = true;
             
             // Block input during transition
             inputBlocker.style.display = 'block';
@@ -525,6 +646,7 @@
             
             // After effects, transform the shape
             setTimeout(() => {
+                currentState = STATE_COMPLEX;
                 currentSections = complexSections;
                 createPalette(8); // Show all colors
                 
@@ -543,7 +665,7 @@
                 transitionOverlay.style.opacity = '0';
                 
                 // Draw new outline
-                drawOutline();
+                drawCurrentState();
                 
                 // Show creepy message
                 hiddenMessage.textContent = "UBBA HAS TRANSFORMED";
@@ -558,6 +680,102 @@
                     isTransitioning = false;
                 }, 500);
             }, 1500);
+        }
+        
+        // Transform to paint mode
+        function transformToPaintMode() {
+            if (isTransitioning) return;
+            isTransitioning = true;
+            
+            // Block input during transition
+            inputBlocker.style.display = 'block';
+            
+            // Shake the canvas violently
+            document.querySelector('.coloring-area').classList.add('shake');
+            
+            // Show glitch effect
+            glitchEffect.style.opacity = '0.7';
+            
+            // Create explosive effects from filled sections
+            currentSections.forEach((section, index) => {
+                const sectionId = `${section.number}-${index}`;
+                if (completedSections.includes(sectionId)) {
+                    const center = getCenter(section.path);
+                    const rect = canvas.getBoundingClientRect();
+                    const x = rect.left + center.x;
+                    const y = rect.top + center.y;
+                    createExplosion(x, y, colors.find(c => c.number === section.number).color);
+                }
+            });
+            
+            // Global color burst
+            createColorBurst();
+            
+            // After effects, transform to paint mode
+            setTimeout(() => {
+                currentState = STATE_PAINT;
+                createPalette(paintColors.length, true); // Create paint palette
+                setupCanvasListeners(); // Switch to paint mode listeners
+                
+                // Reset visual effects
+                document.querySelector('.coloring-area').classList.remove('shake');
+                glitchEffect.style.opacity = '0';
+                transitionOverlay.style.opacity = '0';
+                
+                // Draw dog outline
+                drawCurrentState();
+                
+                // Show submit button
+                submitBtn.style.display = 'block';
+                
+                // Show creepy message
+                hiddenMessage.textContent = "PAINT UBBAS TRUE FORM";
+                hiddenMessage.style.opacity = '1';
+                setTimeout(() => {
+                    hiddenMessage.style.opacity = '0';
+                }, 2000);
+                
+                // Re-enable input
+                setTimeout(() => {
+                    inputBlocker.style.display = 'none';
+                    isTransitioning = false;
+                }, 500);
+            }, 1500);
+        }
+        
+        // Paint mode functions
+        function startPainting(e) {
+            if (!selectedPaintColor) return;
+            isPainting = true;
+            paint(e);
+        }
+        
+        function stopPainting() {
+            isPainting = false;
+            ctx.beginPath();
+        }
+        
+        function paint(e) {
+            if (!isPainting || !selectedPaintColor) return;
+            
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            ctx.lineWidth = brushSize;
+            ctx.lineCap = 'round';
+            ctx.strokeStyle = selectedPaintColor;
+            
+            ctx.lineTo(x, y);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+        }
+        
+        function submitDrawing() {
+            // Show completion message
+            completionMessage.style.display = 'flex';
+            submitBtn.style.display = 'none';
         }
         
         // Drag and drop functions
@@ -608,7 +826,7 @@
                     filledSection = true;
                     
                     // Redraw to show changes
-                    drawOutline();
+                    drawCurrentState();
                     
                     // Show hidden message randomly
                     if (Math.random() < 0.3) {
@@ -621,16 +839,23 @@
             });
             
             if (filledSection) {
-                // Check if we should transform (4/5 unique numbers filled in simple form)
-                if (!hasTransformed && currentSections === simpleSections) {
+                // Check if we should transform to complex shape (4/5 unique numbers filled in simple form)
+                if (currentState === STATE_NUMBERED) {
                     const uniqueCompleted = [...new Set(completedSections.map(id => id.split('-')[0]))];
-                    if (uniqueCompleted.length >= 4) {
+                    if (uniqueCompleted.length >= 2) { // Changed from 4 to 2 as per request
                         transformToComplexShape();
                     }
                 }
+                // Check if we should transform to paint mode (7/8 unique numbers filled in complex form)
+                else if (currentState === STATE_COMPLEX) {
+                    const uniqueCompleted = [...new Set(completedSections.map(id => id.split('-')[0]))];
+                    if (uniqueCompleted.length >= 7) {
+                        transformToPaintMode();
+                    }
+                }
                 
-                // Check if all sections are completed
-                if (completedSections.length === currentSections.length) {
+                // Check if all sections are completed (for numbered modes)
+                if (currentState !== STATE_PAINT && completedSections.length === currentSections.length) {
                     setTimeout(() => {
                         completionMessage.style.display = 'flex';
                     }, 1000);
