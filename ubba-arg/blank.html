@@ -284,6 +284,29 @@
         .submit-btn:active {
             transform: scale(0.95);
         }
+
+        .undo-btn {
+            display: none;
+            margin: 10px auto;
+            padding: 10px 20px;
+            background: #4b0082;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 18px;
+            border-radius: 5px;
+            transition: all 0.3s;
+            font-weight: bold;
+        }
+        
+        .undo-btn:hover {
+            background: #6a0dad;
+            transform: scale(1.1);
+        }
+        
+        .undo-btn:active {
+            transform: scale(0.95);
+        }
     </style>
 </head>
 <body>
@@ -306,6 +329,7 @@
         </div>
     </div>
     
+    <button class="undo-btn" id="undo-btn">UNDO</button>
     <button class="submit-btn" id="submit-btn">SUBMIT DRAWING</button>
     
     <div class="instructions">
@@ -332,6 +356,7 @@
         const transitionOverlay = document.getElementById('transition-overlay');
         const inputBlocker = document.getElementById('input-blocker');
         const submitBtn = document.getElementById('submit-btn');
+        const undoBtn = document.getElementById('undo-btn');
         
         // Game states
         const STATE_NUMBERED = 0;
@@ -361,20 +386,44 @@
             { color: '#9400D3', name: 'Violet' }
         ];
         
-        // Simple Ubba silhouette sections (first 5 colors)
+        // Dog shape 1 (sitting dog) for color 1
+        const dogShape1 = [
+            // Body
+            {x: 200, y: 350}, {x: 300, y: 350}, {x: 320, y: 400}, {x: 320, y: 480}, 
+            {x: 180, y: 480}, {x: 180, y: 400}
+        ];
+
+        // Dog shape 2 (running dog) for color 2
+        const dogShape2 = [
+            // Different dog pose - running/stretching
+            {x: 150, y: 250}, {x: 350, y: 250}, {x: 380, y: 300}, {x: 380, y: 350},
+            {x: 350, y: 380}, {x: 320, y: 370}, {x: 280, y: 380}, {x: 240, y: 370},
+            {x: 200, y: 380}, {x: 150, y: 350}, {x: 120, y: 300}
+        ];
+        
+        // Simple Ubba silhouette sections with dog shapes for first two colors
         const simpleSections = [
-            { number: 1, path: [{x:150,y:150}, {x:450,y:150}, {x:450,y:450}, {x:150,y:450}] }, // Body
-            { number: 2, path: [{x:225,y:75}, {x:375,y:75}, {x:375,y:150}, {x:225,y:150}] }, // Head
+            { number: 1, path: dogShape1 }, // Dog sitting
+            { number: 2, path: dogShape2 }, // Dog running
             { number: 3, path: [{x:150,y:300}, {x:75,y:450}, {x:150,y:450}] }, // Left leg
             { number: 4, path: [{x:450,y:300}, {x:525,y:450}, {x:450,y:450}] }, // Right leg
             { number: 5, path: [{x:300,y:75}, {x:325,y:50}, {x:350,y:75}] } // Ear
         ];
         
-        // Complex Ubba shape (all 8 colors)
+        // Complex Ubba shape (all 8 colors) with more detailed dog shapes
         const complexSections = [
-            // Body parts
-            { number: 1, path: [{x:100,y:200}, {x:500,y:200}, {x:500,y:400}, {x:100,y:400}] }, // Main body
-            { number: 2, path: [{x:200,y:100}, {x:400,y:100}, {x:400,y:200}, {x:200,y:200}] }, // Head
+            // Enhanced dog shapes
+            { number: 1, path: [
+                {x: 150, y: 200}, {x: 300, y: 200}, {x: 320, y: 250}, {x: 350, y: 280},
+                {x: 350, y: 350}, {x: 320, y: 380}, {x: 280, y: 390}, {x: 240, y: 380},
+                {x: 200, y: 390}, {x: 150, y: 380}, {x: 120, y: 350}, {x: 120, y: 280}
+            ]}, // Enhanced sitting dog
+            { number: 2, path: [
+                {x: 200, y: 100}, {x: 400, y: 100}, {x: 430, y: 130}, {x: 450, y: 170},
+                {x: 450, y: 200}, {x: 420, y: 220}, {x: 380, y: 210}, {x: 340, y: 220},
+                {x: 300, y: 210}, {x: 260, y: 220}, {x: 220, y: 210}, {x: 180, y: 220},
+                {x: 150, y: 200}, {x: 150, y: 170}, {x: 170, y: 130}
+            ]}, // Enhanced running dog
             { number: 3, path: [{x:100,y:300}, {x:50,y:450}, {x:150,y:450}] }, // Left leg
             { number: 4, path: [{x:500,y:300}, {x:550,y:450}, {x:450,y:450}] }, // Right leg
             { number: 5, path: [{x:300,y:100}, {x:325,y:75}, {x:350,y:100}] }, // Ear
@@ -393,12 +442,19 @@
         let selectedPaintColor = null;
         let brushSize = 10;
         let dogImage = new Image();
+        let paintStrokes = []; // Store paint strokes for undo functionality
         
         // Initialize the game
         function initGame() {
             // Load the dog outline image
             dogImage.src = 'assets/sprites/dogoutline.png';
             dogImage.onload = function() {
+                drawCurrentState();
+            };
+            
+            // Create a fallback dog outline if image doesn't load
+            dogImage.onerror = function() {
+                console.log('Dog image failed to load, using fallback');
                 drawCurrentState();
             };
             
@@ -418,6 +474,9 @@
             
             // Set up submit button
             submitBtn.addEventListener('click', submitDrawing);
+            
+            // Set up undo button
+            undoBtn.addEventListener('click', undoLastStroke);
         }
         
         // Set up appropriate canvas listeners based on current state
@@ -498,8 +557,33 @@
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             
             if (currentState === STATE_PAINT) {
-                // Draw the dog outline image
-                ctx.drawImage(dogImage, 0, 0, canvas.width, canvas.height);
+                // Draw the dog outline - create a simple fallback if image doesn't load
+                if (dogImage.complete && dogImage.naturalWidth > 0) {
+                    ctx.drawImage(dogImage, 0, 0, canvas.width, canvas.height);
+                } else {
+                    // Draw a simple dog outline as fallback
+                    ctx.strokeStyle = '#8b0000';
+                    ctx.lineWidth = 3;
+                    ctx.beginPath();
+                    ctx.rect(50, 50, 500, 500);
+                    ctx.stroke();
+                }
+                
+                // Redraw all paint strokes
+                paintStrokes.forEach(stroke => {
+                    ctx.strokeStyle = stroke.color;
+                    ctx.lineWidth = stroke.size;
+                    ctx.lineCap = 'round';
+                    ctx.beginPath();
+                    stroke.points.forEach((point, index) => {
+                        if (index === 0) {
+                            ctx.moveTo(point.x, point.y);
+                        } else {
+                            ctx.lineTo(point.x, point.y);
+                        }
+                    });
+                    ctx.stroke();
+                });
                 return;
             }
             
@@ -722,11 +806,15 @@
                 glitchEffect.style.opacity = '0';
                 transitionOverlay.style.opacity = '0';
                 
+                // Clear paint strokes for fresh start
+                paintStrokes = [];
+                
                 // Draw dog outline
                 drawCurrentState();
                 
-                // Show submit button
+                // Show submit and undo buttons
                 submitBtn.style.display = 'block';
+                undoBtn.style.display = 'block';
                 
                 // Show creepy message
                 hiddenMessage.textContent = "PAINT UBBAS TRUE FORM";
@@ -744,23 +832,46 @@
         }
         
         // Paint mode functions
+        let currentStroke = null;
+        
         function startPainting(e) {
             if (!selectedPaintColor) return;
             isPainting = true;
-            paint(e);
+            
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            // Start a new stroke
+            currentStroke = {
+                color: selectedPaintColor,
+                size: brushSize,
+                points: [{x, y}]
+            };
+            
+            ctx.beginPath();
+            ctx.moveTo(x, y);
         }
         
         function stopPainting() {
+            if (isPainting && currentStroke && currentStroke.points.length > 0) {
+                // Save the completed stroke
+                paintStrokes.push(currentStroke);
+                currentStroke = null;
+            }
             isPainting = false;
             ctx.beginPath();
         }
         
         function paint(e) {
-            if (!isPainting || !selectedPaintColor) return;
+            if (!isPainting || !selectedPaintColor || !currentStroke) return;
             
             const rect = canvas.getBoundingClientRect();
             const x = e.clientX - rect.left;
             const y = e.clientY - rect.top;
+            
+            // Add point to current stroke
+            currentStroke.points.push({x, y});
             
             ctx.lineWidth = brushSize;
             ctx.lineCap = 'round';
@@ -772,10 +883,18 @@
             ctx.moveTo(x, y);
         }
         
+        function undoLastStroke() {
+            if (paintStrokes.length > 0) {
+                paintStrokes.pop();
+                drawCurrentState(); // Redraw everything without the last stroke
+            }
+        }
+        
         function submitDrawing() {
             // Show completion message
             completionMessage.style.display = 'flex';
             submitBtn.style.display = 'none';
+            undoBtn.style.display = 'none';
         }
         
         // Drag and drop functions
@@ -839,10 +958,10 @@
             });
             
             if (filledSection) {
-                // Check if we should transform to complex shape (4/5 unique numbers filled in simple form)
+                // Check if we should transform to complex shape (2/5 unique numbers filled in simple form)
                 if (currentState === STATE_NUMBERED) {
                     const uniqueCompleted = [...new Set(completedSections.map(id => id.split('-')[0]))];
-                    if (uniqueCompleted.length >= 2) { // Changed from 4 to 2 as per request
+                    if (uniqueCompleted.length >= 2) {
                         transformToComplexShape();
                     }
                 }
