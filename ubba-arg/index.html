@@ -214,10 +214,18 @@
         }
 
         .evidence-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            display: flex;
+            flex-direction: column;
+            align-items: center;
             gap: 2rem;
             margin: 3rem 0;
+        }
+
+        .card-row {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            width: 100%;
         }
 
         .evidence-card {
@@ -227,6 +235,7 @@
             position: relative;
             transition: all 0.3s ease;
             min-height: 200px;
+            width: 300px;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
@@ -422,40 +431,44 @@
             </div>
 
             <div class="evidence-grid">
-                <div class="evidence-card unlocked" id="evidence1">
-                    <div class="evidence-title">INITIAL SIGHTING</div>
-                    <div class="evidence-content">
-                        <p>First documented encounter: October 26th, 2022. Subject appeared in backyard surveillance footage. Bark pattern analysis revealed anomalous frequency modulation.</p>
-                        <div class="audio-hint">Click to unlock - No password required</div>
+                <div class="card-row">
+                    <div class="evidence-card unlocked" id="evidence1">
+                        <div class="evidence-title">INITIAL SIGHTING</div>
+                        <div class="evidence-content">
+                            <p>First documented encounter: October 26th, 2022. Subject appeared in backyard surveillance footage. Bark pattern analysis revealed anomalous frequency modulation.</p>
+                            <div class="audio-hint">Click to unlock - No password required</div>
+                        </div>
+                        <div class="evidence-requirement">Click to unlock</div>
                     </div>
-                    <div class="evidence-requirement">Click to unlock</div>
+
+                    <div class="evidence-card locked" id="evidence2">
+                        <div class="evidence-title">AUDIO ANALYSIS</div>
+                        <div class="evidence-content">
+                            <p>Spectrogram shows patterns that shouldn't exist in canine vocalizations. Each bark contains encrypted data packets. The silence between barks... it's not empty.</p>
+                            <div class="audio-hint">The password is: WHISPERS</div>
+                        </div>
+                        <div class="evidence-requirement">Requires: Initial Sighting + Password</div>
+                    </div>
                 </div>
 
-                <div class="evidence-card locked" id="evidence2">
-                    <div class="evidence-title">AUDIO ANALYSIS</div>
-                    <div class="evidence-content">
-                        <p>Spectrogram shows patterns that shouldn't exist in canine vocalizations. Each bark contains encrypted data packets. The silence between barks... it's not empty.</p>
-                        <div class="audio-hint">The password is: WHISPERS</div>
+                <div class="card-row">
+                    <div class="evidence-card locked" id="evidence3">
+                        <div class="evidence-title">VICTIM TESTIMONIES</div>
+                        <div class="evidence-content">
+                            <p>All witnesses report the same phenomenon: Ubba appears in dreams before physical encounters. Subjects describe "knowledge transfer" during sleep states.</p>
+                            <p>"It showed me things... things about myself I never knew." - Subject Delta</p>
+                        </div>
+                        <div class="evidence-requirement">Requires: Audio Analysis + 2 other files</div>
                     </div>
-                    <div class="evidence-requirement">Requires: Initial Sighting + Password</div>
-                </div>
 
-                <div class="evidence-card locked" id="evidence3">
-                    <div class="evidence-title">VICTIM TESTIMONIES</div>
-                    <div class="evidence-content">
-                        <p>All witnesses report the same phenomenon: Ubba appears in dreams before physical encounters. Subjects describe "knowledge transfer" during sleep states.</p>
-                        <p>"It showed me things... things about myself I never knew." - Subject Delta</p>
+                    <div class="evidence-card locked" id="evidence4">
+                        <div class="evidence-title">NETWORK INFECTION</div>
+                        <div class="evidence-content">
+                            <p>Ubba's signal spreads through digital networks. Any device that records the bark becomes a transmitter. The infection vector is acoustic, but the payload is digital.</p>
+                            <div class="audio-hint">UBBA IS WATCHING</div>
+                        </div>
+                        <div class="evidence-requirement">Requires: 75% Archive Access</div>
                     </div>
-                    <div class="evidence-requirement">Requires: Audio Analysis + 2 other files</div>
-                </div>
-
-                <div class="evidence-card locked" id="evidence4">
-                    <div class="evidence-title">NETWORK INFECTION</div>
-                    <div class="evidence-content">
-                        <p>Ubba's signal spreads through digital networks. Any device that records the bark becomes a transmitter. The infection vector is acoustic, but the payload is digital.</p>
-                        <div class="audio-hint">UBBA IS WATCHING</div>
-                    </div>
-                    <div class="evidence-requirement">Requires: 75% Archive Access</div>
                 </div>
             </div>
 
@@ -610,6 +623,15 @@
                 return;
             }
 
+            if (id === 1) {
+                // Card 1 is already unlocked, just show content
+                if (!card.classList.contains('active')) {
+                    card.classList.add('active');
+                    showEvidenceMessage(id);
+                }
+                return;
+            }
+
             if (!card.classList.contains('unlocked')) {
                 card.classList.add('unlocked');
                 unlockedEvidence++;
@@ -620,10 +642,13 @@
         }
 
         function checkUnlockConditions() {
-            if (unlockedEvidence >= 1) {
-                document.getElementById('evidence2').classList.remove('locked');
+            // Card 2 requires password (handled separately)
+            // Card 3 requires Card 2 + 2 other files
+            if (unlockedEvidence >= 3) {
+                document.getElementById('evidence3').classList.remove('locked');
             }
-            if (unlockedEvidence >= 3 && progress >= 75) {
+            // Card 4 requires 75% archive access
+            if (progress >= 75) {
                 document.getElementById('evidence4').classList.remove('locked');
             }
         }
@@ -644,6 +669,7 @@
                 document.getElementById('evidence2').classList.remove('locked');
                 unlockedEvidence++;
                 updateProgress();
+                checkUnlockConditions();
                 showMessage("AUDIO ANALYSIS UNLOCKED", "The spectrogram reveals hidden patterns. Ubba's barks contain encrypted data streams.");
             } else {
                 passwordAttempts++;
