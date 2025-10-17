@@ -41,9 +41,8 @@
         .office-bg {
             width: 100%;
             height: 100%;
-            background-image: url('ubba-arg/assets/cameras/Office.png');
+            background: #1a1a1a url('https://raw.githubusercontent.com/clampert1/Ubba/main/ubba-arg/assets/cameras/Office.png') no-repeat center center;
             background-size: cover;
-            background-position: center;
             position: relative;
         }
 
@@ -126,6 +125,7 @@
             font-size: 16px;
             cursor: pointer;
             pointer-events: all;
+            z-index: 15;
         }
 
         #left-door-button {
@@ -139,6 +139,7 @@
             font-size: 16px;
             cursor: pointer;
             pointer-events: all;
+            z-index: 15;
         }
 
         #left-light-button {
@@ -152,6 +153,7 @@
             font-size: 16px;
             cursor: pointer;
             pointer-events: all;
+            z-index: 15;
         }
 
         /* Camera System */
@@ -189,6 +191,7 @@
             height: 100%;
             background-size: cover;
             background-position: center;
+            background-color: #1a1a1a;
         }
 
         .camera-label {
@@ -199,11 +202,12 @@
             padding: 5px 10px;
             border: 1px solid #0f0;
             font-size: 14px;
+            z-index: 10;
         }
 
         .camera-nav {
             position: absolute;
-            bottom: 20px;
+            bottom: 80px;
             left: 50%;
             transform: translateX(-50%);
             display: flex;
@@ -227,12 +231,11 @@
             position: absolute;
             width: 150px;
             height: 200px;
-            background-image: url('ubba-arg/assets/sprites/ubba.png');
+            background: #8b0000 url('https://raw.githubusercontent.com/clampert1/Ubba/main/ubba-arg/assets/sprites/ubba.png') no-repeat center center;
             background-size: contain;
-            background-repeat: no-repeat;
-            background-position: center;
             display: none;
             transition: all 0.5s ease;
+            z-index: 5;
         }
 
         .ubba.visible {
@@ -417,32 +420,32 @@
             <div class="camera-feed">
                 <!-- Camera Rooms -->
                 <div class="camera-room active" id="cam1">
-                    <div class="camera-bg" style="background-image: url('ubba-arg/assets/cameras/cam1.png')"></div>
+                    <div class="camera-bg" style="background-image: url('https://raw.githubusercontent.com/clampert1/Ubba/main/ubba-arg/assets/cameras/cam1.png')"></div>
                     <div class="camera-label">LIVING ROOM</div>
                     <div class="ubba" id="ubba-cam1"></div>
                 </div>
                 <div class="camera-room" id="cam2">
-                    <div class="camera-bg" style="background-image: url('ubba-arg/assets/cameras/cam2.png')"></div>
+                    <div class="camera-bg" style="background-image: url('https://raw.githubusercontent.com/clampert1/Ubba/main/ubba-arg/assets/cameras/cam2.png')"></div>
                     <div class="camera-label">BATHROOM</div>
                     <div class="ubba" id="ubba-cam2"></div>
                 </div>
                 <div class="camera-room" id="cam3">
-                    <div class="camera-bg" style="background-image: url('ubba-arg/assets/cameras/cam3.png')"></div>
+                    <div class="camera-bg" style="background-image: url('https://raw.githubusercontent.com/clampert1/Ubba/main/ubba-arg/assets/cameras/cam3.png')"></div>
                     <div class="camera-label">KITCHEN</div>
                     <div class="ubba" id="ubba-cam3"></div>
                 </div>
                 <div class="camera-room" id="cam4">
-                    <div class="camera-bg" style="background-image: url('ubba-arg/assets/cameras/cam4.png')"></div>
+                    <div class="camera-bg" style="background-image: url('https://raw.githubusercontent.com/clampert1/Ubba/main/ubba-arg/assets/cameras/cam4.png')"></div>
                     <div class="camera-label">BEDROOM</div>
                     <div class="ubba" id="ubba-cam4"></div>
                 </div>
                 <div class="camera-room" id="cam5">
-                    <div class="camera-bg" style="background-image: url('ubba-arg/assets/cameras/cam5.png')"></div>
+                    <div class="camera-bg" style="background-image: url('https://raw.githubusercontent.com/clampert1/Ubba/main/ubba-arg/assets/cameras/cam5.png')"></div>
                     <div class="camera-label">HALLWAY</div>
                     <div class="ubba" id="ubba-cam5"></div>
                 </div>
 
-                <!-- Camera Navigation - Fixed positioning -->
+                <!-- Camera Navigation -->
                 <div class="camera-nav">
                     <button class="camera-nav-btn" id="prev-cam">← PREV</button>
                     <button class="camera-nav-btn" id="next-cam">NEXT →</button>
@@ -486,11 +489,11 @@
     </div>
 
     <!-- Audio Elements -->
-    <audio id="jumpscare-sound" src="ubba-arg/assets/sounds/jumpscare.mp3" preload="auto"></audio>
-    <audio id="warning-sound" src="ubba-arg/assets/sounds/jumpscare.mp3" preload="auto"></audio>
-    <audio id="camera-sound" src="ubba-arg/assets/sounds/camera.mp3" preload="auto"></audio>
-    <audio id="door-sound" src="ubba-arg/assets/sounds/door.mp3" preload="auto"></audio>
-    <audio id="light-sound" src="ubba-arg/assets/sounds/light.mp3" preload="auto"></audio>
+    <audio id="jumpscare-sound" src="https://raw.githubusercontent.com/clampert1/Ubba/main/ubba-arg/assets/sounds/jumpscare.mp3" preload="auto"></audio>
+    <audio id="warning-sound" src="https://raw.githubusercontent.com/clampert1/Ubba/main/ubba-arg/assets/sounds/jumpscare.mp3" preload="auto"></audio>
+    <audio id="camera-sound" src="https://raw.githubusercontent.com/clampert1/Ubba/main/ubba-arg/assets/sounds/camera.mp3" preload="auto"></audio>
+    <audio id="door-sound" src="https://raw.githubusercontent.com/clampert1/Ubba/main/ubba-arg/assets/sounds/door.mp3" preload="auto"></audio>
+    <audio id="light-sound" src="https://raw.githubusercontent.com/clampert1/Ubba/main/ubba-arg/assets/sounds/light.mp3" preload="auto"></audio>
 
     <script>
         // Game State
