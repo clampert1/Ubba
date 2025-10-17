@@ -562,12 +562,12 @@
 
         // Schedule Ubba attacks
         function scheduleAttacks() {
-            // First attack between 5:10-5:20 AM
-            const firstAttackTime = 310 + Math.floor(Math.random() * 10);
+            // First attack between 5:22-5:29 AM
+            const firstAttackTime = 322 + Math.floor(Math.random() * 7); // 322-328 (5:22-5:28)
             setTimeout(() => startAttack(), (firstAttackTime - 300) * 1000);
-
-            // Second attack between 5:30-5:40 AM
-            const secondAttackTime = 330 + Math.floor(Math.random() * 10);
+            
+            // Second attack between 5:49-5:56 AM
+            const secondAttackTime = 349 + Math.floor(Math.random() * 7); // 349-355 (5:49-5:55)
             setTimeout(() => startAttack(), (secondAttackTime - 300) * 1000);
         }
 
