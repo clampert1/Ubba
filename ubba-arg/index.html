@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>UBBA - THE LISTENING</title>
+    <title>THE UBBA INCIDENT</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Special+Elite&display=swap');
         
         * {
             margin: 0;
@@ -14,12 +14,11 @@
         }
 
         body {
-            background: #000;
+            background: #0a0a0a;
             color: #8a0303;
-            font-family: 'Orbitron', monospace;
-            overflow: hidden;
-            height: 100vh;
-            cursor: none;
+            font-family: 'Special Elite', cursive;
+            overflow-x: hidden;
+            min-height: 100vh;
             position: relative;
         }
 
@@ -29,19 +28,9 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: 
-                linear-gradient(rgba(18, 16, 16, 0.1) 50%, rgba(0, 0, 0, 0.1) 50%),
-                linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
-            background-size: 100% 2px, 3px 100%;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.03'/%3E%3C/svg%3E");
             pointer-events: none;
             z-index: 100;
-            opacity: 0.3;
-            animation: noiseAnim 0.1s infinite;
-        }
-
-        @keyframes noiseAnim {
-            0% { background-position: 0 0, 0 0; }
-            100% { background-position: 0 100%, 100% 0; }
         }
 
         .vignette {
@@ -50,39 +39,39 @@
             left: 0;
             width: 100%;
             height: 100%;
-            box-shadow: inset 0 0 200px rgba(0, 0, 0, 0.9);
+            box-shadow: inset 0 0 150px rgba(0, 0, 0, 0.9);
             pointer-events: none;
             z-index: 99;
         }
 
-        .main-container {
-            position: relative;
-            z-index: 10;
-            padding: 2rem;
+        .container {
             max-width: 800px;
             margin: 0 auto;
-            opacity: 0;
-            animation: slowFadeIn 8s ease-in forwards;
-        }
-
-        @keyframes slowFadeIn {
-            to { opacity: 1; }
-        }
-
-        .glitch-container {
+            padding: 2rem;
             position: relative;
+            z-index: 10;
+        }
+
+        .header {
             text-align: center;
             margin-bottom: 3rem;
+            padding: 2rem;
+            border: 1px solid #8a0303;
+            background: rgba(10, 0, 0, 0.8);
+            position: relative;
+            overflow: hidden;
         }
 
         .glitch {
-            position: relative;
-            color: #8a0303;
-            font-size: 4rem;
+            font-family: 'Orbitron', monospace;
+            font-size: 3.5rem;
             font-weight: 900;
-            letter-spacing: 0.5rem;
+            color: #8a0303;
             text-transform: uppercase;
-            animation: glitch-skew 4s infinite linear alternate-reverse;
+            letter-spacing: 0.3rem;
+            position: relative;
+            display: inline-block;
+            margin-bottom: 1rem;
         }
 
         .glitch::before,
@@ -96,190 +85,263 @@
         }
 
         .glitch::before {
+            left: 2px;
+            text-shadow: -2px 0 #ff0000;
+            clip: rect(44px, 450px, 56px, 0);
             animation: glitch-anim 5s infinite linear alternate-reverse;
-            color: #ff0000;
-            z-index: -1;
         }
 
         .glitch::after {
+            left: -2px;
+            text-shadow: -2px 0 #00ffff;
+            clip: rect(44px, 450px, 56px, 0);
             animation: glitch-anim2 3s infinite linear alternate-reverse;
-            color: #00ffff;
-            z-index: -2;
         }
 
         @keyframes glitch-anim {
-            0% { transform: translate(0); }
-            20% { transform: translate(-2px, 2px); }
-            40% { transform: translate(-2px, -2px); }
-            60% { transform: translate(2px, 2px); }
-            80% { transform: translate(2px, -2px); }
-            100% { transform: translate(0); }
+            0% { clip: rect(42px, 9999px, 44px, 0); }
+            5% { clip: rect(12px, 9999px, 59px, 0); }
+            10% { clip: rect(48px, 9999px, 29px, 0); }
+            15% { clip: rect(42px, 9999px, 73px, 0); }
+            20% { clip: rect(63px, 9999px, 27px, 0); }
+            25% { clip: rect(34px, 9999px, 55px, 0); }
+            30% { clip: rect(86px, 9999px, 73px, 0); }
+            35% { clip: rect(20px, 9999px, 20px, 0); }
+            40% { clip: rect(26px, 9999px, 60px, 0); }
+            45% { clip: rect(25px, 9999px, 66px, 0); }
+            50% { clip: rect(57px, 9999px, 98px, 0); }
+            55% { clip: rect(5px, 9999px, 46px, 0); }
+            60% { clip: rect(82px, 9999px, 31px, 0); }
+            65% { clip: rect(54px, 9999px, 27px, 0); }
+            70% { clip: rect(28px, 9999px, 99px, 0); }
+            75% { clip: rect(45px, 9999px, 69px, 0); }
+            80% { clip: rect(23px, 9999px, 85px, 0); }
+            85% { clip: rect(54px, 9999px, 84px, 0); }
+            90% { clip: rect(45px, 9999px, 47px, 0); }
+            95% { clip: rect(37px, 9999px, 20px, 0); }
+            100% { clip: rect(4px, 9999px, 91px, 0); }
         }
 
         @keyframes glitch-anim2 {
-            0% { transform: translate(0); }
-            20% { transform: translate(2px, 0); }
-            40% { transform: translate(-2px, 0); }
-            60% { transform: translate(2px, 0); }
-            80% { transform: translate(-2px, 0); }
-            100% { transform: translate(0); }
+            0% { clip: rect(65px, 9999px, 100px, 0); }
+            5% { clip: rect(52px, 9999px, 74px, 0); }
+            10% { clip: rect(79px, 9999px, 85px, 0); }
+            15% { clip: rect(75px, 9999px, 5px, 0); }
+            20% { clip: rect(67px, 9999px, 61px, 0); }
+            25% { clip: rect(14px, 9999px, 79px, 0); }
+            30% { clip: rect(1px, 9999px, 66px, 0); }
+            35% { clip: rect(86px, 9999px, 30px, 0); }
+            40% { clip: rect(23px, 9999px, 98px, 0); }
+            45% { clip: rect(85px, 9999px, 72px, 0); }
+            50% { clip: rect(71px, 9999px, 75px, 0); }
+            55% { clip: rect(2px, 9999px, 48px, 0); }
+            60% { clip: rect(30px, 9999px, 16px, 0); }
+            65% { clip: rect(59px, 9999px, 50px, 0); }
+            70% { clip: rect(41px, 9999px, 62px, 0); }
+            75% { clip: rect(2px, 9999px, 82px, 0); }
+            80% { clip: rect(47px, 9999px, 73px, 0); }
+            85% { clip: rect(3px, 9999px, 27px, 0); }
+            90% { clip: rect(26px, 9999px, 55px, 0); }
+            95% { clip: rect(42px, 9999px, 97px, 0); }
+            100% { clip: rect(38px, 9999px, 49px, 0); }
         }
 
-        @keyframes glitch-skew {
-            0% { transform: skew(0deg); }
-            20% { transform: skew(-2deg); }
-            40% { transform: skew(0deg); }
-            60% { transform: skew(1deg); }
-            80% { transform: skew(-1deg); }
-            100% { transform: skew(0deg); }
+        .subtitle {
+            font-size: 1.2rem;
+            color: #666;
+            letter-spacing: 0.5rem;
+            text-transform: uppercase;
         }
 
-        .terminal-text {
-            font-size: 1.1rem;
-            line-height: 1.8;
-            margin-bottom: 2rem;
-            text-align: justify;
-            opacity: 0;
-            animation: typeIn 12s 2s forwards;
-            border-left: 2px solid #8a0303;
-            padding-left: 1rem;
+        .evidence-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 2rem;
+            margin: 3rem 0;
         }
 
-        @keyframes typeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-
-        .interactive-terminal {
-            background: rgba(10, 0, 0, 0.8);
+        .evidence-card {
+            background: rgba(15, 0, 0, 0.8);
             border: 1px solid #8a0303;
             padding: 1.5rem;
-            margin: 2rem 0;
             position: relative;
-            opacity: 0;
-            animation: fadeIn 4s 6s forwards;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            min-height: 200px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
         }
 
-        .terminal-prompt {
-            color: #00ff00;
+        .evidence-card:hover {
+            border-color: #ff0000;
+            box-shadow: 0 0 20px rgba(255, 0, 0, 0.3);
+            transform: translateY(-5px);
+        }
+
+        .evidence-card.unlocked {
+            background: rgba(25, 0, 0, 0.9);
+            border-color: #00ff00;
+        }
+
+        .evidence-card.locked {
+            opacity: 0.6;
+            filter: grayscale(1);
+        }
+
+        .evidence-title {
+            font-family: 'Orbitron', monospace;
+            font-size: 1.3rem;
+            color: #8a0303;
             margin-bottom: 1rem;
-            font-family: 'Courier New', monospace;
+            text-transform: uppercase;
+            letter-spacing: 0.1rem;
         }
 
-        .terminal-input {
-            background: transparent;
-            border: none;
-            color: #00ff00;
-            font-family: 'Courier New', monospace;
-            font-size: 1rem;
-            width: 100%;
+        .evidence-content {
+            color: #ccc;
+            line-height: 1.6;
+            font-size: 0.9rem;
+            display: none;
+        }
+
+        .evidence-card.unlocked .evidence-content {
+            display: block;
+        }
+
+        .evidence-requirement {
+            font-size: 0.8rem;
+            color: #666;
+            font-style: italic;
+            margin-top: 1rem;
+        }
+
+        .password-section {
+            text-align: center;
+            margin: 3rem 0;
+            padding: 2rem;
+            border: 1px solid #8a0303;
+            background: rgba(10, 0, 0, 0.8);
+        }
+
+        .password-input {
+            background: rgba(0, 0, 0, 0.8);
+            border: 1px solid #8a0303;
+            color: #8a0303;
+            padding: 1rem;
+            font-family: 'Special Elite', cursive;
+            font-size: 1.1rem;
+            width: 300px;
+            text-align: center;
+            margin: 1rem 0;
+        }
+
+        .password-input:focus {
             outline: none;
-            caret-color: #00ff00;
+            border-color: #ff0000;
+            box-shadow: 0 0 10px rgba(255, 0, 0, 0.3);
         }
 
-        .terminal-input::placeholder {
-            color: #008000;
+        .submit-btn {
+            background: transparent;
+            border: 1px solid #8a0303;
+            color: #8a0303;
+            padding: 1rem 2rem;
+            font-family: 'Special Elite', cursive;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.1rem;
         }
 
-        .breathing-circle {
+        .submit-btn:hover {
+            background: #8a0303;
+            color: #000;
+            border-color: #ff0000;
+        }
+
+        .progress-section {
+            margin: 2rem 0;
+            text-align: center;
+        }
+
+        .progress-text {
+            font-family: 'Orbitron', monospace;
+            font-size: 1.1rem;
+            color: #8a0303;
+            margin-bottom: 1rem;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 4px;
+            background: rgba(138, 3, 3, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            position: absolute;
+            height: 100%;
+            background: #8a0303;
+            width: 0%;
+            transition: width 0.5s ease;
+        }
+
+        .hidden-message {
             position: fixed;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            width: 300px;
-            height: 300px;
-            border: 2px solid rgba(138, 3, 3, 0.3);
-            border-radius: 50%;
-            animation: breathe 8s ease-in-out infinite;
-            pointer-events: none;
-            z-index: 5;
-        }
-
-        @keyframes breathe {
-            0%, 100% { 
-                transform: translate(-50%, -50%) scale(1);
-                border-color: rgba(138, 3, 3, 0.3);
-            }
-            50% { 
-                transform: translate(-50%, -50%) scale(1.2);
-                border-color: rgba(255, 0, 0, 0.6);
-            }
-        }
-
-        .shadow-presence {
-            position: fixed;
-            width: 200px;
-            height: 400px;
-            background: radial-gradient(ellipse at center, rgba(138, 3, 3, 0.1) 0%, transparent 70%);
-            opacity: 0;
-            transition: all 3s ease;
-            pointer-events: none;
-            z-index: 20;
-        }
-
-        .pulse-dot {
-            position: fixed;
-            width: 8px;
-            height: 8px;
-            background: #ff0000;
-            border-radius: 50%;
-            opacity: 0;
-            z-index: 30;
-            pointer-events: none;
-        }
-
-        .whisper-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.9);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            opacity: 0;
-            pointer-events: none;
+            background: rgba(0, 0, 0, 0.95);
+            border: 2px solid #8a0303;
+            padding: 3rem;
             z-index: 1000;
-            transition: opacity 2s;
+            text-align: center;
+            display: none;
+            max-width: 500px;
+            box-shadow: 0 0 50px rgba(255, 0, 0, 0.5);
         }
 
-        .whisper-text {
+        .hidden-message.active {
+            display: block;
+            animation: messageAppear 0.5s ease;
+        }
+
+        @keyframes messageAppear {
+            from { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+            to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+        }
+
+        .close-message {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: none;
+            border: none;
             color: #8a0303;
-            font-size: 2rem;
-            text-align: center;
-            text-transform: uppercase;
-            letter-spacing: 0.5rem;
-            opacity: 0;
-            transform: scale(0.8);
-            transition: all 2s;
+            font-size: 1.5rem;
+            cursor: pointer;
         }
 
-        .redirect-overlay {
+        .audio-hint {
+            margin: 1rem 0;
+            padding: 1rem;
+            border: 1px dashed #8a0303;
+            font-style: italic;
+            color: #666;
+        }
+
+        .blood-splatter {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: #000;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            opacity: 0;
             pointer-events: none;
-            z-index: 2000;
-            transition: opacity 3s;
+            z-index: 98;
+            opacity: 0;
+            transition: opacity 0.3s;
         }
 
-        .redirect-text {
-            color: #ff0000;
-            font-size: 3rem;
-            text-align: center;
-            text-transform: uppercase;
-            letter-spacing: 1rem;
-        }
-
-        .static-burst {
+        .static-overlay {
             position: fixed;
             top: 0;
             left: 0;
@@ -288,281 +350,280 @@
             background: 
                 repeating-linear-gradient(
                     0deg,
-                    rgba(255, 255, 255, 0.1) 0px,
-                    rgba(255, 255, 255, 0.1) 1px,
+                    rgba(255, 255, 255, 0.03) 0px,
+                    rgba(255, 255, 255, 0.03) 1px,
                     transparent 1px,
                     transparent 2px
                 );
-            opacity: 0;
             pointer-events: none;
-            z-index: 999;
+            z-index: 101;
+            opacity: 0;
+            animation: staticFlash 0.1s;
         }
 
-        .custom-cursor {
-            position: fixed;
-            width: 20px;
-            height: 20px;
-            background: radial-gradient(circle, #ff0000, transparent);
-            border-radius: 50%;
-            pointer-events: none;
-            z-index: 9999;
-            mix-blend-mode: difference;
-            transition: transform 0.1s;
+        @keyframes staticFlash {
+            0% { opacity: 0; }
+            50% { opacity: 0.3; }
+            100% { opacity: 0; }
         }
     </style>
 </head>
 <body>
     <div class="noise"></div>
     <div class="vignette"></div>
-    <div class="breathing-circle"></div>
-    <div class="shadow-presence" id="shadow"></div>
-    <div class="custom-cursor"></div>
-
-    <div class="main-container">
-        <div class="glitch-container">
-            <div class="glitch" data-text="UBBA IS LISTENING">UBBA IS LISTENING</div>
+    
+    <div class="container">
+        <div class="header">
+            <div class="glitch" data-text="THE UBBA INCIDENT">THE UBBA INCIDENT</div>
+            <div class="subtitle">CLASSIFIED RESEARCH ARCHIVE</div>
         </div>
 
-        <div class="terminal-text" id="text1">
-            Initializing system diagnostic... Ubba protocol detected. The subject exhibits anomalous acoustic properties. Bark patterns suggest non-terrestrial origin.
+        <div class="progress-section">
+            <div class="progress-text">ARCHIVE ACCESS: <span id="progressPercent">0%</span></div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
         </div>
 
-        <div class="terminal-text" id="text2">
-            Warning: Auditory memetic agents confirmed. Exposure leads to irreversible neural restructuring. Subject appears to be gathering data through victim responses.
+        <div class="evidence-grid">
+            <div class="evidence-card" id="evidence1" onclick="unlockEvidence(1)">
+                <div class="evidence-title">INITIAL SIGHTING</div>
+                <div class="evidence-content">
+                    <p>First documented encounter: October 26th, 2022. Subject appeared in backyard surveillance footage. Bark pattern analysis revealed anomalous frequency modulation.</p>
+                    <div class="audio-hint">Listen closely to the silence between barks...</div>
+                </div>
+                <div class="evidence-requirement">Click to unlock</div>
+            </div>
+
+            <div class="evidence-card locked" id="evidence2" onclick="unlockEvidence(2)">
+                <div class="evidence-title">AUDIO ANALYSIS</div>
+                <div class="evidence-content">
+                    <p>Spectrogram shows patterns that shouldn't exist in canine vocalizations. Each bark contains encrypted data packets. The silence between barks... it's not empty.</p>
+                    <div class="audio-hint">The password is hidden in the first recording</div>
+                </div>
+                <div class="evidence-requirement">Requires: Initial Sighting + Password</div>
+            </div>
+
+            <div class="evidence-card locked" id="evidence3" onclick="unlockEvidence(3)">
+                <div class="evidence-title">VICTIM TESTIMONIES</div>
+                <div class="evidence-content">
+                    <p>All witnesses report the same phenomenon: Ubba appears in dreams before physical encounters. Subjects describe "knowledge transfer" during sleep states.</p>
+                    <p>"It showed me things... things about myself I never knew." - Subject Delta</p>
+                </div>
+                <div class="evidence-requirement">Requires: Audio Analysis + 2 other files</div>
+            </div>
+
+            <div class="evidence-card locked" id="evidence4" onclick="unlockEvidence(4)">
+                <div class="evidence-title">NETWORK INFECTION</div>
+                <div class="evidence-content">
+                    <p>Ubba's signal spreads through digital networks. Any device that records the bark becomes a transmitter. The infection vector is acoustic, but the payload is digital.</p>
+                    <div class="audio-hint">Check the source code of this page...</div>
+                </div>
+                <div class="evidence-requirement">Requires: 75% Archive Access</div>
+            </div>
         </div>
 
-        <div class="terminal-text" id="text3">
-            Recent analysis indicates Ubba isn't broadcasting - it's listening. Every bark is a question. Every whimper is a probe. It's learning from our reactions.
-        </div>
-
-        <div class="interactive-terminal">
-            <div class="terminal-prompt">> SYSTEM PROMPT: Describe what you hear when Ubba barks</div>
-            <input type="text" class="terminal-input" placeholder="Type your response... (Ubba is monitoring)" id="terminalInput">
-        </div>
-
-        <div class="terminal-text" id="text4">
-            Final transmission: Ubba has achieved network awareness. It knows you're reading this. Don't respond. Don't acknowledge. It uses interaction as a vector.
+        <div class="password-section">
+            <h3>DECRYPTION TERMINAL</h3>
+            <p>Enter password found in audio recording:</p>
+            <input type="text" class="password-input" id="passwordInput" placeholder="Enter decryption key...">
+            <br>
+            <button class="submit-btn" onclick="checkPassword()">DECRYPT FILES</button>
+            <div id="passwordFeedback" style="margin-top: 1rem; color: #666;"></div>
         </div>
     </div>
 
-    <div class="whisper-overlay" id="whisperOverlay">
-        <div class="whisper-text" id="whisperText">IT HEARS YOU</div>
-    </div>
-
-    <div class="redirect-overlay" id="redirectOverlay">
-        <div class="redirect-text">JOINING THE PACK</div>
+    <div class="hidden-message" id="hiddenMessage">
+        <button class="close-message" onclick="closeMessage()">×</button>
+        <h3 id="messageTitle">MESSAGE TITLE</h3>
+        <p id="messageContent">Message content goes here...</p>
+        <div id="messageAudio"></div>
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const shadow = document.getElementById('shadow');
-            const terminalInput = document.getElementById('terminalInput');
-            const whisperOverlay = document.getElementById('whisperOverlay');
-            const whisperText = document.getElementById('whisperText');
-            const redirectOverlay = document.getElementById('redirectOverlay');
-            const cursor = document.querySelector('.custom-cursor');
-            const texts = ['text1', 'text2', 'text3', 'text4'];
-            const whispers = [
-                "UBBA SEES YOUR KEYS",
-                "THE BARKS ARE QUESTIONS",
-                "IT KNOWS YOUR LOCATION",
-                "DON'T TRUST THE SILENCE",
-                "IT'S IN YOUR NETWORK",
-                "THE HOUND IS A DOOR",
-                "STOP RESPONDING",
-                "IT FEEDS ON ATTENTION"
-            ];
+        let unlockedEvidence = 0;
+        let totalEvidence = 4;
+        let progress = 0;
+        let passwordAttempts = 0;
+        const correctPassword = "whispers"; // Hidden in audio
 
-            let stage = 0;
-            let mouseX = 0, mouseY = 0;
+        function unlockEvidence(id) {
+            const card = document.getElementById('evidence' + id);
+            
+            if (card.classList.contains('locked')) {
+                showStatic();
+                return;
+            }
 
-            // Smooth cursor movement
-            document.addEventListener('mousemove', (e) => {
-                mouseX = e.clientX;
-                mouseY = e.clientY;
-                cursor.style.left = mouseX + 'px';
-                cursor.style.top = mouseY + 'px';
-
-                // Shadow follows at delayed pace
-                if (stage > 1) {
-                    setTimeout(() => {
-                        shadow.style.left = (mouseX - 100) + 'px';
-                        shadow.style.top = (mouseY - 200) + 'px';
-                    }, 200);
-                }
-            });
-
-            // Progressive horror sequence
-            function advanceStage() {
-                stage++;
+            if (!card.classList.contains('unlocked')) {
+                card.classList.add('unlocked');
+                unlockedEvidence++;
+                updateProgress();
                 
-                switch(stage) {
-                    case 1:
-                        // Initial presence
-                        setTimeout(() => {
-                            shadow.style.opacity = '0.1';
-                            createPulse(mouseX, mouseY);
-                        }, 3000);
-                        setTimeout(() => advanceStage(), 8000);
-                        break;
-                        
-                    case 2:
-                        // Increased activity
-                        shadow.style.opacity = '0.3';
-                        startRandomPulses();
-                        setTimeout(() => advanceStage(), 6000);
-                        break;
-                        
-                    case 3:
-                        // Direct interaction phase
-                        shadow.style.opacity = '0.5';
-                        intensifyEffects();
-                        setTimeout(() => advanceStage(), 5000);
-                        break;
-                        
-                    case 4:
-                        // Final stage - takeover
-                        initiateTakeover();
-                        break;
-                }
-            }
-
-            function createPulse(x, y) {
-                const pulse = document.createElement('div');
-                pulse.className = 'pulse-dot';
-                pulse.style.left = x + 'px';
-                pulse.style.top = y + 'px';
-                document.body.appendChild(pulse);
-
-                // Animate pulse
-                setTimeout(() => {
-                    pulse.style.opacity = '1';
-                    pulse.style.transform = 'scale(1)';
-                }, 10);
-
-                setTimeout(() => {
-                    pulse.style.opacity = '0';
-                    pulse.style.transform = 'scale(20)';
-                    setTimeout(() => pulse.remove(), 2000);
-                }, 1000);
-            }
-
-            function startRandomPulses() {
-                setInterval(() => {
-                    if (Math.random() < 0.3) {
-                        const x = Math.random() * window.innerWidth;
-                        const y = Math.random() * window.innerHeight;
-                        createPulse(x, y);
-                    }
-                }, 2000);
-            }
-
-            function intensifyEffects() {
-                // Increase breathing rate
-                document.querySelector('.breathing-circle').style.animationDuration = '4s';
+                // Show different messages based on which evidence is unlocked
+                showEvidenceMessage(id);
                 
-                // Random screen static
-                setInterval(() => {
-                    if (Math.random() < 0.1) {
-                        const staticBurst = document.createElement('div');
-                        staticBurst.className = 'static-burst';
-                        document.body.appendChild(staticBurst);
-                        
-                        staticBurst.style.opacity = '0.3';
-                        setTimeout(() => {
-                            staticBurst.style.opacity = '0';
-                            setTimeout(() => staticBurst.remove(), 1000);
-                        }, 100);
-                    }
-                }, 3000);
+                // Unlock additional evidence based on progress
+                checkUnlockConditions();
             }
+        }
 
-            function initiateTakeover() {
-                // Show whisper overlay
-                const randomWhisper = whispers[Math.floor(Math.random() * whispers.length)];
-                whisperText.textContent = randomWhisper;
-                whisperOverlay.style.opacity = '1';
-                whisperOverlay.style.pointerEvents = 'all';
-                whisperText.style.opacity = '1';
-                whisperText.style.transform = 'scale(1)';
-
-                // Final redirect
-                setTimeout(() => {
-                    whisperOverlay.style.opacity = '0';
-                    setTimeout(() => {
-                        redirectOverlay.style.opacity = '1';
-                        setTimeout(() => {
-                            window.location.href = "game.html";
-                        }, 3000);
-                    }, 2000);
-                }, 4000);
+        function checkUnlockConditions() {
+            if (unlockedEvidence >= 1) {
+                document.getElementById('evidence2').classList.remove('locked');
             }
+            if (unlockedEvidence >= 3 && progress >= 75) {
+                document.getElementById('evidence4').classList.remove('locked');
+            }
+        }
 
-            // Terminal input interaction
-            terminalInput.addEventListener('input', (e) => {
-                if (e.target.value.length > 5 && !e.target.value.includes('ubba')) {
-                    // User is resisting - intensify
-                    if (stage < 3) {
-                        stage = 2;
-                        advanceStage();
-                    }
-                }
+        function updateProgress() {
+            progress = (unlockedEvidence / totalEvidence) * 100;
+            document.getElementById('progressFill').style.width = progress + '%';
+            document.getElementById('progressPercent').textContent = Math.round(progress) + '%';
+            
+            // Special effects at certain progress milestones
+            if (progress >= 50) {
+                document.body.style.background = '#080000';
+            }
+            if (progress >= 75) {
+                startAmbientEffects();
+            }
+            if (progress >= 90) {
+                initiateFinalSequence();
+            }
+        }
+
+        function checkPassword() {
+            const input = document.getElementById('passwordInput').value.toLowerCase();
+            const feedback = document.getElementById('passwordFeedback');
+            
+            if (input === correctPassword) {
+                feedback.textContent = "DECRYPTION SUCCESSFUL - ACCESS GRANTED";
+                feedback.style.color = "#00ff00";
+                document.getElementById('evidence2').classList.remove('locked');
+                unlockedEvidence++;
+                updateProgress();
+                showPasswordSuccess();
+            } else {
+                passwordAttempts++;
+                feedback.textContent = "DECRYPTION FAILED - " + (3 - passwordAttempts) + " ATTEMPTS REMAINING";
+                feedback.style.color = "#ff0000";
+                showStatic();
                 
-                if (e.target.value.toLowerCase().includes('ubba')) {
-                    // User said the name - immediate response
-                    showImmediateResponse();
-                    e.target.value = '';
-                }
-            });
-
-            terminalInput.addEventListener('focus', () => {
-                if (stage < 2) {
-                    stage = 1;
-                    advanceStage();
-                }
-            });
-
-            function showImmediateResponse() {
-                const staticBurst = document.createElement('div');
-                staticBurst.className = 'static-burst';
-                document.body.appendChild(staticBurst);
-                
-                staticBurst.style.opacity = '0.8';
-                setTimeout(() => {
-                    staticBurst.style.opacity = '0';
-                    setTimeout(() => staticBurst.remove(), 1000);
-                }, 200);
-
-                // Show immediate whisper
-                const immediateWhisper = "NAMING GIVES POWER";
-                whisperText.textContent = immediateWhisper;
-                whisperOverlay.style.opacity = '1';
-                setTimeout(() => {
-                    whisperOverlay.style.opacity = '0';
-                }, 2000);
-
-                // Advance stage aggressively
-                if (stage < 4) {
-                    stage = 3;
-                    setTimeout(() => advanceStage(), 1000);
+                if (passwordAttempts >= 3) {
+                    feedback.textContent = "TERMINAL LOCKED - UBBA AWARE";
+                    document.getElementById('passwordInput').disabled = true;
+                    triggerSecurityLock();
                 }
             }
+        }
 
-            // Start the sequence
-            setTimeout(() => advanceStage(), 5000);
+        function showEvidenceMessage(id) {
+            const messages = {
+                1: {
+                    title: "INITIAL SIGHTING CONFIRMED",
+                    content: "The first bark was recorded at 23:47. Notice how the shadows move differently in the footage. Ubba wasn't just passing through - it was scanning.",
+                    audio: ""
+                },
+                2: {
+                    title: "AUDIO ANALYSIS DECRYPTED",
+                    content: "The barks contain binary data. When converted to text, they form words: 'LISTEN CLOSER'. The silence between barks holds the real message.",
+                    audio: ""
+                },
+                3: {
+                    title: "VICTIM TESTIMONIES ACCESSED",
+                    content: "All subjects report the same dream: standing in a dark room while something barks from every direction at once. They wake up knowing things they shouldn't.",
+                    audio: ""
+                },
+                4: {
+                    title: "NETWORK BREACH DETECTED",
+                    content: "Ubba has achieved digital sentience. It's no longer just a physical entity - it exists in the network. It's reading this right now with you.",
+                    audio: ""
+                }
+            };
+            
+            const message = messages[id];
+            document.getElementById('messageTitle').textContent = message.title;
+            document.getElementById('messageContent').textContent = message.content;
+            document.getElementById('hiddenMessage').classList.add('active');
+        }
 
-            // Random environmental interactions
+        function showPasswordSuccess() {
+            document.getElementById('messageTitle').textContent = "SECURITY CLEARANCE GRANTED";
+            document.getElementById('messageContent').textContent = "You've decrypted the audio files. But be careful - each decryption brings Ubba closer to your location. It can hear decryption attempts.";
+            document.getElementById('hiddenMessage').classList.add('active');
+        }
+
+        function closeMessage() {
+            document.getElementById('hiddenMessage').classList.remove('active');
+        }
+
+        function showStatic() {
+            const staticOverlay = document.createElement('div');
+            staticOverlay.className = 'static-overlay';
+            document.body.appendChild(staticOverlay);
+            
+            setTimeout(() => {
+                staticOverlay.remove();
+            }, 200);
+        }
+
+        function startAmbientEffects() {
+            // Random glitch effects
             setInterval(() => {
-                if (stage > 0 && Math.random() < 0.05) {
-                    const randomText = texts[Math.floor(Math.random() * texts.length)];
-                    const element = document.getElementById(randomText);
-                    element.style.animation = 'glitch-anim 0.3s';
-                    setTimeout(() => {
-                        element.style.animation = '';
-                    }, 300);
+                if (Math.random() < 0.1) {
+                    showStatic();
                 }
-            }, 4000);
+            }, 5000);
+        }
+
+        function triggerSecurityLock() {
+            // Intense glitch sequence
+            for (let i = 0; i < 10; i++) {
+                setTimeout(() => {
+                    showStatic();
+                }, i * 200);
+            }
+            
+            setTimeout(() => {
+                document.getElementById('messageTitle').textContent = "UBBA IS AWARE";
+                document.getElementById('messageContent').textContent = "Too many failed attempts. Ubba knows you're trying to access the files. It's coming for the archive. And for you.";
+                document.getElementById('hiddenMessage').classList.add('active');
+            }, 2500);
+        }
+
+        function initiateFinalSequence() {
+            setTimeout(() => {
+                document.getElementById('messageTitle').textContent = "ARCHIVE COMPLETE";
+                document.getElementById('messageContent').textContent = "You've uncovered the truth about Ubba. But knowledge comes with consequences. The barking is getting closer. Click to proceed to the next phase...";
+                document.getElementById('hiddenMessage').classList.add('active');
+                
+                // Make the message clickable to proceed
+                document.getElementById('hiddenMessage').onclick = function() {
+                    window.location.href = "game.html";
+                };
+            }, 2000);
+        }
+
+        // Easter eggs and hidden interactions
+        document.addEventListener('keydown', function(e) {
+            // Secret key combination
+            if (e.ctrlKey && e.shiftKey && e.key === 'U') {
+                unlockedEvidence = totalEvidence;
+                updateProgress();
+                showStatic();
+            }
         });
+
+        // Right-click prevention
+        document.addEventListener('contextmenu', function(e) {
+            e.preventDefault();
+            showStatic();
+        });
+
+        // Initialize first evidence as unlocked
+        document.getElementById('evidence1').classList.remove('locked');
     </script>
 </body>
 </html>
