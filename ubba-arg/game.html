@@ -208,6 +208,7 @@
             transform: translateX(-50%);
             display: flex;
             gap: 20px;
+            z-index: 100;
         }
 
         .camera-nav-btn {
@@ -217,6 +218,8 @@
             padding: 10px 15px;
             cursor: pointer;
             pointer-events: all;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
         }
 
         /* Ubba Character */
@@ -439,7 +442,7 @@
                     <div class="ubba" id="ubba-cam5"></div>
                 </div>
 
-                <!-- Camera Navigation -->
+                <!-- Camera Navigation - Fixed positioning -->
                 <div class="camera-nav">
                     <button class="camera-nav-btn" id="prev-cam">← PREV</button>
                     <button class="camera-nav-btn" id="next-cam">NEXT →</button>
@@ -485,6 +488,9 @@
     <!-- Audio Elements -->
     <audio id="jumpscare-sound" src="ubba-arg/assets/sounds/jumpscare.mp3" preload="auto"></audio>
     <audio id="warning-sound" src="ubba-arg/assets/sounds/jumpscare.mp3" preload="auto"></audio>
+    <audio id="camera-sound" src="ubba-arg/assets/sounds/camera.mp3" preload="auto"></audio>
+    <audio id="door-sound" src="ubba-arg/assets/sounds/door.mp3" preload="auto"></audio>
+    <audio id="light-sound" src="ubba-arg/assets/sounds/light.mp3" preload="auto"></audio>
 
     <script>
         // Game State
@@ -521,7 +527,10 @@
             gameOver: document.getElementById('game-over'),
             nightComplete: document.getElementById('night-complete'),
             jumpscareSound: document.getElementById('jumpscare-sound'),
-            warningSound: document.getElementById('warning-sound')
+            warningSound: document.getElementById('warning-sound'),
+            cameraSound: document.getElementById('camera-sound'),
+            doorSound: document.getElementById('door-sound'),
+            lightSound: document.getElementById('light-sound')
         };
 
         // Initialize game
@@ -565,7 +574,7 @@
             // First attack between 5:22-5:29 AM
             const firstAttackTime = 322 + Math.floor(Math.random() * 7); // 322-328 (5:22-5:28)
             setTimeout(() => startAttack(), (firstAttackTime - 300) * 1000);
-            
+
             // Second attack between 5:49-5:56 AM
             const secondAttackTime = 349 + Math.floor(Math.random() * 7); // 349-355 (5:49-5:55)
             setTimeout(() => startAttack(), (secondAttackTime - 300) * 1000);
@@ -661,6 +670,12 @@
             gameState.camerasOpen = !gameState.camerasOpen;
             elements.cameraView.style.display = gameState.camerasOpen ? 'block' : 'none';
             elements.officeView.style.display = gameState.camerasOpen ? 'none' : 'block';
+            
+            // Play camera sound
+            if (elements.cameraSound) {
+                elements.cameraSound.currentTime = 0;
+                elements.cameraSound.play();
+            }
         }
 
         function switchCamera(direction) {
@@ -673,16 +688,34 @@
             document.querySelectorAll('.camera-room').forEach((room, index) => {
                 room.classList.toggle('active', index === gameState.currentCamera);
             });
+
+            // Play camera switch sound
+            if (elements.cameraSound) {
+                elements.cameraSound.currentTime = 0;
+                elements.cameraSound.play();
+            }
         }
 
         // Door Controls
         function toggleLeftDoor() {
             gameState.leftDoorClosed = !gameState.leftDoorClosed;
+            
+            // Play door sound
+            if (elements.doorSound) {
+                elements.doorSound.currentTime = 0;
+                elements.doorSound.play();
+            }
         }
 
         // Light Controls
         function toggleLeftLight() {
             gameState.leftLightOn = !gameState.leftLightOn;
+            
+            // Play light sound
+            if (elements.lightSound) {
+                elements.lightSound.currentTime = 0;
+                elements.lightSound.play();
+            }
         }
 
         // Game State Functions
