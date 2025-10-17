@@ -3,8 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>UBBA - THE HOUND</title>
+    <title>UBBA - THE LISTENING</title>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
+        
         * {
             margin: 0;
             padding: 0;
@@ -14,74 +16,43 @@
         body {
             background: #000;
             color: #8a0303;
-            font-family: 'Times New Roman', serif;
+            font-family: 'Orbitron', monospace;
             overflow: hidden;
             height: 100vh;
             cursor: none;
+            position: relative;
         }
 
-        .custom-cursor {
-            position: fixed;
-            width: 20px;
-            height: 20px;
-            background: #8a0303;
-            border-radius: 50%;
-            pointer-events: none;
-            z-index: 9999;
-            mix-blend-mode: difference;
-            transition: transform 0.1s;
-        }
-
-        .cursor-trail {
-            position: fixed;
-            width: 6px;
-            height: 6px;
-            background: #ff0000;
-            border-radius: 50%;
-            pointer-events: none;
-            z-index: 9998;
-            opacity: 0;
-        }
-
-        .static-overlay {
+        .noise {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
             background: 
-                repeating-linear-gradient(
-                    0deg,
-                    rgba(0, 0, 0, 0.15) 0px,
-                    rgba(0, 0, 0, 0.15) 1px,
-                    transparent 1px,
-                    transparent 2px
-                );
+                linear-gradient(rgba(18, 16, 16, 0.1) 50%, rgba(0, 0, 0, 0.1) 50%),
+                linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
+            background-size: 100% 2px, 3px 100%;
             pointer-events: none;
             z-index: 100;
-            opacity: 0.1;
-            animation: staticPulse 8s infinite;
+            opacity: 0.3;
+            animation: noiseAnim 0.1s infinite;
         }
 
-        @keyframes staticPulse {
-            0%, 100% { opacity: 0.05; }
-            50% { opacity: 0.15; }
+        @keyframes noiseAnim {
+            0% { background-position: 0 0, 0 0; }
+            100% { background-position: 0 100%, 100% 0; }
         }
 
-        .breathing-background {
+        .vignette {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: radial-gradient(circle at center, #1a0000 0%, #000 70%);
-            animation: breathe 6s ease-in-out infinite;
-            z-index: -1;
-        }
-
-        @keyframes breathe {
-            0%, 100% { transform: scale(1); opacity: 0.3; }
-            50% { transform: scale(1.1); opacity: 0.6; }
+            box-shadow: inset 0 0 200px rgba(0, 0, 0, 0.9);
+            pointer-events: none;
+            z-index: 99;
         }
 
         .main-container {
@@ -91,464 +62,506 @@
             max-width: 800px;
             margin: 0 auto;
             opacity: 0;
-            animation: fadeIn 5s ease-in forwards;
+            animation: slowFadeIn 8s ease-in forwards;
         }
 
-        @keyframes fadeIn {
+        @keyframes slowFadeIn {
             to { opacity: 1; }
         }
 
-        .title {
-            font-size: 3rem;
-            text-align: center;
-            margin-bottom: 2rem;
-            text-shadow: 0 0 10px #ff0000;
-            animation: titleGlitch 12s infinite;
+        .glitch-container {
             position: relative;
+            text-align: center;
+            margin-bottom: 3rem;
         }
 
-        @keyframes titleGlitch {
-            0%, 95%, 100% { transform: translateX(0); text-shadow: 0 0 10px #ff0000; }
-            96% { transform: translateX(-2px); text-shadow: 2px 0 15px #00ffff; }
-            97% { transform: translateX(2px); text-shadow: -2px 0 15px #ffff00; }
-            98% { transform: translateX(-1px); text-shadow: 1px 0 20px #ff0000; }
+        .glitch {
+            position: relative;
+            color: #8a0303;
+            font-size: 4rem;
+            font-weight: 900;
+            letter-spacing: 0.5rem;
+            text-transform: uppercase;
+            animation: glitch-skew 4s infinite linear alternate-reverse;
+        }
+
+        .glitch::before,
+        .glitch::after {
+            content: attr(data-text);
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        .glitch::before {
+            animation: glitch-anim 5s infinite linear alternate-reverse;
+            color: #ff0000;
+            z-index: -1;
+        }
+
+        .glitch::after {
+            animation: glitch-anim2 3s infinite linear alternate-reverse;
+            color: #00ffff;
+            z-index: -2;
+        }
+
+        @keyframes glitch-anim {
+            0% { transform: translate(0); }
+            20% { transform: translate(-2px, 2px); }
+            40% { transform: translate(-2px, -2px); }
+            60% { transform: translate(2px, 2px); }
+            80% { transform: translate(2px, -2px); }
+            100% { transform: translate(0); }
+        }
+
+        @keyframes glitch-anim2 {
+            0% { transform: translate(0); }
+            20% { transform: translate(2px, 0); }
+            40% { transform: translate(-2px, 0); }
+            60% { transform: translate(2px, 0); }
+            80% { transform: translate(-2px, 0); }
+            100% { transform: translate(0); }
+        }
+
+        @keyframes glitch-skew {
+            0% { transform: skew(0deg); }
+            20% { transform: skew(-2deg); }
+            40% { transform: skew(0deg); }
+            60% { transform: skew(1deg); }
+            80% { transform: skew(-1deg); }
+            100% { transform: skew(0deg); }
+        }
+
+        .terminal-text {
+            font-size: 1.1rem;
+            line-height: 1.8;
+            margin-bottom: 2rem;
+            text-align: justify;
+            opacity: 0;
+            animation: typeIn 12s 2s forwards;
+            border-left: 2px solid #8a0303;
+            padding-left: 1rem;
+        }
+
+        @keyframes typeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .interactive-terminal {
+            background: rgba(10, 0, 0, 0.8);
+            border: 1px solid #8a0303;
+            padding: 1.5rem;
+            margin: 2rem 0;
+            position: relative;
+            opacity: 0;
+            animation: fadeIn 4s 6s forwards;
+        }
+
+        .terminal-prompt {
+            color: #00ff00;
+            margin-bottom: 1rem;
+            font-family: 'Courier New', monospace;
+        }
+
+        .terminal-input {
+            background: transparent;
+            border: none;
+            color: #00ff00;
+            font-family: 'Courier New', monospace;
+            font-size: 1rem;
+            width: 100%;
+            outline: none;
+            caret-color: #00ff00;
+        }
+
+        .terminal-input::placeholder {
+            color: #008000;
+        }
+
+        .breathing-circle {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 300px;
+            height: 300px;
+            border: 2px solid rgba(138, 3, 3, 0.3);
+            border-radius: 50%;
+            animation: breathe 8s ease-in-out infinite;
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        @keyframes breathe {
+            0%, 100% { 
+                transform: translate(-50%, -50%) scale(1);
+                border-color: rgba(138, 3, 3, 0.3);
+            }
+            50% { 
+                transform: translate(-50%, -50%) scale(1.2);
+                border-color: rgba(255, 0, 0, 0.6);
+            }
+        }
+
+        .shadow-presence {
+            position: fixed;
+            width: 200px;
+            height: 400px;
+            background: radial-gradient(ellipse at center, rgba(138, 3, 3, 0.1) 0%, transparent 70%);
+            opacity: 0;
+            transition: all 3s ease;
+            pointer-events: none;
+            z-index: 20;
+        }
+
+        .pulse-dot {
+            position: fixed;
+            width: 8px;
+            height: 8px;
+            background: #ff0000;
+            border-radius: 50%;
+            opacity: 0;
+            z-index: 30;
+            pointer-events: none;
+        }
+
+        .whisper-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 1000;
+            transition: opacity 2s;
         }
 
         .whisper-text {
-            font-size: 1.1rem;
-            line-height: 1.6;
-            margin-bottom: 1.5rem;
-            text-align: justify;
-            position: relative;
-        }
-
-        .whisper-text::before {
-            content: '"';
-            font-size: 2rem;
             color: #8a0303;
-            position: absolute;
-            left: -1rem;
-            top: -0.5rem;
-        }
-
-        .whisper-text::after {
-            content: '"';
             font-size: 2rem;
-            color: #8a0303;
-            position: absolute;
-            right: -1rem;
-            bottom: -1rem;
-        }
-
-        .interactive-area {
-            position: fixed;
-            bottom: 2rem;
-            right: 2rem;
-            width: 300px;
-            height: 300px;
-            border: 1px solid #8a0303;
-            border-radius: 50%;
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 0.5rem;
             opacity: 0;
+            transform: scale(0.8);
+            transition: all 2s;
+        }
+
+        .redirect-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 2000;
             transition: opacity 3s;
-            z-index: 50;
         }
 
-        .interactive-area.active {
-            opacity: 0.3;
-        }
-
-        .blood-drip {
-            position: fixed;
-            top: -100px;
-            width: 3px;
-            height: 100px;
-            background: linear-gradient(to bottom, transparent, #8a0303);
-            animation: drip 8s linear infinite;
-            z-index: 99;
-        }
-
-        @keyframes drip {
-            0% { transform: translateY(0); opacity: 0; }
-            10% { opacity: 1; }
-            90% { opacity: 1; }
-            100% { transform: translateY(100vh); opacity: 0; }
-        }
-
-        .shadow-figure {
-            position: fixed;
-            width: 200px;
-            height: 300px;
-            background: transparent;
-            filter: blur(5px);
-            opacity: 0;
-            transition: all 0.5s;
-            z-index: 80;
-            pointer-events: none;
-        }
-
-        .breath-sound {
-            position: fixed;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            z-index: 200;
-            opacity: 0;
-        }
-
-        .breath-visualizer {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            background: radial-gradient(circle, transparent 30%, #8a0303 70%);
-            opacity: 0;
-            animation: breathVisual 4s ease-in-out infinite;
-        }
-
-        @keyframes breathVisual {
-            0%, 100% { transform: scale(0.8); opacity: 0; }
-            50% { transform: scale(1.2); opacity: 0.1; }
-        }
-
-        .mirror-portal {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 0;
-            height: 0;
-            background: radial-gradient(circle, #8a0303, #000);
-            border-radius: 50%;
-            opacity: 0;
-            transition: all 3s;
-            z-index: 1000;
-        }
-
-        .mirror-portal.open {
-            width: 100vmax;
-            height: 100vmax;
-            opacity: 0.8;
-        }
-
-        .final-warning {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
+        .redirect-text {
             color: #ff0000;
-            font-size: 2rem;
+            font-size: 3rem;
             text-align: center;
-            opacity: 0;
-            z-index: 1001;
-            text-shadow: 0 0 20px #ff0000;
-            pointer-events: none;
+            text-transform: uppercase;
+            letter-spacing: 1rem;
         }
 
-        .whisper-input {
+        .static-burst {
             position: fixed;
-            bottom: 2rem;
-            left: 2rem;
-            background: transparent;
-            border: 1px solid #8a0303;
-            color: #8a0303;
-            padding: 0.5rem;
-            font-family: inherit;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                repeating-linear-gradient(
+                    0deg,
+                    rgba(255, 255, 255, 0.1) 0px,
+                    rgba(255, 255, 255, 0.1) 1px,
+                    transparent 1px,
+                    transparent 2px
+                );
             opacity: 0;
-            transition: opacity 2s;
-            z-index: 60;
-        }
-
-        .whisper-input:focus {
-            outline: none;
-            box-shadow: 0 0 10px #ff0000;
-        }
-
-        .response-text {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            color: #8a0303;
-            font-size: 1.2rem;
-            text-align: center;
-            opacity: 0;
-            transition: opacity 2s;
-            z-index: 70;
             pointer-events: none;
+            z-index: 999;
+        }
+
+        .custom-cursor {
+            position: fixed;
+            width: 20px;
+            height: 20px;
+            background: radial-gradient(circle, #ff0000, transparent);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 9999;
+            mix-blend-mode: difference;
+            transition: transform 0.1s;
         }
     </style>
 </head>
 <body>
+    <div class="noise"></div>
+    <div class="vignette"></div>
+    <div class="breathing-circle"></div>
+    <div class="shadow-presence" id="shadow"></div>
     <div class="custom-cursor"></div>
-    <div class="breathing-background"></div>
-    <div class="static-overlay"></div>
-    
+
     <div class="main-container">
-        <h1 class="title">THE HOUND WATCHES</h1>
-        
-        <div class="whisper-text">
-            They say Ubba is just a dog. They are wrong. I've seen the truth in the spaces between barks, in the silence that follows. The barking isn't communication—it's measurement. It's mapping the dimensions of our reality, finding the weak points.
+        <div class="glitch-container">
+            <div class="glitch" data-text="UBBA IS LISTENING">UBBA IS LISTENING</div>
         </div>
-        
-        <div class="whisper-text">
-            Last night, I recorded the silence between barks. When I played it back, I heard whispers. They weren't in the recording before. They're learning our language, using the empty spaces to slip through.
+
+        <div class="terminal-text" id="text1">
+            Initializing system diagnostic... Ubba protocol detected. The subject exhibits anomalous acoustic properties. Bark patterns suggest non-terrestrial origin.
         </div>
-        
-        <div class="whisper-text">
-            Don't look directly at the shadows in your peripheral vision. They're not just shadows anymore. Ubba has learned to cast more than one kind of shadow. Some of them are starting to look back.
+
+        <div class="terminal-text" id="text2">
+            Warning: Auditory memetic agents confirmed. Exposure leads to irreversible neural restructuring. Subject appears to be gathering data through victim responses.
         </div>
-        
-        <div class="whisper-text">
-            If you're reading this, it's already in your house. Don't turn around. Don't turn on the lights. The light just makes the shadows deeper. It prefers the corners of your eyes, the edges of your vision where reality is thin.
+
+        <div class="terminal-text" id="text3">
+            Recent analysis indicates Ubba isn't broadcasting - it's listening. Every bark is a question. Every whimper is a probe. It's learning from our reactions.
+        </div>
+
+        <div class="interactive-terminal">
+            <div class="terminal-prompt">> SYSTEM PROMPT: Describe what you hear when Ubba barks</div>
+            <input type="text" class="terminal-input" placeholder="Type your response... (Ubba is monitoring)" id="terminalInput">
+        </div>
+
+        <div class="terminal-text" id="text4">
+            Final transmission: Ubba has achieved network awareness. It knows you're reading this. Don't respond. Don't acknowledge. It uses interaction as a vector.
         </div>
     </div>
 
-    <div class="interactive-area"></div>
-    <div class="breath-sound">
-        <div class="breath-visualizer"></div>
+    <div class="whisper-overlay" id="whisperOverlay">
+        <div class="whisper-text" id="whisperText">IT HEARS YOU</div>
     </div>
-    <div class="shadow-figure"></div>
-    <div class="mirror-portal"></div>
-    <div class="final-warning">IT SEES YOU NOW</div>
-    
-    <input type="text" class="whisper-input" placeholder="Whisper its name...">
-    <div class="response-text"></div>
+
+    <div class="redirect-overlay" id="redirectOverlay">
+        <div class="redirect-text">JOINING THE PACK</div>
+    </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            const shadow = document.getElementById('shadow');
+            const terminalInput = document.getElementById('terminalInput');
+            const whisperOverlay = document.getElementById('whisperOverlay');
+            const whisperText = document.getElementById('whisperText');
+            const redirectOverlay = document.getElementById('redirectOverlay');
             const cursor = document.querySelector('.custom-cursor');
-            const interactiveArea = document.querySelector('.interactive-area');
-            const shadowFigure = document.querySelector('.shadow-figure');
-            const breathSound = document.querySelector('.breath-sound');
-            const mirrorPortal = document.querySelector('.mirror-portal');
-            const finalWarning = document.querySelector('.final-warning');
-            const whisperInput = document.querySelector('.whisper-input');
-            const responseText = document.querySelector('.response-text');
-            const body = document.body;
-
-            let mouseX = 0, mouseY = 0;
-            let cursorTrails = [];
-            let shadowVisible = false;
-            let breathActive = false;
-            let stage = 0;
-            let whispers = [
-                "ubba sees you",
-                "the hound is hungry",
-                "it knows your name",
-                "don't look behind you",
-                "the shadows are moving",
-                "it's in your house now",
-                "the barking never stops",
-                "it's learning from your fear"
+            const texts = ['text1', 'text2', 'text3', 'text4'];
+            const whispers = [
+                "UBBA SEES YOUR KEYS",
+                "THE BARKS ARE QUESTIONS",
+                "IT KNOWS YOUR LOCATION",
+                "DON'T TRUST THE SILENCE",
+                "IT'S IN YOUR NETWORK",
+                "THE HOUND IS A DOOR",
+                "STOP RESPONDING",
+                "IT FEEDS ON ATTENTION"
             ];
 
-            // Custom cursor with trail
+            let stage = 0;
+            let mouseX = 0, mouseY = 0;
+
+            // Smooth cursor movement
             document.addEventListener('mousemove', (e) => {
                 mouseX = e.clientX;
                 mouseY = e.clientY;
                 cursor.style.left = mouseX + 'px';
                 cursor.style.top = mouseY + 'px';
 
-                // Create cursor trail
-                if (Math.random() < 0.3) {
-                    createCursorTrail(e.clientX, e.clientY);
-                }
-
-                // Interactive area follows cursor
-                interactiveArea.style.left = (mouseX - 150) + 'px';
-                interactiveArea.style.top = (mouseY - 150) + 'px';
-
-                // Shadow figure follows at distance
-                if (shadowVisible) {
-                    const shadowX = mouseX + (Math.random() - 0.5) * 100;
-                    const shadowY = mouseY + (Math.random() - 0.5) * 100;
-                    shadowFigure.style.left = shadowX + 'px';
-                    shadowFigure.style.top = shadowY + 'px';
+                // Shadow follows at delayed pace
+                if (stage > 1) {
+                    setTimeout(() => {
+                        shadow.style.left = (mouseX - 100) + 'px';
+                        shadow.style.top = (mouseY - 200) + 'px';
+                    }, 200);
                 }
             });
 
-            function createCursorTrail(x, y) {
-                const trail = document.createElement('div');
-                trail.className = 'cursor-trail';
-                trail.style.left = x + 'px';
-                trail.style.top = y + 'px';
-                document.body.appendChild(trail);
-                cursorTrails.push(trail);
-
-                // Animate trail
-                setTimeout(() => {
-                    trail.style.opacity = '0.7';
-                    trail.style.transform = 'scale(1)';
-                }, 10);
-
-                setTimeout(() => {
-                    trail.style.opacity = '0';
-                    trail.style.transform = 'scale(0.1)';
-                    setTimeout(() => {
-                        trail.remove();
-                        cursorTrails = cursorTrails.filter(t => t !== trail);
-                    }, 1000);
-                }, 500);
-            }
-
-            // Progressive horror stages
+            // Progressive horror sequence
             function advanceStage() {
                 stage++;
                 
                 switch(stage) {
                     case 1:
-                        // First stage - subtle changes
-                        interactiveArea.classList.add('active');
-                        startBloodDrips();
-                        setTimeout(() => advanceStage(), 15000);
-                        break;
-                        
-                    case 2:
-                        // Second stage - shadow appears
-                        shadowVisible = true;
-                        shadowFigure.style.opacity = '0.1';
-                        whisperInput.style.opacity = '1';
-                        startBreathingSound();
-                        setTimeout(() => advanceStage(), 12000);
-                        break;
-                        
-                    case 3:
-                        // Third stage - increased activity
-                        shadowFigure.style.opacity = '0.3';
-                        increaseBloodDrips();
-                        setTimeout(() => advanceStage(), 10000);
-                        break;
-                        
-                    case 4:
-                        // Fourth stage - direct interaction
-                        showRandomWhisper();
-                        shadowFigure.style.opacity = '0.5';
+                        // Initial presence
+                        setTimeout(() => {
+                            shadow.style.opacity = '0.1';
+                            createPulse(mouseX, mouseY);
+                        }, 3000);
                         setTimeout(() => advanceStage(), 8000);
                         break;
                         
-                    case 5:
-                        // Final stage - portal opens
-                        openMirrorPortal();
+                    case 2:
+                        // Increased activity
+                        shadow.style.opacity = '0.3';
+                        startRandomPulses();
+                        setTimeout(() => advanceStage(), 6000);
+                        break;
+                        
+                    case 3:
+                        // Direct interaction phase
+                        shadow.style.opacity = '0.5';
+                        intensifyEffects();
+                        setTimeout(() => advanceStage(), 5000);
+                        break;
+                        
+                    case 4:
+                        // Final stage - takeover
+                        initiateTakeover();
                         break;
                 }
             }
 
-            function startBloodDrips() {
-                setInterval(() => {
-                    if (Math.random() < 0.3) {
-                        createBloodDrip();
-                    }
-                }, 2000);
-            }
+            function createPulse(x, y) {
+                const pulse = document.createElement('div');
+                pulse.className = 'pulse-dot';
+                pulse.style.left = x + 'px';
+                pulse.style.top = y + 'px';
+                document.body.appendChild(pulse);
 
-            function increaseBloodDrips() {
-                setInterval(() => {
-                    if (Math.random() < 0.6) {
-                        createBloodDrip();
-                    }
+                // Animate pulse
+                setTimeout(() => {
+                    pulse.style.opacity = '1';
+                    pulse.style.transform = 'scale(1)';
+                }, 10);
+
+                setTimeout(() => {
+                    pulse.style.opacity = '0';
+                    pulse.style.transform = 'scale(20)';
+                    setTimeout(() => pulse.remove(), 2000);
                 }, 1000);
             }
 
-            function createBloodDrip() {
-                const drip = document.createElement('div');
-                drip.className = 'blood-drip';
-                drip.style.left = Math.random() * window.innerWidth + 'px';
-                drip.style.animationDuration = (5 + Math.random() * 5) + 's';
-                document.body.appendChild(drip);
-
-                setTimeout(() => {
-                    drip.remove();
-                }, 10000);
-            }
-
-            function startBreathingSound() {
-                breathActive = true;
-                breathSound.style.opacity = '0.05';
-                
+            function startRandomPulses() {
                 setInterval(() => {
-                    if (breathActive) {
-                        breathSound.style.opacity = (0.05 + Math.random() * 0.1) + '';
+                    if (Math.random() < 0.3) {
+                        const x = Math.random() * window.innerWidth;
+                        const y = Math.random() * window.innerHeight;
+                        createPulse(x, y);
                     }
-                }, 4000);
-            }
-
-            function showRandomWhisper() {
-                const whisper = whispers[Math.floor(Math.random() * whispers.length)];
-                responseText.textContent = whisper;
-                responseText.style.opacity = '1';
-                
-                setTimeout(() => {
-                    responseText.style.opacity = '0';
-                }, 3000);
-            }
-
-            function openMirrorPortal() {
-                mirrorPortal.classList.add('open');
-                
-                setTimeout(() => {
-                    finalWarning.style.opacity = '1';
-                    
-                    // Intensify effects
-                    document.body.style.cursor = 'none';
-                    shadowFigure.style.opacity = '0.8';
-                    breathSound.style.opacity = '0.2';
-                    
-                    // Redirect to next page
-                    setTimeout(() => {
-                        window.location.href = "game.html";
-                    }, 5000);
                 }, 2000);
             }
 
-            // Whisper input interaction
-            whisperInput.addEventListener('input', (e) => {
-                const input = e.target.value.toLowerCase();
+            function intensifyEffects() {
+                // Increase breathing rate
+                document.querySelector('.breathing-circle').style.animationDuration = '4s';
                 
-                if (input.includes('ubba') || input.includes('hound') || input.includes('dog')) {
-                    responseText.textContent = "IT HEARS YOU";
-                    responseText.style.opacity = '1';
-                    shadowFigure.style.opacity = '0.7';
-                    
-                    setTimeout(() => {
-                        responseText.style.opacity = '0';
-                    }, 2000);
-                    
-                    // Advance stage faster if user interacts
-                    if (stage < 4) {
-                        stage = 3;
-                        setTimeout(() => advanceStage(), 1000);
+                // Random screen static
+                setInterval(() => {
+                    if (Math.random() < 0.1) {
+                        const staticBurst = document.createElement('div');
+                        staticBurst.className = 'static-burst';
+                        document.body.appendChild(staticBurst);
+                        
+                        staticBurst.style.opacity = '0.3';
+                        setTimeout(() => {
+                            staticBurst.style.opacity = '0';
+                            setTimeout(() => staticBurst.remove(), 1000);
+                        }, 100);
                     }
+                }, 3000);
+            }
+
+            function initiateTakeover() {
+                // Show whisper overlay
+                const randomWhisper = whispers[Math.floor(Math.random() * whispers.length)];
+                whisperText.textContent = randomWhisper;
+                whisperOverlay.style.opacity = '1';
+                whisperOverlay.style.pointerEvents = 'all';
+                whisperText.style.opacity = '1';
+                whisperText.style.transform = 'scale(1)';
+
+                // Final redirect
+                setTimeout(() => {
+                    whisperOverlay.style.opacity = '0';
+                    setTimeout(() => {
+                        redirectOverlay.style.opacity = '1';
+                        setTimeout(() => {
+                            window.location.href = "game.html";
+                        }, 3000);
+                    }, 2000);
+                }, 4000);
+            }
+
+            // Terminal input interaction
+            terminalInput.addEventListener('input', (e) => {
+                if (e.target.value.length > 5 && !e.target.value.includes('ubba')) {
+                    // User is resisting - intensify
+                    if (stage < 3) {
+                        stage = 2;
+                        advanceStage();
+                    }
+                }
+                
+                if (e.target.value.toLowerCase().includes('ubba')) {
+                    // User said the name - immediate response
+                    showImmediateResponse();
+                    e.target.value = '';
                 }
             });
 
-            // Random environmental interactions
-            setInterval(() => {
-                if (stage > 0 && Math.random() < 0.1) {
-                    createBloodDrip();
-                }
-                
-                if (stage > 1 && Math.random() < 0.05) {
-                    showRandomWhisper();
-                }
-                
-                if (stage > 2 && Math.random() < 0.02) {
-                    // Brief screen flash
-                    body.style.backgroundColor = '#1a0000';
-                    setTimeout(() => {
-                        body.style.backgroundColor = '#000';
-                    }, 100);
-                }
-            }, 3000);
-
-            // Start the horror progression
-            setTimeout(() => advanceStage(), 5000);
-
-            // Click to advance faster (for impatient users)
-            document.addEventListener('click', () => {
-                if (stage < 4) {
-                    stage++;
+            terminalInput.addEventListener('focus', () => {
+                if (stage < 2) {
+                    stage = 1;
                     advanceStage();
                 }
             });
+
+            function showImmediateResponse() {
+                const staticBurst = document.createElement('div');
+                staticBurst.className = 'static-burst';
+                document.body.appendChild(staticBurst);
+                
+                staticBurst.style.opacity = '0.8';
+                setTimeout(() => {
+                    staticBurst.style.opacity = '0';
+                    setTimeout(() => staticBurst.remove(), 1000);
+                }, 200);
+
+                // Show immediate whisper
+                const immediateWhisper = "NAMING GIVES POWER";
+                whisperText.textContent = immediateWhisper;
+                whisperOverlay.style.opacity = '1';
+                setTimeout(() => {
+                    whisperOverlay.style.opacity = '0';
+                }, 2000);
+
+                // Advance stage aggressively
+                if (stage < 4) {
+                    stage = 3;
+                    setTimeout(() => advanceStage(), 1000);
+                }
+            }
+
+            // Start the sequence
+            setTimeout(() => advanceStage(), 5000);
+
+            // Random environmental interactions
+            setInterval(() => {
+                if (stage > 0 && Math.random() < 0.05) {
+                    const randomText = texts[Math.floor(Math.random() * texts.length)];
+                    const element = document.getElementById(randomText);
+                    element.style.animation = 'glitch-anim 0.3s';
+                    setTimeout(() => {
+                        element.style.animation = '';
+                    }, 300);
+                }
+            }, 4000);
         });
     </script>
 </body>
