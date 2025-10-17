@@ -526,7 +526,8 @@
             attackTimer: null,
             ubbaCameraTimer: null,
             currentUbbaCamera: 0,
-            attackScheduled: false
+            firstAttackTriggered: false,
+            secondAttackTriggered: false
         };
 
         // Camera rooms
@@ -570,15 +571,16 @@
             gameState.time++;
             
             // Schedule attacks at specific times
-            if (!gameState.attackScheduled) {
-                // First attack at 5:22 AM (322 minutes)
-                if (gameState.time === 322) {
-                    startAttack();
-                }
-                // Second attack at 5:49 AM (349 minutes)
-                else if (gameState.time === 349) {
-                    startAttack();
-                }
+            // First attack warning at 5:20 AM (320 minutes), attack at 5:22 AM (322 minutes)
+            if (!gameState.firstAttackTriggered && gameState.time === 320) {
+                startAttack();
+                gameState.firstAttackTriggered = true;
+            }
+            
+            // Second attack warning at 5:47 AM (347 minutes), attack at 5:49 AM (349 minutes)
+            if (!gameState.secondAttackTriggered && gameState.time === 347) {
+                startAttack();
+                gameState.secondAttackTriggered = true;
             }
 
             if (gameState.time >= 360) { // 6:00 AM
@@ -645,7 +647,6 @@
             if (gameState.attacksCompleted >= gameState.totalAttacks || !gameState.gameActive || gameState.isAttacking) return;
 
             gameState.isAttacking = true;
-            gameState.attackScheduled = true;
             
             // Hide Ubba from all cameras during attack
             document.querySelectorAll('.ubba').forEach(ubba => {
@@ -735,7 +736,6 @@
             elements.leftLightButton.classList.toggle('active', gameState.leftLightOn);
             
             // Show Ubba at door ONLY during attack AND when light is on
-            // No flash when lights aren't on
             if (gameState.isAttacking && gameState.leftLightOn) {
                 elements.ubbaDoor.classList.add('visible');
             } else {
@@ -829,7 +829,8 @@
             gameState.attacksCompleted = 0;
             gameState.isAttacking = false;
             gameState.currentUbbaCamera = 0;
-            gameState.attackScheduled = false;
+            gameState.firstAttackTriggered = false;
+            gameState.secondAttackTriggered = false;
 
             elements.cameraView.style.display = 'none';
             elements.officeView.style.display = 'block';
