@@ -764,16 +764,6 @@
             showMessage(message.title, message.content);
         }
 
-        function showMessage(title, content) {
-            document.getElementById('messageTitle').textContent = title;
-            document.getElementById('messageContent').textContent = content;
-            document.getElementById('hiddenMessage').classList.add('active');
-        }
-
-        function closeMessage() {
-            document.getElementById('hiddenMessage').classList.remove('active');
-        }
-
         function showStatic() {
             const staticOverlay = document.createElement('div');
             staticOverlay.className = 'static-overlay';
