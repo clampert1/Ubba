@@ -9,13 +9,13 @@
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            cursor: none;
         }
 
         body {
             background: #000;
             overflow: hidden;
             font-family: 'Courier New', monospace;
+            cursor: default;
         }
 
         #matrix {
@@ -30,27 +30,11 @@
         .matrix-char {
             position: absolute;
             color: #ff0000;
-            font-size: 14px;
+            font-size: 16px;
             font-weight: bold;
             opacity: 0;
-            animation: fadeInOut 3s infinite;
-        }
-
-        @keyframes fadeInOut {
-            0%, 100% { opacity: 0; }
-            50% { opacity: 0.8; }
-        }
-
-        .matrix-char.glitching {
-            animation: glitchChar 0.1s infinite;
-        }
-
-        @keyframes glitchChar {
-            0% { transform: translateX(0); }
-            25% { transform: translateX(-2px); }
-            50% { transform: translateX(2px); }
-            75% { transform: translateX(-1px); }
-            100% { transform: translateX(0); }
+            will-change: transform;
+            transform: translateZ(0);
         }
 
         .enter-btn {
@@ -71,6 +55,7 @@
             opacity: 0;
             transition: all 0.3s ease;
             box-shadow: 0 0 30px #ff0000;
+            cursor: pointer;
         }
 
         .enter-btn:hover {
@@ -243,12 +228,14 @@
             display: flex;
             flex-direction: column;
             justify-content: space-between;
+            cursor: pointer;
+            transform: translateZ(0);
+            will-change: transform;
         }
 
         .evidence-card.unlocked {
             background: rgba(25, 0, 0, 0.9);
             border-color: #00ff00;
-            cursor: pointer;
         }
 
         .evidence-card.locked {
@@ -260,7 +247,7 @@
         .evidence-card.unlocked:hover {
             border-color: #ff0000;
             box-shadow: 0 0 20px rgba(255, 0, 0, 0.3);
-            transform: translateY(-5px);
+            transform: translateY(-5px) translateZ(0);
         }
 
         .evidence-title {
@@ -312,6 +299,7 @@
             width: 300px;
             text-align: center;
             margin: 1rem 0;
+            cursor: text;
         }
 
         .password-input:focus {
@@ -432,7 +420,7 @@
             </div>
 
             <div class="evidence-grid">
-                <div class="evidence-card unlocked" id="evidence1" onclick="unlockEvidence(1)">
+                <div class="evidence-card unlocked" id="evidence1">
                     <div class="evidence-title">INITIAL SIGHTING</div>
                     <div class="evidence-content">
                         <p>First documented encounter: October 26th, 2022. Subject appeared in backyard surveillance footage. Bark pattern analysis revealed anomalous frequency modulation.</p>
@@ -491,7 +479,7 @@
         let matrixChars = [];
         let flowDirection = 'down';
         let glitchActive = false;
-        let diagonalActive = false;
+        let animationId;
         
         let unlockedEvidence = 0;
         let totalEvidence = 4;
@@ -501,75 +489,79 @@
 
         function createMatrix() {
             const matrix = document.getElementById('matrix');
-            const columns = Math.floor(window.innerWidth / 14);
-            
-            for (let i = 0; i < columns; i++) {
-                createColumn(i * 14);
-            }
-        }
-
-        function createColumn(x) {
-            const charCount = Math.floor(window.innerHeight / 20);
-            const startDelay = Math.random() * 2000;
+            const charCount = Math.floor((window.innerWidth * window.innerHeight) / 400); // Reduced density
             
             for (let i = 0; i < charCount; i++) {
-                setTimeout(() => {
-                    createMatrixChar(x, -20);
-                }, startDelay + (i * 100));
+                createMatrixChar();
             }
+            
+            startMatrixAnimation();
         }
 
-        function createMatrixChar(x, y) {
+        function createMatrixChar() {
             const char = document.createElement('div');
             char.className = 'matrix-char';
-            char.style.left = x + 'px';
-            char.style.top = y + 'px';
+            
+            // Start above the viewport
+            const startX = Math.random() * window.innerWidth;
+            const startY = -20 - Math.random() * 100; // Start above viewport
+            char.style.left = startX + 'px';
+            char.style.top = startY + 'px';
             char.textContent = getRandomChar();
+            char.style.opacity = Math.random() * 0.8 + 0.2;
             
             document.getElementById('matrix').appendChild(char);
-            matrixChars.push({ element: char, x: x, y: y, speed: 2 + Math.random() * 3 });
             
-            animateChar(char, x, y);
+            matrixChars.push({
+                element: char,
+                x: startX,
+                y: startY,
+                speed: 1 + Math.random() * 2, // Slower speed for better performance
+                charChangeRate: Math.random() * 0.1
+            });
         }
 
         function getRandomChar() {
             return chars[Math.floor(Math.random() * chars.length)];
         }
 
-        function animateChar(char, startX, startY) {
-            let y = startY;
-            let x = startX;
-            const speed = 2 + Math.random() * 3;
-            const maxY = window.innerHeight + 20;
-            
-            function move() {
-                if (flowDirection === 'down') {
-                    y += speed;
-                    if (y > maxY) {
-                        y = -20;
-                        char.textContent = getRandomChar();
+        function startMatrixAnimation() {
+            function animate() {
+                const viewportHeight = window.innerHeight;
+                
+                for (let i = matrixChars.length - 1; i >= 0; i--) {
+                    const char = matrixChars[i];
+                    
+                    // Move character down
+                    char.y += char.speed;
+                    
+                    // Random character changes with glitch effect
+                    if (glitchActive && Math.random() < char.charChangeRate) {
+                        char.element.textContent = getRandomChar();
                     }
-                } else {
-                    y += speed;
-                    x += speed;
-                    if (y > maxY || x > window.innerWidth) {
-                        y = -20;
-                        x = Math.random() * window.innerWidth;
-                        char.textContent = getRandomChar();
+                    
+                    // Reset character when it goes below viewport
+                    if (char.y > viewportHeight + 50) {
+                        char.y = -20;
+                        char.x = Math.random() * window.innerWidth;
+                        char.element.textContent = getRandomChar();
                     }
+                    
+                    // Update position
+                    char.element.style.top = char.y + 'px';
+                    char.element.style.left = char.x + 'px';
+                    
+                    // Fade effect based on position
+                    const viewportMiddle = viewportHeight / 2;
+                    const distanceFromMiddle = Math.abs(char.y - viewportMiddle);
+                    const opacity = 1 - (distanceFromMiddle / viewportMiddle);
+                    char.element.style.opacity = Math.max(0.1, opacity * 0.8);
                 }
                 
-                char.style.top = y + 'px';
-                char.style.left = x + 'px';
-                
-                if (glitchActive && Math.random() < 0.1) {
-                    char.textContent = getRandomChar();
-                }
-                
-                requestAnimationFrame(move);
+                animationId = requestAnimationFrame(animate);
             }
             
-            move();
+            animate();
         }
 
         function startSequence() {
@@ -578,17 +570,16 @@
                 
                 setTimeout(() => {
                     glitchActive = true;
-                    document.querySelectorAll('.matrix-char').forEach(char => {
-                        char.classList.add('glitching');
-                    });
                     
                     setTimeout(() => {
+                        // Change to diagonal flow
                         flowDirection = 'diagonal';
-                        diagonalActive = true;
+                        updateFlowDirection();
                         
                         setTimeout(() => {
+                            // Return to downward flow and show button
                             flowDirection = 'down';
-                            diagonalActive = false;
+                            updateFlowDirection();
                             document.getElementById('enterBtn').style.opacity = '1';
                         }, 2000);
                     }, 800);
@@ -596,9 +587,22 @@
             }, 1200);
         }
 
+        function updateFlowDirection() {
+            for (let char of matrixChars) {
+                if (flowDirection === 'diagonal') {
+                    char.speedX = char.speed * 0.7;
+                } else {
+                    char.speedX = 0;
+                }
+            }
+        }
+
         function triggerTransition() {
             const staticOverlay = document.getElementById('staticOverlay');
             const enterBtn = document.getElementById('enterBtn');
+            
+            // Stop matrix animation to improve performance
+            cancelAnimationFrame(animationId);
             
             let strobeCount = 0;
             const strobeInterval = setInterval(() => {
@@ -611,6 +615,10 @@
                     
                     document.getElementById('archive-page').style.opacity = '1';
                     document.getElementById('archive-page').style.pointerEvents = 'all';
+                    
+                    // Clear matrix to free memory
+                    document.getElementById('matrix').innerHTML = '';
+                    matrixChars = [];
                 }
             }, 100);
             
@@ -720,16 +728,36 @@
             }, 200);
         }
 
+        // Add event listeners for cards
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('evidence1').addEventListener('click', function() {
+                unlockEvidence(1);
+            });
+            
+            document.getElementById('evidence2').addEventListener('click', function() {
+                unlockEvidence(2);
+            });
+            
+            document.getElementById('evidence3').addEventListener('click', function() {
+                unlockEvidence(3);
+            });
+            
+            document.getElementById('evidence4').addEventListener('click', function() {
+                unlockEvidence(4);
+            });
+        });
+
         // Initialize
         startSequence();
         document.getElementById('enterBtn').addEventListener('click', triggerTransition);
 
-        // Make evidence cards clickable when unlocked
-        document.addEventListener('click', function(e) {
-            if (e.target.closest('.evidence-card.unlocked')) {
-                const card = e.target.closest('.evidence-card');
-                const id = card.id.replace('evidence', '');
-                unlockEvidence(parseInt(id));
+        // Handle window resize
+        window.addEventListener('resize', function() {
+            // Reset matrix on resize for better performance
+            document.getElementById('matrix').innerHTML = '';
+            matrixChars = [];
+            if (document.getElementById('archive-page').style.opacity !== '1') {
+                createMatrix();
             }
         });
     </script>
