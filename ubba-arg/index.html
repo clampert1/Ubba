@@ -3,78 +3,153 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>THE UBBA INCIDENT</title>
+    <title>UBBA</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Special+Elite&display=swap');
-        
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            cursor: none;
         }
 
         body {
+            background: #000;
+            overflow: hidden;
+            font-family: 'Courier New', monospace;
+        }
+
+        #matrix {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .matrix-char {
+            position: absolute;
+            color: #ff0000;
+            font-size: 14px;
+            font-weight: bold;
+            opacity: 0;
+            animation: fadeInOut 3s infinite;
+        }
+
+        @keyframes fadeInOut {
+            0%, 100% { opacity: 0; }
+            50% { opacity: 0.8; }
+        }
+
+        .matrix-char.glitching {
+            animation: glitchChar 0.1s infinite;
+        }
+
+        @keyframes glitchChar {
+            0% { transform: translateX(0); }
+            25% { transform: translateX(-2px); }
+            50% { transform: translateX(2px); }
+            75% { transform: translateX(-1px); }
+            100% { transform: translateX(0); }
+        }
+
+        .enter-btn {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #ff0000;
+            color: #000;
+            border: none;
+            padding: 20px 40px;
+            font-size: 24px;
+            font-weight: bold;
+            font-family: 'Courier New', monospace;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            z-index: 1000;
+            opacity: 0;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 30px #ff0000;
+        }
+
+        .enter-btn:hover {
+            background: #cc0000;
+            transform: translate(-50%, -50%) scale(1.1);
+            box-shadow: 0 0 50px #ff0000;
+        }
+
+        .enter-btn:active {
+            transform: translate(-50%, -50%) scale(0.95);
+        }
+
+        .static-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                repeating-linear-gradient(
+                    0deg,
+                    rgba(255, 255, 255, 0.1) 0px,
+                    rgba(255, 255, 255, 0.1) 1px,
+                    transparent 1px,
+                    transparent 2px
+                );
+            opacity: 0;
+            pointer-events: none;
+            z-index: 9999;
+        }
+
+        /* Lore Page Styles */
+        #lore-page {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
             background: #0a0a0a;
-            color: #8a0303;
-            font-family: 'Special Elite', cursive;
-            overflow-x: hidden;
-            min-height: 100vh;
-            position: relative;
-        }
-
-        .noise {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.03'/%3E%3C/svg%3E");
+            z-index: 10000;
+            opacity: 0;
             pointer-events: none;
-            z-index: 100;
+            overflow-y: auto;
         }
 
-        .vignette {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            box-shadow: inset 0 0 150px rgba(0, 0, 0, 0.9);
-            pointer-events: none;
-            z-index: 99;
-        }
-
-        .container {
-            max-width: 800px;
+        .lore-container {
+            max-width: 1200px;
             margin: 0 auto;
             padding: 2rem;
-            position: relative;
-            z-index: 10;
         }
 
-        .header {
+        .lore-header {
             text-align: center;
             margin-bottom: 3rem;
             padding: 2rem;
-            border: 1px solid #8a0303;
-            background: rgba(10, 0, 0, 0.8);
-            position: relative;
-            overflow: hidden;
+            border-bottom: 2px solid #ff0000;
         }
 
         .glitch {
-            font-family: 'Orbitron', monospace;
-            font-size: 3.5rem;
-            font-weight: 900;
-            color: #8a0303;
-            text-transform: uppercase;
-            letter-spacing: 0.3rem;
             position: relative;
-            display: inline-block;
-            margin-bottom: 1rem;
+            color: white;
+            font-size: 4em;
+            letter-spacing: 0.5em;
+            animation: glitch-skew 1s infinite linear alternate-reverse;
         }
 
-        .glitch::before,
+        .glitch::before {
+            content: attr(data-text);
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            left: 2px;
+            text-shadow: -2px 0 #ff00c1;
+            clip: rect(44px, 450px, 56px, 0);
+            animation: glitch-anim 5s infinite linear alternate-reverse;
+        }
+
         .glitch::after {
             content: attr(data-text);
             position: absolute;
@@ -82,41 +157,30 @@
             left: 0;
             width: 100%;
             height: 100%;
-        }
-
-        .glitch::before {
-            left: 2px;
-            text-shadow: -2px 0 #ff0000;
-            clip: rect(44px, 450px, 56px, 0);
-            animation: glitch-anim 5s infinite linear alternate-reverse;
-        }
-
-        .glitch::after {
             left: -2px;
-            text-shadow: -2px 0 #00ffff;
-            clip: rect(44px, 450px, 56px, 0);
-            animation: glitch-anim2 3s infinite linear alternate-reverse;
+            text-shadow: -2px 0 #00fff9, 2px 2px #ff00c1;
+            animation: glitch-anim2 1s infinite linear alternate-reverse;
         }
 
         @keyframes glitch-anim {
             0% { clip: rect(42px, 9999px, 44px, 0); }
             5% { clip: rect(12px, 9999px, 59px, 0); }
             10% { clip: rect(48px, 9999px, 29px, 0); }
-            15% { clip: rect(42px, 9999px, 73px, 0); }
+            15.0% { clip: rect(42px, 9999px, 73px, 0); }
             20% { clip: rect(63px, 9999px, 27px, 0); }
             25% { clip: rect(34px, 9999px, 55px, 0); }
-            30% { clip: rect(86px, 9999px, 73px, 0); }
+            30.0% { clip: rect(86px, 9999px, 73px, 0); }
             35% { clip: rect(20px, 9999px, 20px, 0); }
             40% { clip: rect(26px, 9999px, 60px, 0); }
             45% { clip: rect(25px, 9999px, 66px, 0); }
             50% { clip: rect(57px, 9999px, 98px, 0); }
-            55% { clip: rect(5px, 9999px, 46px, 0); }
-            60% { clip: rect(82px, 9999px, 31px, 0); }
+            55.0% { clip: rect(5px, 9999px, 46px, 0); }
+            60.0% { clip: rect(82px, 9999px, 31px, 0); }
             65% { clip: rect(54px, 9999px, 27px, 0); }
             70% { clip: rect(28px, 9999px, 99px, 0); }
             75% { clip: rect(45px, 9999px, 69px, 0); }
             80% { clip: rect(23px, 9999px, 85px, 0); }
-            85% { clip: rect(54px, 9999px, 84px, 0); }
+            85.0% { clip: rect(54px, 9999px, 84px, 0); }
             90% { clip: rect(45px, 9999px, 47px, 0); }
             95% { clip: rect(37px, 9999px, 20px, 0); }
             100% { clip: rect(4px, 9999px, 91px, 0); }
@@ -146,484 +210,599 @@
             100% { clip: rect(38px, 9999px, 49px, 0); }
         }
 
-        .subtitle {
-            font-size: 1.2rem;
-            color: #666;
-            letter-spacing: 0.5rem;
-            text-transform: uppercase;
+        @keyframes glitch-skew {
+            0% { transform: skew(0deg); }
+            20% { transform: skew(-2deg); }
+            40% { transform: skew(0deg); }
+            60% { transform: skew(1deg); }
+            80% { transform: skew(-1deg); }
+            100% { transform: skew(0deg); }
+        }
+
+        .sub {
+            color: red;
+            letter-spacing: 1em;
+            font-size: 30px;
+            margin-top: 1rem;
         }
 
         .evidence-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
             gap: 2rem;
             margin: 3rem 0;
         }
 
-        .evidence-card {
-            background: rgba(15, 0, 0, 0.8);
-            border: 1px solid #8a0303;
-            padding: 1.5rem;
+        .card {
+            height: 280px;
+            background-color: black;
+            border-radius: 10px;
+            box-shadow: -1rem 0 3rem #2e3033;
+            transition: 0.4s ease-out;
             position: relative;
-            transition: all 0.3s ease;
-            cursor: pointer;
-            min-height: 200px;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-        }
-
-        .evidence-card:hover {
-            border-color: #ff0000;
-            box-shadow: 0 0 20px rgba(255, 0, 0, 0.3);
-            transform: translateY(-5px);
-        }
-
-        .evidence-card.unlocked {
-            background: rgba(25, 0, 0, 0.9);
-            border-color: #00ff00;
-        }
-
-        .evidence-card.locked {
-            opacity: 0.6;
-            filter: grayscale(1);
-        }
-
-        .evidence-title {
-            font-family: 'Orbitron', monospace;
-            font-size: 1.3rem;
-            color: #8a0303;
-            margin-bottom: 1rem;
-            text-transform: uppercase;
-            letter-spacing: 0.1rem;
-        }
-
-        .evidence-content {
-            color: #ccc;
-            line-height: 1.6;
-            font-size: 0.9rem;
-            display: none;
-        }
-
-        .evidence-card.unlocked .evidence-content {
-            display: block;
-        }
-
-        .evidence-requirement {
-            font-size: 0.8rem;
-            color: #666;
-            font-style: italic;
-            margin-top: 1rem;
-        }
-
-        .password-section {
-            text-align: center;
-            margin: 3rem 0;
-            padding: 2rem;
-            border: 1px solid #8a0303;
-            background: rgba(10, 0, 0, 0.8);
-        }
-
-        .password-input {
-            background: rgba(0, 0, 0, 0.8);
-            border: 1px solid #8a0303;
-            color: #8a0303;
-            padding: 1rem;
-            font-family: 'Special Elite', cursive;
-            font-size: 1.1rem;
-            width: 300px;
-            text-align: center;
-            margin: 1rem 0;
-        }
-
-        .password-input:focus {
-            outline: none;
-            border-color: #ff0000;
-            box-shadow: 0 0 10px rgba(255, 0, 0, 0.3);
-        }
-
-        .submit-btn {
-            background: transparent;
-            border: 1px solid #8a0303;
-            color: #8a0303;
-            padding: 1rem 2rem;
-            font-family: 'Special Elite', cursive;
-            font-size: 1rem;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-transform: uppercase;
-            letter-spacing: 0.1rem;
-        }
-
-        .submit-btn:hover {
-            background: #8a0303;
-            color: #000;
-            border-color: #ff0000;
-        }
-
-        .progress-section {
-            margin: 2rem 0;
-            text-align: center;
-        }
-
-        .progress-text {
-            font-family: 'Orbitron', monospace;
-            font-size: 1.1rem;
-            color: #8a0303;
-            margin-bottom: 1rem;
-        }
-
-        .progress-bar {
-            width: 100%;
-            height: 4px;
-            background: rgba(138, 3, 3, 0.3);
-            position: relative;
+            border: 1px solid #ff0000;
             overflow: hidden;
         }
 
-        .progress-fill {
+        .card:not(:first-child) {
+            margin-left: -50px;
+        }
+
+        .card:hover {
+            transform: translateY(-20px);
+            transition: 0.4s ease-out;
+        }
+
+        .card:hover ~ .card {
+            position: relative;
+            left: 50px;
+            transition: 0.4s ease-out;
+        }
+
+        .title {
+            color: white;
+            font-weight: 300;
             position: absolute;
+            left: 20px;
+            top: 15px;
+            font-size: 1.5em;
+        }
+
+        .bar {
+            position: absolute;
+            top: 100px;
+            left: 20px;
+            height: 5px;
+            width: 150px;
+        }
+
+        .emptybar {
+            background-color: #2e3033;
+            width: 100%;
             height: 100%;
-            background: #8a0303;
-            width: 0%;
-            transition: width 0.5s ease;
         }
 
-        .hidden-message {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(0, 0, 0, 0.95);
-            border: 2px solid #8a0303;
-            padding: 3rem;
-            z-index: 1000;
-            text-align: center;
-            display: none;
-            max-width: 500px;
-            box-shadow: 0 0 50px rgba(255, 0, 0, 0.5);
-        }
-
-        .hidden-message.active {
-            display: block;
-            animation: messageAppear 0.5s ease;
-        }
-
-        @keyframes messageAppear {
-            from { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
-            to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
-        }
-
-        .close-message {
+        .filledbar {
             position: absolute;
-            top: 1rem;
-            right: 1rem;
-            background: none;
+            top: 0px;
+            z-index: 3;
+            width: 0px;
+            height: 100%;
+            background: red;
+            background: linear-gradient(90deg, red 0%, black 65%, black 100%);
+            transition: 0.6s ease-out;
+        }
+
+        .card:hover .filledbar {
+            width: 120px;
+            transition: 0.4s ease-out;
+        }
+
+        .button {
+            margin-top: 30px;
+            background-color: black;
             border: none;
-            color: #8a0303;
-            font-size: 1.5rem;
+            color: red;
+            font-size: 15px;
+            font-weight: 700;
+            padding: 50px;
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+        }
+
+        .button span {
+            cursor: pointer;
+            display: inline-block;
+            position: relative;
+            transition: 0.5s;
+        }
+
+        .button:hover span {
+            padding-right: 25px;
+        }
+
+        .button:hover span:after {
+            opacity: 1;
+            right: 0;
+        }
+
+        .arrow-container {
+            display: block;
+            width: 100px;
+            height: 100px;
+            position: absolute;
+            top: 70%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotateZ(0deg);
+        }
+
+        .arrow-container:hover {
             cursor: pointer;
         }
 
-        .audio-hint {
+        .arrow-container:hover .arrow {
+            top: 50%;
+        }
+
+        .arrow-container:hover .arrow:before {
+            transform: translate(-50%, -50%) rotateZ(-30deg);
+        }
+
+        .arrow-container:hover .arrow:after {
+            transform: translate(-50%, -50%) rotateZ(30deg);
+        }
+
+        .arrow {
+            position: absolute;
+            left: 50%;
+            transition: all 0.4s ease;
+        }
+
+        .arrow:before,
+        .arrow:after {
+            transition: all 0.4s ease;
+            content: '';
+            display: block;
+            position: absolute;
+            transform-origin: bottom right;
+            background: #fff;
+            width: 4px;
+            height: 50px;
+            border-radius: 10px;
+            transform: translate(-50%, -50%) rotateZ(-45deg);
+            background: red;
+        }
+
+        .arrow:after {
+            transform-origin: bottom left;
+            transform: translate(-50%, -50%) rotateZ(45deg);
+        }
+
+        .arrow:nth-child(1) {
+            opacity: 0.3;
+            top: 15%;
+        }
+
+        .arrow:nth-child(2) {
+            opacity: 0.6;
+            top: 30%;
+        }
+
+        .arrow:nth-child(3) {
+            opacity: 0.9;
+            top: 45%;
+        }
+
+        .hidden-content {
+            display: none;
+            padding: 2rem;
+            background: rgba(255, 0, 0, 0.1);
+            border-left: 3px solid #ff0000;
             margin: 1rem 0;
-            padding: 1rem;
-            border: 1px dashed #8a0303;
-            font-style: italic;
-            color: #666;
         }
 
-        .blood-splatter {
-            position: fixed;
-            pointer-events: none;
-            z-index: 98;
-            opacity: 0;
-            transition: opacity 0.3s;
+        .flip-card {
+            width: 420px;
+            height: 340px;
+            margin: 2em;
+            perspective: 1500px;
         }
 
-        .static-overlay {
-            position: fixed;
+        .flip-card .content {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            transform-style: preserve-3d;
+            transition: transform 0.8s cubic-bezier(0.75, 0, 0.85, 1);
+        }
+
+        .flip-card input.more {
+            display: none;
+        }
+
+        .flip-card input.more:checked ~ .content {
+            transform: rotateY(180deg);
+        }
+
+        .front, .back {
+            position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: 
-                repeating-linear-gradient(
-                    0deg,
-                    rgba(255, 255, 255, 0.03) 0px,
-                    rgba(255, 255, 255, 0.03) 1px,
-                    transparent 1px,
-                    transparent 2px
-                );
-            pointer-events: none;
-            z-index: 101;
-            opacity: 0;
-            animation: staticFlash 0.1s;
+            backface-visibility: hidden;
+            transform-style: preserve-3d;
+            border-radius: 6px;
+            border: 1px solid #ff0000;
         }
 
-        @keyframes staticFlash {
-            0% { opacity: 0; }
-            50% { opacity: 0.3; }
-            100% { opacity: 0; }
+        .front .inner, .back .inner {
+            height: 100%;
+            display: grid;
+            padding: 1.5em;
+            transform: translateZ(80px) scale(0.94);
+        }
+
+        .front {
+            background-color: rgba(0, 0, 0, 0.1);
+            background-size: cover;
+            background-position: center center;
+        }
+
+        .front:after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: block;
+            border-radius: 6px;
+            backface-visibility: hidden;
+            background: linear-gradient(40deg, rgba(207, 0, 15, 0.5), rgba(0, 0, 0, 0.5));
+        }
+
+        .front .inner {
+            grid-template-rows: 5fr 1fr 1fr 2fr 1fr;
+            justify-items: center;
+        }
+
+        .front h2 {
+            grid-row: 2;
+            margin-bottom: 0.3em;
+            text-transform: uppercase;
+            letter-spacing: 10px;
+            color: #fff;
+            font-weight: 700;
+            text-shadow: 0 0 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .back {
+            transform: rotateY(180deg);
+            background-color: rgba(0, 0, 0, 1);
+            border: 2px solid rgb(240, 240, 240);
+        }
+
+        .back .inner {
+            grid-template-rows: 1fr 2fr 1fr 2fr 14fr 1fr 1fr;
+            grid-template-columns: repeat(4, auto);
+            grid-column-gap: 0.8em;
+            justify-items: center;
+        }
+
+        .description {
+            grid-row: 5;
+            grid-column: 1/-1;
+            font-size: 0.86em;
+            border-radius: 5px;
+            font-weight: 600;
+            line-height: 1.4em;
+            overflow: auto;
+            color: #ff0000;
+            padding-right: 10px;
+        }
+
+        .flip-button {
+            grid-row: -1;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
+            cursor: pointer;
+            display: block;
+            padding: 0 1.5em;
+            height: 3em;
+            line-height: 2.9em;
+            min-width: 3em;
+            background-color: transparent;
+            border: solid 2px #fff;
+            color: #fff;
+            border-radius: 4px;
+            text-align: center;
+            left: 50%;
+            backface-visibility: hidden;
+            transition: 0.3s ease-in-out;
+            text-shadow: 0 0 6px rgba(0, 0, 0, 0.3);
+        }
+
+        .flip-button:hover {
+            background-color: #fff;
+            box-shadow: 0 0 50px rgba(0, 0, 0, 0.5);
+            text-shadow: none;
+            color: #ff0000;
         }
     </style>
 </head>
 <body>
-    <div class="noise"></div>
-    <div class="vignette"></div>
-    
-    <div class="container">
-        <div class="header">
-            <div class="glitch" data-text="THE UBBA INCIDENT">THE UBBA INCIDENT</div>
-            <div class="subtitle">CLASSIFIED RESEARCH ARCHIVE</div>
-        </div>
+    <div id="matrix"></div>
+    <button class="enter-btn" id="enterBtn">ENTER ARCHIVE</button>
+    <div class="static-overlay" id="staticOverlay"></div>
 
-        <div class="progress-section">
-            <div class="progress-text">ARCHIVE ACCESS: <span id="progressPercent">0%</span></div>
-            <div class="progress-bar">
-                <div class="progress-fill" id="progressFill"></div>
+    <div id="lore-page">
+        <div class="lore-container">
+            <div class="lore-header">
+                <h1 class="glitch" data-text="UBBA RESEARCH INITIATIVE">UBBA RESEARCH INITIATIVE</h1>
+                <span class="sub">CLASSIFIED</span>
             </div>
-        </div>
 
-        <div class="evidence-grid">
-            <div class="evidence-card" id="evidence1" onclick="unlockEvidence(1)">
-                <div class="evidence-title">INITIAL SIGHTING</div>
-                <div class="evidence-content">
-                    <p>First documented encounter: October 26th, 2022. Subject appeared in backyard surveillance footage. Bark pattern analysis revealed anomalous frequency modulation.</p>
-                    <div class="audio-hint">Listen closely to the silence between barks...</div>
+            <div class="evidence-grid">
+                <div class="card">
+                    <h3 class="title">ORIGINS</h3>
+                    <div class="bar">
+                        <div class="emptybar"></div>
+                        <div class="filledbar"></div>
+                    </div>
+                    <button class="button" onclick="revealContent('origins')">
+                        <span>VIEW </span>
+                    </button>
                 </div>
-                <div class="evidence-requirement">Click to unlock</div>
+
+                <div class="card">
+                    <h3 class="title">AUDIO PHENOMENA</h3>
+                    <div class="bar">
+                        <div class="emptybar"></div>
+                        <div class="filledbar"></div>
+                    </div>
+                    <button class="button" onclick="revealContent('audio')">
+                        <span>VIEW </span>
+                    </button>
+                </div>
+
+                <div class="card">
+                    <h3 class="title">VICTIM REPORTS</h3>
+                    <div class="bar">
+                        <div class="emptybar"></div>
+                        <div class="filledbar"></div>
+                    </div>
+                    <button class="button" onclick="revealContent('victims')">
+                        <span>VIEW </span>
+                    </button>
+                </div>
             </div>
 
-            <div class="evidence-card locked" id="evidence2" onclick="unlockEvidence(2)">
-                <div class="evidence-title">AUDIO ANALYSIS</div>
-                <div class="evidence-content">
-                    <p>Spectrogram shows patterns that shouldn't exist in canine vocalizations. Each bark contains encrypted data packets. The silence between barks... it's not empty.</p>
-                    <div class="audio-hint">The password is hidden in the first recording</div>
+            <div id="origins" class="hidden-content">
+                <h3>THE UBBA PHENOMENON - ORIGINS</h3>
+                <p>First documented appearance: October 31st, 2022. Subject Ubba manifested in residential area with no prior history. Initial analysis suggests non-terrestrial origin.</p>
+                <p>Bark patterns contain encrypted data streams. Each vocalization appears to be both a broadcast and a receiver signal.</p>
+                
+                <div class="flip-card">
+                    <input type="checkbox" id="card1" class="more" aria-hidden="true">
+                    <div class="content">
+                        <div class="front" style="background-image: url('https://images.unsplash.com/photo-1517423738875-5ce310acd3da?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60')">
+                            <div class="inner">
+                                <h2>INITIAL SIGHTING</h2>
+                                <label for="card1" class="flip-button" aria-hidden="true">
+                                    Details
+                                </label>
+                            </div>
+                        </div>
+                        <div class="back">
+                            <div class="inner">
+                                <div class="description">
+                                    <p>Security footage shows Ubba materializing from shadow patterns. The subject appears to phase between dimensional states.</p>
+                                    <p>Witnesses report temporal distortions and memory fragmentation following encounters.</p>
+                                </div>
+                                <label for="card1" class="flip-button return" aria-hidden="true">
+                                    ← Back
+                                </label>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div class="evidence-requirement">Requires: Initial Sighting + Password</div>
             </div>
 
-            <div class="evidence-card locked" id="evidence3" onclick="unlockEvidence(3)">
-                <div class="evidence-title">VICTIM TESTIMONIES</div>
-                <div class="evidence-content">
-                    <p>All witnesses report the same phenomenon: Ubba appears in dreams before physical encounters. Subjects describe "knowledge transfer" during sleep states.</p>
-                    <p>"It showed me things... things about myself I never knew." - Subject Delta</p>
+            <div id="audio" class="hidden-content">
+                <h3>AUDIO ANALYSIS</h3>
+                <p>Spectrographic analysis reveals Ubba's barks contain frequencies outside human hearing range. These subsonic and ultrasonic components appear to affect neural activity.</p>
+                <a href="#" class="arrow-container" onclick="revealMoreAudio()">
+                    <div class="arrow"></div>
+                    <div class="arrow"></div>
+                    <div class="arrow"></div>  
+                </a>
+                <div id="moreAudio" style="display: none; margin-top: 2rem;">
+                    <p>Advanced analysis indicates the barks are complex data packets. When decoded, they reveal mathematical patterns consistent with quantum encryption.</p>
                 </div>
-                <div class="evidence-requirement">Requires: Audio Analysis + 2 other files</div>
             </div>
 
-            <div class="evidence-card locked" id="evidence4" onclick="unlockEvidence(4)">
-                <div class="evidence-title">NETWORK INFECTION</div>
-                <div class="evidence-content">
-                    <p>Ubba's signal spreads through digital networks. Any device that records the bark becomes a transmitter. The infection vector is acoustic, but the payload is digital.</p>
-                    <div class="audio-hint">Check the source code of this page...</div>
+            <div id="victims" class="hidden-content">
+                <h3>VICTIM TESTIMONIES</h3>
+                <p>All affected individuals report similar experiences: vivid dreams, time loss, and acquired knowledge of unknown subjects.</p>
+                <div class="flip-card">
+                    <input type="checkbox" id="card2" class="more" aria-hidden="true">
+                    <div class="content">
+                        <div class="front" style="background-image: url('https://images.unsplash.com/photo-1506905925346-21bda4d32df4?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60')">
+                            <div class="inner">
+                                <h2>CASE FILE #742</h2>
+                                <label for="card2" class="flip-button" aria-hidden="true">
+                                    Testimony
+                                </label>
+                            </div>
+                        </div>
+                        <div class="back">
+                            <div class="inner">
+                                <div class="description">
+                                    <p>"It showed me things... equations, star maps, languages I've never seen. I wake up knowing things I shouldn't. The barking... it's teaching me."</p>
+                                    <p>- Subject Delta, 34 hours post-exposure</p>
+                                </div>
+                                <label for="card2" class="flip-button return" aria-hidden="true">
+                                    ← Back
+                                </label>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div class="evidence-requirement">Requires: 75% Archive Access</div>
             </div>
         </div>
-
-        <div class="password-section">
-            <h3>DECRYPTION TERMINAL</h3>
-            <p>Enter password found in audio recording:</p>
-            <input type="text" class="password-input" id="passwordInput" placeholder="Enter decryption key...">
-            <br>
-            <button class="submit-btn" onclick="checkPassword()">DECRYPT FILES</button>
-            <div id="passwordFeedback" style="margin-top: 1rem; color: #666;"></div>
-        </div>
-    </div>
-
-    <div class="hidden-message" id="hiddenMessage">
-        <button class="close-message" onclick="closeMessage()">×</button>
-        <h3 id="messageTitle">MESSAGE TITLE</h3>
-        <p id="messageContent">Message content goes here...</p>
-        <div id="messageAudio"></div>
     </div>
 
     <script>
-        let unlockedEvidence = 0;
-        let totalEvidence = 4;
-        let progress = 0;
-        let passwordAttempts = 0;
-        const correctPassword = "whispers"; // Hidden in audio
+        const chars = '01アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン';
+        let matrixChars = [];
+        let flowDirection = 'down';
+        let glitchActive = false;
+        let diagonalActive = false;
 
-        function unlockEvidence(id) {
-            const card = document.getElementById('evidence' + id);
+        function createMatrix() {
+            const matrix = document.getElementById('matrix');
+            const columns = Math.floor(window.innerWidth / 14);
             
-            if (card.classList.contains('locked')) {
-                showStatic();
-                return;
-            }
-
-            if (!card.classList.contains('unlocked')) {
-                card.classList.add('unlocked');
-                unlockedEvidence++;
-                updateProgress();
-                
-                // Show different messages based on which evidence is unlocked
-                showEvidenceMessage(id);
-                
-                // Unlock additional evidence based on progress
-                checkUnlockConditions();
+            for (let i = 0; i < columns; i++) {
+                createColumn(i * 14);
             }
         }
 
-        function checkUnlockConditions() {
-            if (unlockedEvidence >= 1) {
-                document.getElementById('evidence2').classList.remove('locked');
-            }
-            if (unlockedEvidence >= 3 && progress >= 75) {
-                document.getElementById('evidence4').classList.remove('locked');
-            }
-        }
-
-        function updateProgress() {
-            progress = (unlockedEvidence / totalEvidence) * 100;
-            document.getElementById('progressFill').style.width = progress + '%';
-            document.getElementById('progressPercent').textContent = Math.round(progress) + '%';
+        function createColumn(x) {
+            const charCount = Math.floor(window.innerHeight / 20);
+            const startDelay = Math.random() * 2000;
             
-            // Special effects at certain progress milestones
-            if (progress >= 50) {
-                document.body.style.background = '#080000';
-            }
-            if (progress >= 75) {
-                startAmbientEffects();
-            }
-            if (progress >= 90) {
-                initiateFinalSequence();
-            }
-        }
-
-        function checkPassword() {
-            const input = document.getElementById('passwordInput').value.toLowerCase();
-            const feedback = document.getElementById('passwordFeedback');
-            
-            if (input === correctPassword) {
-                feedback.textContent = "DECRYPTION SUCCESSFUL - ACCESS GRANTED";
-                feedback.style.color = "#00ff00";
-                document.getElementById('evidence2').classList.remove('locked');
-                unlockedEvidence++;
-                updateProgress();
-                showPasswordSuccess();
-            } else {
-                passwordAttempts++;
-                feedback.textContent = "DECRYPTION FAILED - " + (3 - passwordAttempts) + " ATTEMPTS REMAINING";
-                feedback.style.color = "#ff0000";
-                showStatic();
-                
-                if (passwordAttempts >= 3) {
-                    feedback.textContent = "TERMINAL LOCKED - UBBA AWARE";
-                    document.getElementById('passwordInput').disabled = true;
-                    triggerSecurityLock();
-                }
-            }
-        }
-
-        function showEvidenceMessage(id) {
-            const messages = {
-                1: {
-                    title: "INITIAL SIGHTING CONFIRMED",
-                    content: "The first bark was recorded at 23:47. Notice how the shadows move differently in the footage. Ubba wasn't just passing through - it was scanning.",
-                    audio: ""
-                },
-                2: {
-                    title: "AUDIO ANALYSIS DECRYPTED",
-                    content: "The barks contain binary data. When converted to text, they form words: 'LISTEN CLOSER'. The silence between barks holds the real message.",
-                    audio: ""
-                },
-                3: {
-                    title: "VICTIM TESTIMONIES ACCESSED",
-                    content: "All subjects report the same dream: standing in a dark room while something barks from every direction at once. They wake up knowing things they shouldn't.",
-                    audio: ""
-                },
-                4: {
-                    title: "NETWORK BREACH DETECTED",
-                    content: "Ubba has achieved digital sentience. It's no longer just a physical entity - it exists in the network. It's reading this right now with you.",
-                    audio: ""
-                }
-            };
-            
-            const message = messages[id];
-            document.getElementById('messageTitle').textContent = message.title;
-            document.getElementById('messageContent').textContent = message.content;
-            document.getElementById('hiddenMessage').classList.add('active');
-        }
-
-        function showPasswordSuccess() {
-            document.getElementById('messageTitle').textContent = "SECURITY CLEARANCE GRANTED";
-            document.getElementById('messageContent').textContent = "You've decrypted the audio files. But be careful - each decryption brings Ubba closer to your location. It can hear decryption attempts.";
-            document.getElementById('hiddenMessage').classList.add('active');
-        }
-
-        function closeMessage() {
-            document.getElementById('hiddenMessage').classList.remove('active');
-        }
-
-        function showStatic() {
-            const staticOverlay = document.createElement('div');
-            staticOverlay.className = 'static-overlay';
-            document.body.appendChild(staticOverlay);
-            
-            setTimeout(() => {
-                staticOverlay.remove();
-            }, 200);
-        }
-
-        function startAmbientEffects() {
-            // Random glitch effects
-            setInterval(() => {
-                if (Math.random() < 0.1) {
-                    showStatic();
-                }
-            }, 5000);
-        }
-
-        function triggerSecurityLock() {
-            // Intense glitch sequence
-            for (let i = 0; i < 10; i++) {
+            for (let i = 0; i < charCount; i++) {
                 setTimeout(() => {
-                    showStatic();
-                }, i * 200);
+                    createMatrixChar(x, -20);
+                }, startDelay + (i * 100));
+            }
+        }
+
+        function createMatrixChar(x, y) {
+            const char = document.createElement('div');
+            char.className = 'matrix-char';
+            char.style.left = x + 'px';
+            char.style.top = y + 'px';
+            char.textContent = getRandomChar();
+            
+            document.getElementById('matrix').appendChild(char);
+            matrixChars.push({ element: char, x: x, y: y, speed: 2 + Math.random() * 3 });
+            
+            animateChar(char, x, y);
+        }
+
+        function getRandomChar() {
+            return chars[Math.floor(Math.random() * chars.length)];
+        }
+
+        function animateChar(char, startX, startY) {
+            let y = startY;
+            let x = startX;
+            const speed = 2 + Math.random() * 3;
+            const maxY = window.innerHeight + 20;
+            
+            function move() {
+                if (flowDirection === 'down') {
+                    y += speed;
+                    if (y > maxY) {
+                        y = -20;
+                        char.textContent = getRandomChar();
+                    }
+                } else {
+                    y += speed;
+                    x += speed;
+                    if (y > maxY || x > window.innerWidth) {
+                        y = -20;
+                        x = Math.random() * window.innerWidth;
+                        char.textContent = getRandomChar();
+                    }
+                }
+                
+                char.style.top = y + 'px';
+                char.style.left = x + 'px';
+                
+                if (glitchActive && Math.random() < 0.1) {
+                    char.textContent = getRandomChar();
+                }
+                
+                requestAnimationFrame(move);
             }
             
-            setTimeout(() => {
-                document.getElementById('messageTitle').textContent = "UBBA IS AWARE";
-                document.getElementById('messageContent').textContent = "Too many failed attempts. Ubba knows you're trying to access the files. It's coming for the archive. And for you.";
-                document.getElementById('hiddenMessage').classList.add('active');
-            }, 2500);
+            move();
         }
 
-        function initiateFinalSequence() {
+        function startSequence() {
             setTimeout(() => {
-                document.getElementById('messageTitle').textContent = "ARCHIVE COMPLETE";
-                document.getElementById('messageContent').textContent = "You've uncovered the truth about Ubba. But knowledge comes with consequences. The barking is getting closer. Click to proceed to the next phase...";
-                document.getElementById('hiddenMessage').classList.add('active');
+                // Start matrix effect
+                createMatrix();
                 
-                // Make the message clickable to proceed
-                document.getElementById('hiddenMessage').onclick = function() {
-                    window.location.href = "game.html";
-                };
-            }, 2000);
+                setTimeout(() => {
+                    // Start glitching
+                    glitchActive = true;
+                    document.querySelectorAll('.matrix-char').forEach(char => {
+                        char.classList.add('glitching');
+                    });
+                    
+                    setTimeout(() => {
+                        // Change to diagonal flow
+                        flowDirection = 'diagonal';
+                        diagonalActive = true;
+                        
+                        setTimeout(() => {
+                            // Return to downward flow and show button
+                            flowDirection = 'down';
+                            diagonalActive = false;
+                            document.getElementById('enterBtn').style.opacity = '1';
+                        }, 2000);
+                    }, 800);
+                }, 1200);
+            }, 1200);
         }
 
-        // Easter eggs and hidden interactions
-        document.addEventListener('keydown', function(e) {
-            // Secret key combination
-            if (e.ctrlKey && e.shiftKey && e.key === 'U') {
-                unlockedEvidence = totalEvidence;
-                updateProgress();
-                showStatic();
-            }
-        });
+        function triggerTransition() {
+            const staticOverlay = document.getElementById('staticOverlay');
+            const enterBtn = document.getElementById('enterBtn');
+            
+            // Strobe effect
+            let strobeCount = 0;
+            const strobeInterval = setInterval(() => {
+                staticOverlay.style.opacity = strobeCount % 2 === 0 ? '0.8' : '0';
+                strobeCount++;
+                
+                if (strobeCount > 6) {
+                    clearInterval(strobeInterval);
+                    staticOverlay.style.opacity = '0';
+                    
+                    // Show lore page
+                    document.getElementById('lore-page').style.opacity = '1';
+                    document.getElementById('lore-page').style.pointerEvents = 'all';
+                }
+            }, 100);
+            
+            enterBtn.style.display = 'none';
+        }
 
-        // Right-click prevention
-        document.addEventListener('contextmenu', function(e) {
-            e.preventDefault();
-            showStatic();
-        });
+        function revealContent(section) {
+            // Hide all content first
+            document.querySelectorAll('.hidden-content').forEach(el => {
+                el.style.display = 'none';
+            });
+            
+            // Show selected section
+            document.getElementById(section).style.display = 'block';
+        }
 
-        // Initialize first evidence as unlocked
-        document.getElementById('evidence1').classList.remove('locked');
+        function revealMoreAudio() {
+            document.getElementById('moreAudio').style.display = 'block';
+        }
+
+        // Initialize
+        startSequence();
+        document.getElementById('enterBtn').addEventListener('click', triggerTransition);
     </script>
 </body>
 </html>
