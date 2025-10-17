@@ -41,7 +41,7 @@
         .office-bg {
             width: 100%;
             height: 100%;
-            background: #1a1a1a url('https://raw.githubusercontent.com/clampert1/Ubba/main/ubba-arg/assets/cameras/Office.png') no-repeat center center;
+            background: #1a1a1a url('https://raw.githubusercontent.com/clampert1/Ubba/main/ubba-arg/assets/cameras/office.png') no-repeat center center;
             background-size: cover;
             position: relative;
         }
@@ -231,7 +231,7 @@
             position: absolute;
             width: 150px;
             height: 200px;
-            background: #8b0000 url('https://raw.githubusercontent.com/clampert1/Ubba/main/ubba-arg/assets/sprites/ubba.png') no-repeat center center;
+            background: url('https://raw.githubusercontent.com/clampert1/Ubba/main/ubba-arg/assets/sprites/ubba.png') no-repeat center center;
             background-size: contain;
             display: none;
             transition: all 0.5s ease;
@@ -242,6 +242,15 @@
             display: block;
         }
 
+        /* Ubba in office - partially above light button */
+        #ubba-office {
+            left: 250px;
+            top: 55%;
+            width: 120px;
+            height: 160px;
+        }
+
+        /* Ubba at door during attack */
         #ubba-door {
             left: 220px;
             top: 50%;
@@ -410,7 +419,10 @@
                 <div id="left-door" class="closed"></div>
                 <div id="left-light"></div>
                 
-                <!-- Ubba at door -->
+                <!-- Ubba in office (only visible when light is on) -->
+                <div class="ubba" id="ubba-office"></div>
+                
+                <!-- Ubba at door during attack -->
                 <div class="ubba" id="ubba-door"></div>
             </div>
         </div>
@@ -509,7 +521,9 @@
             attacksCompleted: 0,
             totalAttacks: 2,
             isAttacking: false,
-            attackTimer: null
+            attackTimer: null,
+            ubbaCameraTimer: null,
+            currentUbbaCamera: 0
         };
 
         // Camera rooms
@@ -523,6 +537,7 @@
             officeView: document.getElementById('office-view'),
             leftDoor: document.getElementById('left-door'),
             leftLight: document.getElementById('left-light'),
+            ubbaOffice: document.getElementById('ubba-office'),
             ubbaDoor: document.getElementById('ubba-door'),
             static: document.querySelector('.static-overlay'),
             jumpscare: document.getElementById('jumpscare'),
@@ -541,6 +556,7 @@
             updateUI();
             gameLoop();
             scheduleAttacks();
+            startUbbaCameraMovement();
         }
 
         // Main game loop
@@ -572,6 +588,42 @@
             setTimeout(gameLoop, 1000);
         }
 
+        // Ubba camera movement - switches cameras every 6 seconds
+        function startUbbaCameraMovement() {
+            if (gameState.ubbaCameraTimer) {
+                clearInterval(gameState.ubbaCameraTimer);
+            }
+            
+            gameState.ubbaCameraTimer = setInterval(() => {
+                if (!gameState.isAttacking && gameState.gameActive) {
+                    moveUbbaToRandomCamera();
+                }
+            }, 6000);
+        }
+
+        function moveUbbaToRandomCamera() {
+            // Hide Ubba from all cameras
+            document.querySelectorAll('.ubba').forEach(ubba => {
+                if (ubba.id !== 'ubba-office' && ubba.id !== 'ubba-door') {
+                    ubba.classList.remove('visible');
+                }
+            });
+
+            // Choose a random camera (different from current)
+            let newCamera;
+            do {
+                newCamera = Math.floor(Math.random() * 5);
+            } while (newCamera === gameState.currentUbbaCamera);
+            
+            gameState.currentUbbaCamera = newCamera;
+
+            // Show Ubba in the new camera
+            const ubbaElement = document.getElementById(`ubba-cam${newCamera + 1}`);
+            if (ubbaElement) {
+                ubbaElement.classList.add('visible');
+            }
+        }
+
         // Schedule Ubba attacks
         function scheduleAttacks() {
             // First attack between 5:22-5:29 AM
@@ -589,6 +641,13 @@
 
             gameState.isAttacking = true;
             
+            // Hide Ubba from all cameras during attack
+            document.querySelectorAll('.ubba').forEach(ubba => {
+                if (ubba.id !== 'ubba-office' && ubba.id !== 'ubba-door') {
+                    ubba.classList.remove('visible');
+                }
+            });
+
             // Show warning 2 seconds before attack
             elements.attackWarning.classList.add('active');
             elements.warningSound.play();
@@ -636,6 +695,9 @@
             gameState.isAttacking = false;
             gameState.attacksCompleted++;
             elements.ubbaDoor.classList.remove('visible');
+
+            // Return Ubba to a random camera after attack
+            moveUbbaToRandomCamera();
             
             if (gameState.attackTimer) {
                 clearTimeout(gameState.attackTimer);
@@ -657,10 +719,17 @@
             // Update door state
             elements.leftDoor.className = gameState.leftDoorClosed ? 'closed' : 'open';
 
-            // Update light state and Ubba visibility
+            // Update light state and Ubba visibility in office
             elements.leftLight.className = gameState.leftLightOn ? 'light-on' : '';
             
-            // Show Ubba at door only when light is on and door is closed during attack
+            // Show Ubba in office only when light is on
+            if (gameState.leftLightOn && !gameState.isAttacking) {
+                elements.ubbaOffice.classList.add('visible');
+            } else {
+                elements.ubbaOffice.classList.remove('visible');
+            }
+            
+            // Show Ubba at door only during attack when door is closed and light is on
             if (gameState.isAttacking && gameState.leftDoorClosed) {
                 elements.ubbaDoor.style.display = gameState.leftLightOn ? 'block' : 'none';
             } else {
@@ -753,6 +822,7 @@
             gameState.gameActive = true;
             gameState.attacksCompleted = 0;
             gameState.isAttacking = false;
+            gameState.currentUbbaCamera = 0;
 
             elements.cameraView.style.display = 'none';
             elements.officeView.style.display = 'block';
@@ -761,6 +831,14 @@
             elements.jumpscare.classList.remove('active');
             elements.attackWarning.classList.remove('active');
             elements.ubbaDoor.classList.remove('visible');
+            elements.ubbaOffice.classList.remove('visible');
+
+            // Hide Ubba from all cameras
+            document.querySelectorAll('.ubba').forEach(ubba => {
+                if (ubba.id !== 'ubba-office' && ubba.id !== 'ubba-door') {
+                    ubba.classList.remove('visible');
+                }
+            });
 
             if (gameState.attackTimer) {
                 clearTimeout(gameState.attackTimer);
@@ -770,6 +848,7 @@
             updateUI();
             gameLoop();
             scheduleAttacks();
+            startUbbaCameraMovement();
         }
 
         function nextPage() {
