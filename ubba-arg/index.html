@@ -252,7 +252,6 @@
         .evidence-card.locked {
             opacity: 0.6;
             filter: grayscale(1);
-            cursor: not-allowed;
         }
 
         .evidence-card.unlocked:hover {
@@ -298,6 +297,7 @@
             padding: 2rem;
             border: 1px solid #8a0303;
             background: rgba(10, 0, 0, 0.8);
+            display: none;
         }
 
         .password-input {
@@ -409,6 +409,72 @@
             font-style: italic;
             color: #666;
         }
+
+        .password-reveal {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.95);
+            border: 2px solid #ff0000;
+            padding: 3rem;
+            z-index: 10002;
+            text-align: center;
+            display: none;
+            max-width: 500px;
+            box-shadow: 0 0 50px rgba(255, 0, 0, 0.5);
+            animation: glitch-skew 0.5s infinite;
+        }
+
+        .password-reveal.active {
+            display: block;
+        }
+
+        .password-glitch {
+            font-size: 2em;
+            color: #ff0000;
+            font-weight: bold;
+            animation: textGlitch 0.3s infinite;
+        }
+
+        @keyframes textGlitch {
+            0% { transform: translate(0); }
+            20% { transform: translate(-2px, 2px); }
+            40% { transform: translate(-2px, -2px); }
+            60% { transform: translate(2px, 2px); }
+            80% { transform: translate(2px, -2px); }
+            100% { transform: translate(0); }
+        }
+
+        .decryption-animation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            z-index: 10003;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            color: #00ff00;
+            font-size: 2em;
+        }
+
+        .decryption-animation.active {
+            display: flex;
+        }
+
+        .decryption-text {
+            animation: decryptText 3s ease-in-out;
+        }
+
+        @keyframes decryptText {
+            0% { opacity: 0; transform: scale(0.5); }
+            50% { opacity: 1; transform: scale(1.2); }
+            100% { opacity: 0; transform: scale(1); }
+        }
     </style>
 </head>
 <body>
@@ -432,11 +498,10 @@
 
             <div class="evidence-grid">
                 <div class="card-row">
-                    <div class="evidence-card unlocked" id="evidence1">
+                    <div class="evidence-card locked" id="evidence1">
                         <div class="evidence-title">INITIAL SIGHTING</div>
                         <div class="evidence-content">
                             <p>First documented encounter: October 26th, 2022. Subject appeared in backyard surveillance footage. Bark pattern analysis revealed anomalous frequency modulation.</p>
-                            <div class="audio-hint">Click to unlock - No password required</div>
                         </div>
                         <div class="evidence-requirement">Click to unlock</div>
                     </div>
@@ -445,9 +510,8 @@
                         <div class="evidence-title">AUDIO ANALYSIS</div>
                         <div class="evidence-content">
                             <p>Spectrogram shows patterns that shouldn't exist in canine vocalizations. Each bark contains encrypted data packets. The silence between barks... it's not empty.</p>
-                            <div class="audio-hint">The password is: WHISPERS</div>
                         </div>
-                        <div class="evidence-requirement">Requires: Initial Sighting + Password</div>
+                        <div class="evidence-requirement">Click to unlock</div>
                     </div>
                 </div>
 
@@ -458,23 +522,22 @@
                             <p>All witnesses report the same phenomenon: Ubba appears in dreams before physical encounters. Subjects describe "knowledge transfer" during sleep states.</p>
                             <p>"It showed me things... things about myself I never knew." - Subject Delta</p>
                         </div>
-                        <div class="evidence-requirement">Requires: Audio Analysis + 2 other files</div>
+                        <div class="evidence-requirement">Click to unlock</div>
                     </div>
 
                     <div class="evidence-card locked" id="evidence4">
                         <div class="evidence-title">NETWORK INFECTION</div>
                         <div class="evidence-content">
                             <p>Ubba's signal spreads through digital networks. Any device that records the bark becomes a transmitter. The infection vector is acoustic, but the payload is digital.</p>
-                            <div class="audio-hint">UBBA IS WATCHING</div>
                         </div>
-                        <div class="evidence-requirement">Requires: 75% Archive Access</div>
+                        <div class="evidence-requirement">Click to unlock</div>
                     </div>
                 </div>
             </div>
 
-            <div class="password-section">
+            <div class="password-section" id="passwordSection">
                 <h3>DECRYPTION TERMINAL</h3>
-                <p>Enter password found in audio recording:</p>
+                <p>Enter the password revealed in the transmission:</p>
                 <input type="text" class="password-input" id="passwordInput" placeholder="Enter decryption key...">
                 <br>
                 <button class="submit-btn" onclick="checkPassword()">DECRYPT FILES</button>
@@ -489,6 +552,17 @@
         <p id="messageContent">Message content goes here...</p>
     </div>
 
+    <div class="password-reveal" id="passwordReveal">
+        <h3>TRANSMISSION INTERCEPTED</h3>
+        <div class="password-glitch" id="passwordGlitch">UBBA UBBA</div>
+        <p style="margin-top: 1rem; color: #ccc;">The password has been revealed...</p>
+    </div>
+
+    <div class="decryption-animation" id="decryptionAnimation">
+        <div class="decryption-text">FILES DECRYPTED</div>
+        <div class="decryption-text" style="font-size: 1em; margin-top: 2rem;">REDIRECTING...</div>
+    </div>
+
     <script>
         const chars = '01アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン';
         let matrixChars = [];
@@ -498,11 +572,12 @@
         let totalEvidence = 4;
         let progress = 0;
         let passwordAttempts = 0;
-        const correctPassword = "whispers";
+        const correctPassword = "ubba ubba";
+        let allUnlocked = false;
+        let passwordRevealTimer = null;
 
         function createMatrix() {
             const matrix = document.getElementById('matrix');
-            // Reduced density for better performance
             const charCount = Math.floor((window.innerWidth * window.innerHeight) / 800);
             
             for (let i = 0; i < charCount; i++) {
@@ -516,9 +591,8 @@
             const char = document.createElement('div');
             char.className = 'matrix-char';
             
-            // Start above the viewport
             const startX = Math.random() * window.innerWidth;
-            const startY = -20 - Math.random() * 500; // Start much higher above viewport
+            const startY = -20 - Math.random() * 500;
             char.style.left = startX + 'px';
             char.style.top = startY + 'px';
             char.textContent = getRandomChar();
@@ -530,8 +604,8 @@
                 element: char,
                 x: startX,
                 y: startY,
-                speed: 1 + Math.random() * 3, // Variable speed
-                charChangeRate: Math.random() * 0.05 // Slower character changes
+                speed: 1 + Math.random() * 3,
+                charChangeRate: Math.random() * 0.05
             });
         }
 
@@ -546,22 +620,18 @@
                 for (let i = matrixChars.length - 1; i >= 0; i--) {
                     const char = matrixChars[i];
                     
-                    // Move character down
                     char.y += char.speed;
                     
-                    // Random character changes
                     if (Math.random() < char.charChangeRate) {
                         char.element.textContent = getRandomChar();
                     }
                     
-                    // Reset character when it goes below viewport
                     if (char.y > viewportHeight + 100) {
                         char.y = -100;
                         char.x = Math.random() * window.innerWidth;
                         char.element.textContent = getRandomChar();
                     }
                     
-                    // Update position
                     char.element.style.top = char.y + 'px';
                     char.element.style.left = char.x + 'px';
                 }
@@ -576,9 +646,7 @@
             setTimeout(() => {
                 createMatrix();
                 
-                // Keep flowing forever, no direction changes
                 setTimeout(() => {
-                    // Just show button after delay
                     document.getElementById('enterBtn').style.opacity = '1';
                 }, 3000);
             }, 1200);
@@ -588,7 +656,6 @@
             const staticOverlay = document.getElementById('staticOverlay');
             const enterBtn = document.getElementById('enterBtn');
             
-            // Stop matrix animation to improve performance
             if (animationId) {
                 cancelAnimationFrame(animationId);
             }
@@ -605,7 +672,6 @@
                     document.getElementById('archive-page').style.opacity = '1';
                     document.getElementById('archive-page').style.pointerEvents = 'all';
                     
-                    // Clear matrix to free memory
                     document.getElementById('matrix').innerHTML = '';
                     matrixChars = [];
                 }
@@ -617,40 +683,29 @@
         function unlockEvidence(id) {
             const card = document.getElementById('evidence' + id);
             
-            if (card.classList.contains('locked')) {
-                showStatic();
-                showMessage("ACCESS DENIED", "Additional requirements not met.");
+            if (card.classList.contains('unlocked')) {
                 return;
             }
 
-            if (id === 1) {
-                // Card 1 is already unlocked, just show content
-                if (!card.classList.contains('active')) {
-                    card.classList.add('active');
-                    showEvidenceMessage(id);
-                }
-                return;
-            }
-
-            if (!card.classList.contains('unlocked')) {
-                card.classList.add('unlocked');
-                unlockedEvidence++;
-                updateProgress();
-                showEvidenceMessage(id);
-                checkUnlockConditions();
+            card.classList.remove('locked');
+            card.classList.add('unlocked');
+            unlockedEvidence++;
+            updateProgress();
+            showEvidenceMessage(id);
+            
+            if (unlockedEvidence === totalEvidence && !allUnlocked) {
+                allUnlocked = true;
+                passwordRevealTimer = setTimeout(showPasswordReveal, 12000);
             }
         }
 
-        function checkUnlockConditions() {
-            // Card 2 requires password (handled separately)
-            // Card 3 requires Card 2 + 2 other files
-            if (unlockedEvidence >= 3) {
-                document.getElementById('evidence3').classList.remove('locked');
-            }
-            // Card 4 requires 75% archive access
-            if (progress >= 75) {
-                document.getElementById('evidence4').classList.remove('locked');
-            }
+        function showPasswordReveal() {
+            document.getElementById('passwordReveal').classList.add('active');
+            document.getElementById('passwordSection').style.display = 'block';
+            
+            setTimeout(() => {
+                document.getElementById('passwordReveal').classList.remove('active');
+            }, 5000);
         }
 
         function updateProgress() {
@@ -664,13 +719,14 @@
             const feedback = document.getElementById('passwordFeedback');
             
             if (input === correctPassword) {
-                feedback.textContent = "DECRYPTION SUCCESSFUL - ACCESS GRANTED";
+                feedback.textContent = "DECRYPTION SUCCESSFUL - INITIATING TRANSFER";
                 feedback.style.color = "#00ff00";
-                document.getElementById('evidence2').classList.remove('locked');
-                unlockedEvidence++;
-                updateProgress();
-                checkUnlockConditions();
-                showMessage("AUDIO ANALYSIS UNLOCKED", "The spectrogram reveals hidden patterns. Ubba's barks contain encrypted data streams.");
+                
+                document.getElementById('decryptionAnimation').classList.add('active');
+                
+                setTimeout(() => {
+                    window.location.href = "https://clampert1.github.io/Ubba/ubba-arg/game.html";
+                }, 3000);
             } else {
                 passwordAttempts++;
                 feedback.textContent = "DECRYPTION FAILED - " + (3 - passwordAttempts) + " ATTEMPTS REMAINING";
@@ -678,9 +734,8 @@
                 showStatic();
                 
                 if (passwordAttempts >= 3) {
-                    feedback.textContent = "TERMINAL LOCKED - UBBA AWARE";
+                    feedback.textContent = "TERMINAL LOCKED - REBOOT REQUIRED";
                     document.getElementById('passwordInput').disabled = true;
-                    showMessage("SECURITY BREACH", "Too many failed attempts. Ubba is now aware of your presence.");
                 }
             }
         }
@@ -730,7 +785,6 @@
             }, 200);
         }
 
-        // Add event listeners for cards
         document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('evidence1').addEventListener('click', function() {
                 unlockEvidence(1);
@@ -749,13 +803,10 @@
             });
         });
 
-        // Initialize
         startSequence();
         document.getElementById('enterBtn').addEventListener('click', triggerTransition);
 
-        // Handle window resize
         window.addEventListener('resize', function() {
-            // Reset matrix on resize for better performance
             document.getElementById('matrix').innerHTML = '';
             matrixChars = [];
             if (document.getElementById('archive-page').style.opacity !== '1') {
