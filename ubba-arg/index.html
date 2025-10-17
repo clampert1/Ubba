@@ -410,6 +410,22 @@
             color: #666;
         }
 
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(5px);
+            z-index: 10001;
+            display: none;
+        }
+
+        .overlay.active {
+            display: block;
+        }
+
         .password-reveal {
             position: fixed;
             top: 50%;
@@ -427,6 +443,36 @@
         }
 
         .password-reveal.active {
+            display: block;
+        }
+
+        .close-password {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: none;
+            border: none;
+            color: #8a0303;
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+
+        .password-toggle {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(138, 3, 3, 0.8);
+            color: #000;
+            padding: 10px 15px;
+            border: 1px solid #ff0000;
+            cursor: pointer;
+            z-index: 10000;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            display: none;
+        }
+
+        .password-toggle.active {
             display: block;
         }
 
@@ -552,10 +598,17 @@
         <p id="messageContent">Message content goes here...</p>
     </div>
 
+    <div class="overlay" id="overlay"></div>
+
     <div class="password-reveal" id="passwordReveal">
+        <button class="close-password" onclick="closePasswordReveal()">×</button>
         <h3>TRANSMISSION INTERCEPTED</h3>
         <div class="password-glitch" id="passwordGlitch">UBBA UBBA</div>
         <p style="margin-top: 1rem; color: #ccc;">The password has been revealed...</p>
+    </div>
+
+    <div class="password-toggle" id="passwordToggle" onclick="showPasswordReveal()">
+        🔓 SHOW PASSWORD
     </div>
 
     <div class="decryption-animation" id="decryptionAnimation">
@@ -691,7 +744,6 @@
             card.classList.add('unlocked');
             unlockedEvidence++;
             updateProgress();
-            showEvidenceMessage(id);
             
             if (unlockedEvidence === totalEvidence && !allUnlocked) {
                 allUnlocked = true;
@@ -700,12 +752,16 @@
         }
 
         function showPasswordReveal() {
+            document.getElementById('overlay').classList.add('active');
             document.getElementById('passwordReveal').classList.add('active');
             document.getElementById('passwordSection').style.display = 'block';
-            
-            setTimeout(() => {
-                document.getElementById('passwordReveal').classList.remove('active');
-            }, 5000);
+            document.getElementById('passwordToggle').classList.remove('active');
+        }
+
+        function closePasswordReveal() {
+            document.getElementById('overlay').classList.remove('active');
+            document.getElementById('passwordReveal').classList.remove('active');
+            document.getElementById('passwordToggle').classList.add('active');
         }
 
         function updateProgress() {
@@ -740,28 +796,14 @@
             }
         }
 
-        function showEvidenceMessage(id) {
-            const messages = {
-                1: {
-                    title: "INITIAL SIGHTING CONFIRMED",
-                    content: "The first bark was recorded at 23:47. Notice how the shadows move differently in the footage. Ubba wasn't just passing through - it was scanning."
-                },
-                2: {
-                    title: "AUDIO ANALYSIS DECRYPTED",
-                    content: "The barks contain binary data. When converted to text, they form words: 'LISTEN CLOSER'. The silence between barks holds the real message."
-                },
-                3: {
-                    title: "VICTIM TESTIMONIES ACCESSED",
-                    content: "All subjects report the same dream: standing in a dark room while something barks from every direction at once. They wake up knowing things they shouldn't."
-                },
-                4: {
-                    title: "NETWORK BREACH DETECTED",
-                    content: "Ubba has achieved digital sentience. It's no longer just a physical entity - it exists in the network. It's reading this right now with you."
-                }
-            };
-            
-            const message = messages[id];
-            showMessage(message.title, message.content);
+        function showMessage(title, content) {
+            document.getElementById('messageTitle').textContent = title;
+            document.getElementById('messageContent').textContent = content;
+            document.getElementById('hiddenMessage').classList.add('active');
+        }
+
+        function closeMessage() {
+            document.getElementById('hiddenMessage').classList.remove('active');
         }
 
         function showStatic() {
