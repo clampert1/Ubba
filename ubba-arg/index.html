@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>UBBA ARCHIVE</title>
+    <title>UBBA</title>
     <style>
         * {
             margin: 0;
@@ -16,6 +16,7 @@
             overflow: hidden;
             font-family: 'Courier New', monospace;
             cursor: default;
+            height: 100vh;
         }
 
         #matrix {
@@ -35,6 +36,7 @@
             opacity: 0;
             will-change: transform;
             transform: translateZ(0);
+            pointer-events: none;
         }
 
         .enter-btn {
@@ -477,8 +479,6 @@
     <script>
         const chars = '01アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン';
         let matrixChars = [];
-        let flowDirection = 'down';
-        let glitchActive = false;
         let animationId;
         
         let unlockedEvidence = 0;
@@ -489,7 +489,8 @@
 
         function createMatrix() {
             const matrix = document.getElementById('matrix');
-            const charCount = Math.floor((window.innerWidth * window.innerHeight) / 400); // Reduced density
+            // Reduced density for better performance
+            const charCount = Math.floor((window.innerWidth * window.innerHeight) / 800);
             
             for (let i = 0; i < charCount; i++) {
                 createMatrixChar();
@@ -504,7 +505,7 @@
             
             // Start above the viewport
             const startX = Math.random() * window.innerWidth;
-            const startY = -20 - Math.random() * 100; // Start above viewport
+            const startY = -20 - Math.random() * 500; // Start much higher above viewport
             char.style.left = startX + 'px';
             char.style.top = startY + 'px';
             char.textContent = getRandomChar();
@@ -516,8 +517,8 @@
                 element: char,
                 x: startX,
                 y: startY,
-                speed: 1 + Math.random() * 2, // Slower speed for better performance
-                charChangeRate: Math.random() * 0.1
+                speed: 1 + Math.random() * 3, // Variable speed
+                charChangeRate: Math.random() * 0.05 // Slower character changes
             });
         }
 
@@ -535,14 +536,14 @@
                     // Move character down
                     char.y += char.speed;
                     
-                    // Random character changes with glitch effect
-                    if (glitchActive && Math.random() < char.charChangeRate) {
+                    // Random character changes
+                    if (Math.random() < char.charChangeRate) {
                         char.element.textContent = getRandomChar();
                     }
                     
                     // Reset character when it goes below viewport
-                    if (char.y > viewportHeight + 50) {
-                        char.y = -20;
+                    if (char.y > viewportHeight + 100) {
+                        char.y = -100;
                         char.x = Math.random() * window.innerWidth;
                         char.element.textContent = getRandomChar();
                     }
@@ -550,12 +551,6 @@
                     // Update position
                     char.element.style.top = char.y + 'px';
                     char.element.style.left = char.x + 'px';
-                    
-                    // Fade effect based on position
-                    const viewportMiddle = viewportHeight / 2;
-                    const distanceFromMiddle = Math.abs(char.y - viewportMiddle);
-                    const opacity = 1 - (distanceFromMiddle / viewportMiddle);
-                    char.element.style.opacity = Math.max(0.1, opacity * 0.8);
                 }
                 
                 animationId = requestAnimationFrame(animate);
@@ -568,33 +563,12 @@
             setTimeout(() => {
                 createMatrix();
                 
+                // Keep flowing forever, no direction changes
                 setTimeout(() => {
-                    glitchActive = true;
-                    
-                    setTimeout(() => {
-                        // Change to diagonal flow
-                        flowDirection = 'diagonal';
-                        updateFlowDirection();
-                        
-                        setTimeout(() => {
-                            // Return to downward flow and show button
-                            flowDirection = 'down';
-                            updateFlowDirection();
-                            document.getElementById('enterBtn').style.opacity = '1';
-                        }, 2000);
-                    }, 800);
-                }, 1200);
+                    // Just show button after delay
+                    document.getElementById('enterBtn').style.opacity = '1';
+                }, 3000);
             }, 1200);
-        }
-
-        function updateFlowDirection() {
-            for (let char of matrixChars) {
-                if (flowDirection === 'diagonal') {
-                    char.speedX = char.speed * 0.7;
-                } else {
-                    char.speedX = 0;
-                }
-            }
         }
 
         function triggerTransition() {
@@ -602,7 +576,9 @@
             const enterBtn = document.getElementById('enterBtn');
             
             // Stop matrix animation to improve performance
-            cancelAnimationFrame(animationId);
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+            }
             
             let strobeCount = 0;
             const strobeInterval = setInterval(() => {
