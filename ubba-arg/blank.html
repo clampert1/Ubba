@@ -3,556 +3,538 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>UBBA DANCE BATTLE</title>
+    <title>Arrow Key Rhythm Game</title>
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
-
+        
         body {
-            background: #000;
-            color: #fff;
-            font-family: 'Courier New', monospace;
-            overflow: hidden;
-            user-select: none;
-        }
-
-        #game-container {
-            position: relative;
-            width: 100vw;
-            height: 100vh;
-            background: #000;
-        }
-
-        #background {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: url('https://raw.githubusercontent.com/clampert1/Ubba/main/ubba-arg/assets/cameras/office.png') no-repeat center center;
-            background-size: cover;
-            filter: brightness(0.3);
-        }
-
-        #game-ui {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 10;
-        }
-
-        /* Characters */
-        #player {
-            position: absolute;
-            bottom: 150px;
-            left: 300px;
-            width: 200px;
-            height: 300px;
-            background: #00f;
-            border: 3px solid #fff;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
             color: white;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
         }
-
-        #ubba {
-            position: absolute;
-            bottom: 150px;
-            right: 300px;
-            width: 200px;
-            height: 300px;
-            background: url('https://raw.githubusercontent.com/clampert1/Ubba/main/ubba-arg/assets/sprites/ubba.png') no-repeat center center;
-            background-size: contain;
-            border: 3px solid #fff;
-        }
-
-        /* Health Bars */
-        #health-bars {
-            position: absolute;
-            top: 50px;
-            left: 0;
+        
+        .container {
             width: 100%;
+            max-width: 900px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            color: #ffcc00;
+            text-shadow: 0 0 10px rgba(255, 204, 0, 0.5);
+        }
+        
+        .score {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #00ffcc;
+        }
+        
+        .game-area {
             display: flex;
             justify-content: space-between;
-            padding: 0 100px;
+            gap: 20px;
         }
-
-        .health-bar {
-            width: 400px;
-            height: 30px;
-            background: #333;
-            border: 2px solid #fff;
-            position: relative;
+        
+        .player {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
         }
-
-        .health-fill {
-            position: absolute;
-            top: 0;
-            left: 0;
-            height: 100%;
+        
+        .player-title {
+            font-size: 1.2rem;
+            margin-bottom: 15px;
+            color: #ffcc00;
+        }
+        
+        .track {
             width: 100%;
-            background: #0f0;
-            transition: width 0.3s ease;
+            height: 300px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 5px;
+            position: relative;
+            overflow: hidden;
+            border: 2px solid rgba(255, 255, 255, 0.2);
         }
-
-        #ubba-health .health-fill {
-            background: #f00;
-        }
-
-        /* Arrow Track */
-        #arrow-track {
+        
+        .hit-line {
             position: absolute;
-            bottom: 200px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 600px;
-            height: 100px;
-            background: rgba(0, 0, 0, 0.7);
-            border: 3px solid #fff;
-            display: flex;
-            justify-content: space-around;
-            align-items: center;
+            bottom: 60px;
+            width: 100%;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.7);
+            z-index: 10;
         }
-
+        
         .arrow {
-            width: 80px;
-            height: 80px;
-            background: #333;
-            border: 3px solid #666;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
-            font-weight: bold;
-            color: #fff;
-            transition: all 0.1s ease;
-        }
-
-        .arrow.active {
-            background: #0f0;
-            border-color: #fff;
-            transform: scale(1.1);
-        }
-
-        .arrow.up { border-top-color: #f00; }
-        .arrow.left { border-left-color: #f00; }
-        .arrow.down { border-bottom-color: #f00; }
-        .arrow.right { border-right-color: #f00; }
-
-        /* Falling Arrows */
-        #falling-arrows {
-            position: absolute;
-            bottom: 300px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 600px;
-            height: 400px;
-        }
-
-        .falling-arrow {
             position: absolute;
             width: 60px;
             height: 60px;
-            background: #333;
-            border: 2px solid;
             display: flex;
-            align-items: center;
             justify-content: center;
-            font-size: 20px;
-            font-weight: bold;
-            color: #fff;
-            transition: top 0.1s linear;
-        }
-
-        .falling-arrow.up { border-color: #f00; background: #400; }
-        .falling-arrow.left { border-color: #f00; background: #400; }
-        .falling-arrow.down { border-color: #f00; background: #400; }
-        .falling-arrow.right { border-color: #f00; background: #400; }
-
-        /* Song Info */
-        #song-info {
-            position: absolute;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            text-align: center;
+            align-items: center;
             font-size: 24px;
-            color: #fff;
-            text-shadow: 2px 2px 4px #000;
+            border-radius: 5px;
+            transition: transform 0.1s;
+            z-index: 5;
         }
-
-        #score {
-            position: absolute;
-            top: 100px;
+        
+        .arrow.up {
+            background: #ff5252;
+            bottom: 0;
             left: 50%;
             transform: translateX(-50%);
-            font-size: 32px;
-            color: #0f0;
-            text-shadow: 2px 2px 4px #000;
         }
-
-        /* Game States */
-        #start-screen, #results-screen {
+        
+        .arrow.left {
+            background: #4caf50;
+            bottom: 0;
+            left: 25%;
+            transform: translateX(-50%);
+        }
+        
+        .arrow.down {
+            background: #2196f3;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        
+        .arrow.right {
+            background: #ff9800;
+            bottom: 0;
+            left: 75%;
+            transform: translateX(-50%);
+        }
+        
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .key {
+            width: 60px;
+            height: 60px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 5px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;
+            font-weight: bold;
+            color: white;
+            box-shadow: 0 4px 0 rgba(0, 0, 0, 0.2);
+            transition: all 0.1s;
+        }
+        
+        .key.active {
+            transform: translateY(4px);
+            box-shadow: none;
+            background: rgba(255, 255, 255, 0.3);
+        }
+        
+        .key.w {
+            color: #ff5252;
+        }
+        
+        .key.a {
+            color: #4caf50;
+        }
+        
+        .key.s {
+            color: #2196f3;
+        }
+        
+        .key.d {
+            color: #ff9800;
+        }
+        
+        .health-bar {
+            width: 100%;
+            height: 30px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+            margin-top: 20px;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .health-fill {
+            height: 100%;
+            width: 50%;
+            background: linear-gradient(90deg, #ff5252 0%, #4caf50 100%);
+            border-radius: 15px;
+            transition: width 0.3s;
+        }
+        
+        .health-text {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.9);
             display: flex;
-            flex-direction: column;
             justify-content: center;
             align-items: center;
-            z-index: 100;
-            color: #fff;
-            font-size: 24px;
+            font-weight: bold;
         }
-
-        #results-screen {
-            display: none;
+        
+        .instructions {
+            margin-top: 20px;
+            text-align: center;
+            color: rgba(255, 255, 255, 0.7);
+            line-height: 1.5;
         }
-
-        .battle-button {
-            background: #f00;
-            color: white;
-            border: 3px solid #fff;
-            padding: 20px 40px;
-            margin: 20px;
-            font-size: 24px;
-            cursor: pointer;
-            font-family: 'Courier New', monospace;
-        }
-
-        .battle-button:hover {
-            background: #ff4444;
-        }
-
-        /* Combo Display */
-        #combo {
+        
+        .hit-effect {
             position: absolute;
-            top: 150px;
-            left: 50%;
-            transform: translateX(-50%);
-            font-size: 28px;
-            color: #0ff;
-            text-shadow: 2px 2px 4px #000;
-            display: none;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        
+        .hit-effect.active {
+            opacity: 1;
+        }
+        
+        .hit-good {
+            background: radial-gradient(circle, rgba(76, 175, 80, 0.3) 0%, transparent 70%);
+        }
+        
+        .hit-bad {
+            background: radial-gradient(circle, rgba(255, 82, 82, 0.3) 0%, transparent 70%);
         }
     </style>
 </head>
 <body>
-    <div id="game-container">
-        <div id="background"></div>
+    <div class="container">
+        <header>
+            <h1>ARROW RHYTHM GAME</h1>
+            <div class="score">Score: <span id="score">0</span></div>
+        </header>
         
-        <div id="game-ui">
-            <!-- Health Bars -->
-            <div id="health-bars">
-                <div class="health-bar" id="player-health">
-                    <div class="health-fill" style="width: 100%"></div>
-                    <div style="position: absolute; top: 0; left: 0; width: 100%; text-align: center; color: white;">PLAYER</div>
+        <div class="game-area">
+            <div class="player">
+                <div class="player-title">PLAYER 1</div>
+                <div class="track" id="track1">
+                    <div class="hit-line"></div>
+                    <div class="hit-effect hit-good" id="hit-effect1"></div>
+                    <div class="hit-effect hit-bad" id="miss-effect1"></div>
                 </div>
-                <div class="health-bar" id="ubba-health">
-                    <div class="health-fill" style="width: 100%"></div>
-                    <div style="position: absolute; top: 0; left: 0; width: 100%; text-align: center; color: white;">UBBA</div>
+                <div class="controls">
+                    <div class="key w">W</div>
+                    <div class="key a">A</div>
+                    <div class="key s">S</div>
+                    <div class="key d">D</div>
                 </div>
             </div>
-
-            <!-- Song Info -->
-            <div id="song-info">
-                <div id="song-title">UBBA BATTLE 1</div>
-                <div id="score">SCORE: 0</div>
+            
+            <div class="player">
+                <div class="player-title">PLAYER 2</div>
+                <div class="track" id="track2">
+                    <div class="hit-line"></div>
+                    <div class="hit-effect hit-good" id="hit-effect2"></div>
+                    <div class="hit-effect hit-bad" id="miss-effect2"></div>
+                </div>
+                <div class="controls">
+                    <div class="key w">W</div>
+                    <div class="key a">A</div>
+                    <div class="key s">S</div>
+                    <div class="key d">D</div>
+                </div>
             </div>
-
-            <!-- Combo Display -->
-            <div id="combo">COMBO: 0</div>
-
-            <!-- Characters -->
-            <div id="player">YOU</div>
-            <div id="ubba"></div>
-
-            <!-- Arrow Track -->
-            <div id="arrow-track">
-                <div class="arrow up" data-key="w">W</div>
-                <div class="arrow left" data-key="a">A</div>
-                <div class="arrow down" data-key="s">S</div>
-                <div class="arrow right" data-key="d">D</div>
-            </div>
-
-            <!-- Falling Arrows -->
-            <div id="falling-arrows"></div>
         </div>
-
-        <!-- Start Screen -->
-        <div id="start-screen">
-            <h1>UBBA DANCE BATTLE</h1>
-            <p>Get ready to face Ubba in a rhythm battle!</p>
-            <p>Use W A S D keys to match the falling arrows</p>
-            <button class="battle-button" onclick="startBattle(1)">START BATTLE 1</button>
+        
+        <div class="health-bar">
+            <div class="health-fill" id="health-fill"></div>
+            <div class="health-text">HP: <span id="health-text">25</span>/50</div>
         </div>
-
-        <!-- Results Screen -->
-        <div id="results-screen">
-            <h1 id="result-title">BATTLE COMPLETE!</h1>
-            <p id="result-score">SCORE: 0</p>
-            <p id="result-combo">MAX COMBO: 0</p>
-            <div id="next-buttons">
-                <button class="battle-button" onclick="startBattle(2)">BATTLE 2</button>
-                <button class="battle-button" onclick="startBattle(3)">BATTLE 3</button>
-            </div>
+        
+        <div class="instructions">
+            <p>Press W, A, S, D keys when the arrows reach the line to gain HP. Missed keys reduce HP.</p>
+            <p>Max HP: 50 | Current HP: 25</p>
         </div>
     </div>
 
     <script>
-        // Game State
-        const gameState = {
-            currentBattle: 1,
-            score: 0,
-            combo: 0,
-            maxCombo: 0,
-            playerHealth: 100,
-            ubbaHealth: 100,
-            isPlaying: false,
-            arrowSpeed: 3,
-            arrowSpawnRate: 800,
-            activeArrows: [],
-            keys: {
-                'w': false,
-                'a': false,
-                's': false,
-                'd': false
-            }
-        };
-
-        // Battle data
-        const battles = [
-            { name: "UBBA BATTLE 1", duration: 60, arrows: 50 },
-            { name: "UBBA BATTLE 2", duration: 90, arrows: 80 },
-            { name: "UBBA FINAL BATTLE", duration: 120, arrows: 120 }
-        ];
-
-        // DOM Elements
-        const elements = {
-            startScreen: document.getElementById('start-screen'),
-            resultsScreen: document.getElementById('results-screen'),
-            songTitle: document.getElementById('song-title'),
-            score: document.getElementById('score'),
-            combo: document.getElementById('combo'),
-            playerHealth: document.querySelector('#player-health .health-fill'),
-            ubbaHealth: document.querySelector('#ubba-health .health-fill'),
-            arrowTrack: document.getElementById('arrow-track'),
-            fallingArrows: document.getElementById('falling-arrows'),
-            resultTitle: document.getElementById('result-title'),
-            resultScore: document.getElementById('result-score'),
-            resultCombo: document.getElementById('result-combo'),
-            nextButtons: document.getElementById('next-buttons')
-        };
-
-        // Arrow types
-        const arrowTypes = ['up', 'left', 'down', 'right'];
-        const keyMap = {
-            'w': 'up',
-            'a': 'left', 
-            's': 'down',
-            'd': 'right'
-        };
-
-        function startBattle(battleNumber) {
-            gameState.currentBattle = battleNumber;
-            gameState.score = 0;
-            gameState.combo = 0;
-            gameState.maxCombo = 0;
-            gameState.playerHealth = 100;
-            gameState.ubbaHealth = 100;
-            gameState.isPlaying = true;
-            gameState.activeArrows = [];
-            
-            elements.startScreen.style.display = 'none';
-            elements.resultsScreen.style.display = 'none';
-            elements.songTitle.textContent = battles[battleNumber - 1].name;
-            updateUI();
-            
-            // Clear existing arrows
-            elements.fallingArrows.innerHTML = '';
-            
-            // Start arrow spawning
-            startArrowSpawning();
-            
-            // Set battle timer
-            setTimeout(() => {
-                endBattle(true);
-            }, battles[battleNumber - 1].duration * 1000);
-        }
-
-        function startArrowSpawning() {
-            const battle = battles[gameState.currentBattle - 1];
-            const totalArrows = battle.arrows;
-            const spawnInterval = (battle.duration * 1000) / totalArrows;
-            
-            let arrowsSpawned = 0;
-            const spawner = setInterval(() => {
-                if (!gameState.isPlaying || arrowsSpawned >= totalArrows) {
-                    clearInterval(spawner);
-                    return;
+        document.addEventListener('DOMContentLoaded', function() {
+            // Game state
+            const state = {
+                score: 0,
+                health: 25,
+                maxHealth: 50,
+                arrows: [[], []], // Arrows for each player
+                keyState: {
+                    'w': false,
+                    'a': false,
+                    's': false,
+                    'd': false
+                },
+                arrowTypes: ['up', 'left', 'down', 'right'],
+                arrowKeys: {
+                    'w': 'up',
+                    'a': 'left',
+                    's': 'down',
+                    'd': 'right'
                 }
-                
-                spawnArrow();
-                arrowsSpawned++;
-            }, spawnInterval);
-        }
-
-        function spawnArrow() {
-            const arrowType = arrowTypes[Math.floor(Math.random() * arrowTypes.length)];
-            const arrow = document.createElement('div');
-            arrow.className = `falling-arrow ${arrowType}`;
-            arrow.textContent = arrowType.toUpperCase();
-            arrow.style.top = '0px';
-            arrow.style.left = getArrowPosition(arrowType);
-            arrow.dataset.type = arrowType;
-            
-            elements.fallingArrows.appendChild(arrow);
-            gameState.activeArrows.push({
-                element: arrow,
-                type: arrowType,
-                y: 0,
-                hit: false
-            });
-        }
-
-        function getArrowPosition(type) {
-            const positions = {
-                'up': '135px',
-                'left': '225px',
-                'down': '315px',
-                'right': '405px'
             };
-            return positions[type];
-        }
-
-        function updateGame() {
-            if (!gameState.isPlaying) return;
             
-            // Update falling arrows
-            gameState.activeArrows.forEach((arrowObj, index) => {
-                arrowObj.y += gameState.arrowSpeed;
-                arrowObj.element.style.top = arrowObj.y + 'px';
-                
-                // Check if arrow reached target
-                if (arrowObj.y > 250 && !arrowObj.hit) {
-                    // Missed arrow - lose health
-                    gameState.playerHealth = Math.max(0, gameState.playerHealth - 5);
-                    gameState.combo = 0;
-                    updateUI();
-                    removeArrow(index);
-                }
-            });
+            // DOM elements
+            const scoreElement = document.getElementById('score');
+            const healthElement = document.getElementById('health-text');
+            const healthFill = document.getElementById('health-fill');
+            const tracks = [document.getElementById('track1'), document.getElementById('track2')];
+            const keyElements = document.querySelectorAll('.key');
+            const hitEffects = [
+                document.getElementById('hit-effect1'),
+                document.getElementById('hit-effect2')
+            ];
+            const missEffects = [
+                document.getElementById('miss-effect1'),
+                document.getElementById('miss-effect2')
+            ];
             
-            requestAnimationFrame(updateGame);
-        }
-
-        function checkArrowHit(key) {
-            const arrowType = keyMap[key];
-            if (!arrowType) return;
+            // Initialize game
+            function init() {
+                updateUI();
+                generateArrows();
+                gameLoop();
+            }
             
-            let hit = false;
-            gameState.activeArrows.forEach((arrowObj, index) => {
-                if (arrowObj.type === arrowType && arrowObj.y > 200 && arrowObj.y < 280 && !arrowObj.hit) {
-                    // Successful hit!
-                    arrowObj.hit = true;
-                    arrowObj.element.style.background = '#0f0';
-                    arrowObj.element.style.borderColor = '#0f0';
-                    
-                    gameState.score += 100;
-                    gameState.combo++;
-                    gameState.maxCombo = Math.max(gameState.maxCombo, gameState.combo);
-                    gameState.ubbaHealth = Math.max(0, gameState.ubbaHealth - 2);
-                    
-                    // Show combo
-                    if (gameState.combo > 1) {
-                        elements.combo.textContent = `COMBO: ${gameState.combo}`;
-                        elements.combo.style.display = 'block';
+            // Generate arrows for both players
+            function generateArrows() {
+                for (let player = 0; player < 2; player++) {
+                    for (let i = 0; i < 4; i++) {
+                        const type = state.arrowTypes[Math.floor(Math.random() * state.arrowTypes.length)];
+                        createArrow(player, type, 2000 + i * 1000);
                     }
+                }
+            }
+            
+            // Create a new arrow
+            function createArrow(player, type, delay = 0) {
+                setTimeout(() => {
+                    const arrow = document.createElement('div');
+                    arrow.className = `arrow ${type}`;
+                    arrow.dataset.type = type;
                     
-                    setTimeout(() => removeArrow(index), 200);
-                    hit = true;
-                    updateUI();
+                    // Set arrow symbol
+                    if (type === 'up') arrow.innerHTML = '↑';
+                    else if (type === 'left') arrow.innerHTML = '←';
+                    else if (type === 'down') arrow.innerHTML = '↓';
+                    else if (type === 'right') arrow.innerHTML = '→';
+                    
+                    tracks[player].appendChild(arrow);
+                    state.arrows[player].push({
+                        element: arrow,
+                        type: type,
+                        position: 0,
+                        hit: false
+                    });
+                    
+                    // Create next arrow
+                    if (Math.random() < 0.7) {
+                        const nextType = state.arrowTypes[Math.floor(Math.random() * state.arrowTypes.length)];
+                        createArrow(player, nextType, 800 + Math.random() * 1200);
+                    }
+                }, delay);
+            }
+            
+            // Main game loop
+            function gameLoop() {
+                updateArrows();
+                checkHits();
+                requestAnimationFrame(gameLoop);
+            }
+            
+            // Update arrow positions
+            function updateArrows() {
+                for (let player = 0; player < 2; player++) {
+                    for (let i = state.arrows[player].length - 1; i >= 0; i--) {
+                        const arrow = state.arrows[player][i];
+                        arrow.position += 2;
+                        
+                        // Calculate position from bottom (0 to track height)
+                        const trackHeight = tracks[player].offsetHeight;
+                        const bottomPosition = trackHeight - arrow.position;
+                        
+                        // Remove arrows that are off screen
+                        if (bottomPosition < -60) {
+                            arrow.element.remove();
+                            state.arrows[player].splice(i, 1);
+                            
+                            // If arrow wasn't hit and passed the hit line, it's a miss
+                            if (!arrow.hit && bottomPosition < -30) {
+                                handleMiss(player);
+                            }
+                            continue;
+                        }
+                        
+                        // Update arrow position
+                        arrow.element.style.bottom = `${bottomPosition}px`;
+                    }
+                }
+            }
+            
+            // Check for key hits
+            function checkHits() {
+                const hitLinePosition = 60; // Position from bottom
+                
+                for (let player = 0; player < 2; player++) {
+                    for (let i = 0; i < state.arrows[player].length; i++) {
+                        const arrow = state.arrows[player][i];
+                        const arrowBottom = parseInt(arrow.element.style.bottom) || 0;
+                        
+                        // Check if arrow is near hit line and key is pressed
+                        if (Math.abs(arrowBottom - hitLinePosition) < 20 && !arrow.hit) {
+                            const key = getKeyForArrowType(arrow.type);
+                            
+                            if (state.keyState[key]) {
+                                // Successful hit
+                                arrow.hit = true;
+                                arrow.element.style.opacity = '0.5';
+                                handleHit(player);
+                                
+                                // Remove arrow after a delay
+                                setTimeout(() => {
+                                    if (arrow.element.parentNode) {
+                                        arrow.element.remove();
+                                        state.arrows[player].splice(i, 1);
+                                    }
+                                }, 200);
+                            }
+                        }
+                    }
+                }
+            }
+            
+            // Handle successful hit
+            function handleHit(player) {
+                // Show hit effect
+                hitEffects[player].classList.add('active');
+                setTimeout(() => {
+                    hitEffects[player].classList.remove('active');
+                }, 200);
+                
+                // Increase health (capped at max)
+                state.health = Math.min(state.maxHealth, state.health + 2);
+                state.score += 10;
+                updateUI();
+            }
+            
+            // Handle missed arrow
+            function handleMiss(player) {
+                // Show miss effect
+                missEffects[player].classList.add('active');
+                setTimeout(() => {
+                    missEffects[player].classList.remove('active');
+                }, 200);
+                
+                // Decrease health
+                state.health = Math.max(0, state.health - 1);
+                updateUI();
+                
+                // Game over check
+                if (state.health <= 0) {
+                    alert('Game Over! Your score: ' + state.score);
+                    resetGame();
+                }
+            }
+            
+            // Reset game
+            function resetGame() {
+                state.score = 0;
+                state.health = 25;
+                
+                // Clear all arrows
+                for (let player = 0; player < 2; player++) {
+                    state.arrows[player].forEach(arrow => {
+                        if (arrow.element.parentNode) {
+                            arrow.element.remove();
+                        }
+                    });
+                    state.arrows[player] = [];
+                }
+                
+                updateUI();
+                generateArrows();
+            }
+            
+            // Update UI elements
+            function updateUI() {
+                scoreElement.textContent = state.score;
+                healthElement.textContent = state.health;
+                healthFill.style.width = `${(state.health / state.maxHealth) * 100}%`;
+            }
+            
+            // Get key for arrow type
+            function getKeyForArrowType(type) {
+                for (const [key, arrowType] of Object.entries(state.arrowKeys)) {
+                    if (arrowType === type) return key;
+                }
+                return null;
+            }
+            
+            // Key event listeners
+            document.addEventListener('keydown', (e) => {
+                const key = e.key.toLowerCase();
+                if (state.keyState.hasOwnProperty(key)) {
+                    state.keyState[key] = true;
+                    
+                    // Highlight key
+                    keyElements.forEach(el => {
+                        if (el.classList.contains(key)) {
+                            el.classList.add('active');
+                        }
+                    });
                 }
             });
             
-            if (!hit) {
-                // Miss - lose combo
-                gameState.combo = 0;
-                elements.combo.style.display = 'none';
-            }
-        }
-
-        function removeArrow(index) {
-            if (gameState.activeArrows[index]) {
-                gameState.activeArrows[index].element.remove();
-                gameState.activeArrows.splice(index, 1);
-            }
-        }
-
-        function updateUI() {
-            elements.score.textContent = `SCORE: ${gameState.score}`;
-            elements.playerHealth.style.width = `${gameState.playerHealth}%`;
-            elements.ubbaHealth.style.width = `${gameState.ubbaHealth}%`;
-            
-            // Update arrow colors based on key presses
-            document.querySelectorAll('.arrow').forEach(arrow => {
-                const key = arrow.dataset.key;
-                if (gameState.keys[key]) {
-                    arrow.classList.add('active');
-                } else {
-                    arrow.classList.remove('active');
+            document.addEventListener('keyup', (e) => {
+                const key = e.key.toLowerCase();
+                if (state.keyState.hasOwnProperty(key)) {
+                    state.keyState[key] = false;
+                    
+                    // Remove highlight from key
+                    keyElements.forEach(el => {
+                        if (el.classList.contains(key)) {
+                            el.classList.remove('active');
+                        }
+                    });
                 }
             });
-        }
-
-        function endBattle(victory) {
-            gameState.isPlaying = false;
             
-            elements.resultTitle.textContent = victory ? 'VICTORY!' : 'DEFEAT!';
-            elements.resultScore.textContent = `SCORE: ${gameState.score}`;
-            elements.resultCombo.textContent = `MAX COMBO: ${gameState.maxCombo}`;
-            
-            // Show appropriate next buttons
-            elements.nextButtons.innerHTML = '';
-            if (gameState.currentBattle < 3) {
-                elements.nextButtons.innerHTML = `<button class="battle-button" onclick="startBattle(${gameState.currentBattle + 1})">BATTLE ${gameState.currentBattle + 1}</button>`;
-            } else {
-                elements.nextButtons.innerHTML = `<button class="battle-button" onclick="location.reload()">PLAY AGAIN</button>`;
-            }
-            
-            elements.resultsScreen.style.display = 'flex';
-        }
-
-        // Event Listeners
-        document.addEventListener('keydown', (e) => {
-            const key = e.key.toLowerCase();
-            if (gameState.keys.hasOwnProperty(key) && gameState.isPlaying) {
-                gameState.keys[key] = true;
-                checkArrowHit(key);
-                updateUI();
-            }
+            // Start the game
+            init();
         });
-
-        document.addEventListener('keyup', (e) => {
-            const key = e.key.toLowerCase();
-            if (gameState.keys.hasOwnProperty(key)) {
-                gameState.keys[key] = false;
-                updateUI();
-            }
-        });
-
-        // Start game loop
-        updateGame();
     </script>
 </body>
 </html>
