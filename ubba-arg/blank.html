@@ -3,989 +3,556 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>UBBA COLORING ACTIVITY</title>
+    <title>UBBA DANCE BATTLE</title>
     <style>
-        body {
+        * {
             margin: 0;
-            padding: 20px;
-            background-color: #111;
-            font-family: 'Comic Sans MS', cursive, sans-serif;
-            color: #ddd;
-            overflow-x: hidden;
-            text-align: center;
+            padding: 0;
+            box-sizing: border-box;
         }
-        
-        h1 {
-            color: #8b0000;
-            text-shadow: 0 0 5px #ff0000;
-            margin-bottom: 10px;
-        }
-        
-        .subtitle {
-            color: #aaa;
-            margin-bottom: 20px;
-            font-style: italic;
-        }
-        
-        .game-container {
-            display: flex;
-            justify-content: center;
-            gap: 20px;
-            flex-wrap: wrap;
-            margin-top: 20px;
-            position: relative;
-        }
-        
-        .coloring-area {
-            position: relative;
-            width: 600px;
-            height: 600px;
-            border: 3px solid #8b0000;
-            background-color: #222;
+
+        body {
+            background: #000;
+            color: #fff;
+            font-family: 'Courier New', monospace;
             overflow: hidden;
-        }
-        
-        #coloring-canvas {
-            width: 100%;
-            height: 100%;
-            cursor: crosshair;
-        }
-        
-        .colors-palette {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 15px;
-            width: 200px;
-        }
-        
-        .color-option {
-            width: 80px;
-            height: 80px;
-            border-radius: 50%;
-            border: 3px solid #333;
-            cursor: grab;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-weight: bold;
-            font-size: 24px;
             user-select: none;
-            transition: all 0.2s;
+        }
+
+        #game-container {
             position: relative;
-            margin: 0 auto;
+            width: 100vw;
+            height: 100vh;
+            background: #000;
         }
-        
-        .color-option .number {
-            color: white;
-            text-shadow: 
-                -2px -2px 0 #000,
-                2px -2px 0 #000,
-                -2px 2px 0 #000,
-                2px 2px 0 #000;
-            pointer-events: none;
-        }
-        
-        .color-option:hover {
-            transform: scale(1.1);
-            border-color: #8b0000;
-            box-shadow: 0 0 15px currentColor;
-        }
-        
-        .color-option:active {
-            cursor: grabbing;
-            transform: scale(0.95);
-        }
-        
-        .instructions {
-            margin-top: 20px;
-            padding: 15px;
-            background-color: rgba(139, 0, 0, 0.2);
-            border-left: 3px solid #8b0000;
-            text-align: left;
-            max-width: 600px;
-            margin-left: auto;
-            margin-right: auto;
-        }
-        
-        .hidden-message {
-            opacity: 0;
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            color: #8b0000;
-            font-size: 32px;
-            text-shadow: 0 0 10px #000;
-            pointer-events: none;
-            transition: opacity 1s;
-            z-index: 100;
-            font-weight: bold;
-        }
-        
-        .scanlines {
-            position: fixed;
+
+        #background {
+            position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: linear-gradient(
-                to bottom,
-                rgba(0, 255, 0, 0.05) 50%,
-                transparent 50%
-            );
-            background-size: 100% 4px;
-            pointer-events: none;
+            background: url('https://raw.githubusercontent.com/clampert1/Ubba/main/ubba-arg/assets/cameras/office.png') no-repeat center center;
+            background-size: cover;
+            filter: brightness(0.3);
+        }
+
+        #game-ui {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
             z-index: 10;
         }
-        
-        .completion-message {
-            display: none;
-            position: fixed;
+
+        /* Characters */
+        #player {
+            position: absolute;
+            bottom: 150px;
+            left: 300px;
+            width: 200px;
+            height: 300px;
+            background: #00f;
+            border: 3px solid #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: white;
+        }
+
+        #ubba {
+            position: absolute;
+            bottom: 150px;
+            right: 300px;
+            width: 200px;
+            height: 300px;
+            background: url('https://raw.githubusercontent.com/clampert1/Ubba/main/ubba-arg/assets/sprites/ubba.png') no-repeat center center;
+            background-size: contain;
+            border: 3px solid #fff;
+        }
+
+        /* Health Bars */
+        #health-bars {
+            position: absolute;
+            top: 50px;
+            left: 0;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            padding: 0 100px;
+        }
+
+        .health-bar {
+            width: 400px;
+            height: 30px;
+            background: #333;
+            border: 2px solid #fff;
+            position: relative;
+        }
+
+        .health-fill {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            width: 100%;
+            background: #0f0;
+            transition: width 0.3s ease;
+        }
+
+        #ubba-health .health-fill {
+            background: #f00;
+        }
+
+        /* Arrow Track */
+        #arrow-track {
+            position: absolute;
+            bottom: 200px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 600px;
+            height: 100px;
+            background: rgba(0, 0, 0, 0.7);
+            border: 3px solid #fff;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+        }
+
+        .arrow {
+            width: 80px;
+            height: 80px;
+            background: #333;
+            border: 3px solid #666;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: bold;
+            color: #fff;
+            transition: all 0.1s ease;
+        }
+
+        .arrow.active {
+            background: #0f0;
+            border-color: #fff;
+            transform: scale(1.1);
+        }
+
+        .arrow.up { border-top-color: #f00; }
+        .arrow.left { border-left-color: #f00; }
+        .arrow.down { border-bottom-color: #f00; }
+        .arrow.right { border-right-color: #f00; }
+
+        /* Falling Arrows */
+        #falling-arrows {
+            position: absolute;
+            bottom: 300px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 600px;
+            height: 400px;
+        }
+
+        .falling-arrow {
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            background: #333;
+            border: 2px solid;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            font-weight: bold;
+            color: #fff;
+            transition: top 0.1s linear;
+        }
+
+        .falling-arrow.up { border-color: #f00; background: #400; }
+        .falling-arrow.left { border-color: #f00; background: #400; }
+        .falling-arrow.down { border-color: #f00; background: #400; }
+        .falling-arrow.right { border-color: #f00; background: #400; }
+
+        /* Song Info */
+        #song-info {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+            font-size: 24px;
+            color: #fff;
+            text-shadow: 2px 2px 4px #000;
+        }
+
+        #score {
+            position: absolute;
+            top: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 32px;
+            color: #0f0;
+            text-shadow: 2px 2px 4px #000;
+        }
+
+        /* Game States */
+        #start-screen, #results-screen {
+            position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(0, 0, 0, 0.95);
+            background: rgba(0, 0, 0, 0.9);
+            display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            z-index: 50;
-            color: #8b0000;
-            font-size: 32px;
-            text-align: center;
-        }
-        
-        .completion-message button {
-            margin-top: 30px;
-            padding: 15px 30px;
-            background: #8b0000;
-            color: white;
-            border: none;
-            cursor: pointer;
+            z-index: 100;
+            color: #fff;
             font-size: 24px;
-            border-radius: 5px;
-            transition: all 0.3s;
-        }
-        
-        .completion-message button:hover {
-            background: #ff0000;
-            transform: scale(1.1);
-        }
-        
-        /* Glitch effect */
-        .glitch {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAA8SURBVGhDY/j//z8DrmFgYGBgxJX4nwF3JjQNQ9MwNA1D0zA0DUPTMDQNQ9MwNA1D0zA0DUPTMDQNQ9MwNA0D1QAAXQYHZx4XJzAAAAAASUVORK5CYII=');
-            opacity: 0;
-            pointer-events: none;
-            z-index: 20;
-            animation: glitch-anim 0.5s infinite;
-        }
-        
-        @keyframes glitch-anim {
-            0% { transform: translate(0); }
-            20% { transform: translate(-5px, 5px); }
-            40% { transform: translate(-5px, -5px); }
-            60% { transform: translate(5px, 5px); }
-            80% { transform: translate(5px, -5px); }
-            100% { transform: translate(0); }
-        }
-        
-        /* Explosive transition effects */
-        .transition-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: #000;
-            z-index: 30;
-            opacity: 0;
-            pointer-events: none;
-        }
-        
-        .pixel-explosion {
-            position: absolute;
-            width: 10px;
-            height: 10px;
-            background: #8b0000;
-            z-index: 40;
-            pointer-events: none;
-        }
-        
-        .color-burst {
-            position: absolute;
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            z-index: 40;
-            pointer-events: none;
-        }
-        
-        @keyframes explode {
-            0% { transform: scale(1); opacity: 1; }
-            100% { transform: scale(20); opacity: 0; }
-        }
-        
-        @keyframes implode {
-            0% { transform: scale(1); opacity: 1; }
-            100% { transform: scale(0); opacity: 0; }
-        }
-        
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            10%, 30%, 50%, 70%, 90% { transform: translateX(-10px); }
-            20%, 40%, 60%, 80% { transform: translateX(10px); }
-        }
-        
-        .shake {
-            animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
-        }
-        
-        /* Input blocker */
-        .input-blocker {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 1000;
-            display: none;
-        }
-        
-        /* Paint mode styles */
-        .paint-brush {
-            cursor: url('assets/sprites/paintbrush.png'), auto;
-        }
-        
-        .submit-btn {
-            display: none;
-            margin: 20px auto;
-            padding: 15px 30px;
-            background: #8b0000;
-            color: white;
-            border: none;
-            cursor: pointer;
-            font-size: 24px;
-            border-radius: 5px;
-            transition: all 0.3s;
-            font-weight: bold;
-        }
-        
-        .submit-btn:hover {
-            background: #ff0000;
-            transform: scale(1.1);
-        }
-        
-        .submit-btn:active {
-            transform: scale(0.95);
         }
 
-        .undo-btn {
+        #results-screen {
             display: none;
-            margin: 10px auto;
-            padding: 10px 20px;
-            background: #4b0082;
+        }
+
+        .battle-button {
+            background: #f00;
             color: white;
-            border: none;
+            border: 3px solid #fff;
+            padding: 20px 40px;
+            margin: 20px;
+            font-size: 24px;
             cursor: pointer;
-            font-size: 18px;
-            border-radius: 5px;
-            transition: all 0.3s;
-            font-weight: bold;
+            font-family: 'Courier New', monospace;
         }
-        
-        .undo-btn:hover {
-            background: #6a0dad;
-            transform: scale(1.1);
+
+        .battle-button:hover {
+            background: #ff4444;
         }
-        
-        .undo-btn:active {
-            transform: scale(0.95);
+
+        /* Combo Display */
+        #combo {
+            position: absolute;
+            top: 150px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 28px;
+            color: #0ff;
+            text-shadow: 2px 2px 4px #000;
+            display: none;
         }
     </style>
 </head>
 <body>
-    <div class="scanlines"></div>
-    <div class="glitch" id="glitch-effect"></div>
-    <div class="hidden-message" id="hidden-message">GOOD DOG</div>
-    <div class="transition-overlay" id="transition-overlay"></div>
-    <div class="input-blocker" id="input-blocker"></div>
-    
-    <h1>UBBA COLORING ACTIVITY</h1>
-    <div class="subtitle">Color by numbers! Drag colors to matching numbered areas</div>
-    
-    <div class="game-container">
-        <div class="coloring-area">
-            <canvas id="coloring-canvas" width="600" height="600"></canvas>
-        </div>
+    <div id="game-container">
+        <div id="background"></div>
         
-        <div class="colors-palette" id="colors-palette">
-            <!-- Colors will be added by JavaScript -->
+        <div id="game-ui">
+            <!-- Health Bars -->
+            <div id="health-bars">
+                <div class="health-bar" id="player-health">
+                    <div class="health-fill" style="width: 100%"></div>
+                    <div style="position: absolute; top: 0; left: 0; width: 100%; text-align: center; color: white;">PLAYER</div>
+                </div>
+                <div class="health-bar" id="ubba-health">
+                    <div class="health-fill" style="width: 100%"></div>
+                    <div style="position: absolute; top: 0; left: 0; width: 100%; text-align: center; color: white;">UBBA</div>
+                </div>
+            </div>
+
+            <!-- Song Info -->
+            <div id="song-info">
+                <div id="song-title">UBBA BATTLE 1</div>
+                <div id="score">SCORE: 0</div>
+            </div>
+
+            <!-- Combo Display -->
+            <div id="combo">COMBO: 0</div>
+
+            <!-- Characters -->
+            <div id="player">YOU</div>
+            <div id="ubba"></div>
+
+            <!-- Arrow Track -->
+            <div id="arrow-track">
+                <div class="arrow up" data-key="w">W</div>
+                <div class="arrow left" data-key="a">A</div>
+                <div class="arrow down" data-key="s">S</div>
+                <div class="arrow right" data-key="d">D</div>
+            </div>
+
+            <!-- Falling Arrows -->
+            <div id="falling-arrows"></div>
         </div>
-    </div>
-    
-    <button class="undo-btn" id="undo-btn">UNDO</button>
-    <button class="submit-btn" id="submit-btn">SUBMIT DRAWING</button>
-    
-    <div class="instructions">
-        <p><strong>How to play:</strong></p>
-        <p>1. Drag a color from the palette to the matching numbered area</p>
-        <p>2. Fill in all sections to complete the picture</p>
-        <p>3. Discover what Ubba really looks like</p>
-    </div>
-    
-    <div class="completion-message" id="completion-message">
-        <h2>PAINTING COMPLETE</h2>
-        <p>You've revealed Ubba's true form...</p>
-        <button id="continue-btn">CONTINUE</button>
+
+        <!-- Start Screen -->
+        <div id="start-screen">
+            <h1>UBBA DANCE BATTLE</h1>
+            <p>Get ready to face Ubba in a rhythm battle!</p>
+            <p>Use W A S D keys to match the falling arrows</p>
+            <button class="battle-button" onclick="startBattle(1)">START BATTLE 1</button>
+        </div>
+
+        <!-- Results Screen -->
+        <div id="results-screen">
+            <h1 id="result-title">BATTLE COMPLETE!</h1>
+            <p id="result-score">SCORE: 0</p>
+            <p id="result-combo">MAX COMBO: 0</p>
+            <div id="next-buttons">
+                <button class="battle-button" onclick="startBattle(2)">BATTLE 2</button>
+                <button class="battle-button" onclick="startBattle(3)">BATTLE 3</button>
+            </div>
+        </div>
     </div>
 
     <script>
-        // Canvas setup
-        const canvas = document.getElementById('coloring-canvas');
-        const ctx = canvas.getContext('2d');
-        const palette = document.getElementById('colors-palette');
-        const hiddenMessage = document.getElementById('hidden-message');
-        const completionMessage = document.getElementById('completion-message');
-        const glitchEffect = document.getElementById('glitch-effect');
-        const transitionOverlay = document.getElementById('transition-overlay');
-        const inputBlocker = document.getElementById('input-blocker');
-        const submitBtn = document.getElementById('submit-btn');
-        const undoBtn = document.getElementById('undo-btn');
-        
-        // Game states
-        const STATE_NUMBERED = 0;
-        const STATE_COMPLEX = 1;
-        const STATE_PAINT = 2;
-        
-        // Colors with numbers (using all 8 colors)
-        const colors = [
-            { number: 1, color: '#8b0000', name: 'Blood Red' },
-            { number: 2, color: '#000000', name: 'Void Black' },
-            { number: 3, color: '#556b2f', name: 'Sickly Green' },
-            { number: 4, color: '#d3d3d3', name: 'Ashen Gray' },
-            { number: 5, color: '#ffd700', name: 'Unnatural Gold' },
-            { number: 6, color: '#4b0082', name: 'Eldritch Purple' },
-            { number: 7, color: '#ff4500', name: 'Infected Orange' },
-            { number: 8, color: '#00ffff', name: 'Toxic Cyan' }
-        ];
-        
-        // ROYGBIV colors for paint mode
-        const paintColors = [
-            { color: '#FF0000', name: 'Red' },
-            { color: '#FF7F00', name: 'Orange' },
-            { color: '#FFFF00', name: 'Yellow' },
-            { color: '#00FF00', name: 'Green' },
-            { color: '#0000FF', name: 'Blue' },
-            { color: '#4B0082', name: 'Indigo' },
-            { color: '#9400D3', name: 'Violet' }
-        ];
-        
-        // Dog shape 1 (sitting dog) for color 1
-        const dogShape1 = [
-            // Body
-            {x: 200, y: 350}, {x: 300, y: 350}, {x: 320, y: 400}, {x: 320, y: 480}, 
-            {x: 180, y: 480}, {x: 180, y: 400}
+        // Game State
+        const gameState = {
+            currentBattle: 1,
+            score: 0,
+            combo: 0,
+            maxCombo: 0,
+            playerHealth: 100,
+            ubbaHealth: 100,
+            isPlaying: false,
+            arrowSpeed: 3,
+            arrowSpawnRate: 800,
+            activeArrows: [],
+            keys: {
+                'w': false,
+                'a': false,
+                's': false,
+                'd': false
+            }
+        };
+
+        // Battle data
+        const battles = [
+            { name: "UBBA BATTLE 1", duration: 60, arrows: 50 },
+            { name: "UBBA BATTLE 2", duration: 90, arrows: 80 },
+            { name: "UBBA FINAL BATTLE", duration: 120, arrows: 120 }
         ];
 
-        // Dog shape 2 (running dog) for color 2
-        const dogShape2 = [
-            // Different dog pose - running/stretching
-            {x: 150, y: 250}, {x: 350, y: 250}, {x: 380, y: 300}, {x: 380, y: 350},
-            {x: 350, y: 380}, {x: 320, y: 370}, {x: 280, y: 380}, {x: 240, y: 370},
-            {x: 200, y: 380}, {x: 150, y: 350}, {x: 120, y: 300}
-        ];
-        
-        // Simple Ubba silhouette sections with dog shapes for first two colors
-        const simpleSections = [
-            { number: 1, path: dogShape1 }, // Dog sitting
-            { number: 2, path: dogShape2 }, // Dog running
-            { number: 3, path: [{x:150,y:300}, {x:75,y:450}, {x:150,y:450}] }, // Left leg
-            { number: 4, path: [{x:450,y:300}, {x:525,y:450}, {x:450,y:450}] }, // Right leg
-            { number: 5, path: [{x:300,y:75}, {x:325,y:50}, {x:350,y:75}] } // Ear
-        ];
-        
-        // Complex Ubba shape (all 8 colors) with more detailed dog shapes
-        const complexSections = [
-            // Enhanced dog shapes
-            { number: 1, path: [
-                {x: 150, y: 200}, {x: 300, y: 200}, {x: 320, y: 250}, {x: 350, y: 280},
-                {x: 350, y: 350}, {x: 320, y: 380}, {x: 280, y: 390}, {x: 240, y: 380},
-                {x: 200, y: 390}, {x: 150, y: 380}, {x: 120, y: 350}, {x: 120, y: 280}
-            ]}, // Enhanced sitting dog
-            { number: 2, path: [
-                {x: 200, y: 100}, {x: 400, y: 100}, {x: 430, y: 130}, {x: 450, y: 170},
-                {x: 450, y: 200}, {x: 420, y: 220}, {x: 380, y: 210}, {x: 340, y: 220},
-                {x: 300, y: 210}, {x: 260, y: 220}, {x: 220, y: 210}, {x: 180, y: 220},
-                {x: 150, y: 200}, {x: 150, y: 170}, {x: 170, y: 130}
-            ]}, // Enhanced running dog
-            { number: 3, path: [{x:100,y:300}, {x:50,y:450}, {x:150,y:450}] }, // Left leg
-            { number: 4, path: [{x:500,y:300}, {x:550,y:450}, {x:450,y:450}] }, // Right leg
-            { number: 5, path: [{x:300,y:100}, {x:325,y:75}, {x:350,y:100}] }, // Ear
-            { number: 6, path: [{x:100,y:200}, {x:50,y:150}, {x:100,y:100}, {x:150,y:150}] }, // Tail
-            { number: 7, path: [{x:250,y:125}, {x:275,y:150}, {x:300,y:125}, {x:275,y:100}] }, // Left eye
-            { number: 8, path: [{x:350,y:125}, {x:325,y:150}, {x:300,y:125}, {x:325,y:100}] }  // Right eye
-        ];
-        
-        // Game state
-        let currentState = STATE_NUMBERED;
-        let currentSections = simpleSections;
-        let completedSections = [];
-        let currentColor = null;
-        let isTransitioning = false;
-        let isPainting = false;
-        let selectedPaintColor = null;
-        let brushSize = 10;
-        let dogImage = new Image();
-        let paintStrokes = []; // Store paint strokes for undo functionality
-        
-        // Initialize the game
-        function initGame() {
-            // Load the dog outline image
-            dogImage.src = 'assets/sprites/dogoutline.png';
-            dogImage.onload = function() {
-                drawCurrentState();
+        // DOM Elements
+        const elements = {
+            startScreen: document.getElementById('start-screen'),
+            resultsScreen: document.getElementById('results-screen'),
+            songTitle: document.getElementById('song-title'),
+            score: document.getElementById('score'),
+            combo: document.getElementById('combo'),
+            playerHealth: document.querySelector('#player-health .health-fill'),
+            ubbaHealth: document.querySelector('#ubba-health .health-fill'),
+            arrowTrack: document.getElementById('arrow-track'),
+            fallingArrows: document.getElementById('falling-arrows'),
+            resultTitle: document.getElementById('result-title'),
+            resultScore: document.getElementById('result-score'),
+            resultCombo: document.getElementById('result-combo'),
+            nextButtons: document.getElementById('next-buttons')
+        };
+
+        // Arrow types
+        const arrowTypes = ['up', 'left', 'down', 'right'];
+        const keyMap = {
+            'w': 'up',
+            'a': 'left', 
+            's': 'down',
+            'd': 'right'
+        };
+
+        function startBattle(battleNumber) {
+            gameState.currentBattle = battleNumber;
+            gameState.score = 0;
+            gameState.combo = 0;
+            gameState.maxCombo = 0;
+            gameState.playerHealth = 100;
+            gameState.ubbaHealth = 100;
+            gameState.isPlaying = true;
+            gameState.activeArrows = [];
+            
+            elements.startScreen.style.display = 'none';
+            elements.resultsScreen.style.display = 'none';
+            elements.songTitle.textContent = battles[battleNumber - 1].name;
+            updateUI();
+            
+            // Clear existing arrows
+            elements.fallingArrows.innerHTML = '';
+            
+            // Start arrow spawning
+            startArrowSpawning();
+            
+            // Set battle timer
+            setTimeout(() => {
+                endBattle(true);
+            }, battles[battleNumber - 1].duration * 1000);
+        }
+
+        function startArrowSpawning() {
+            const battle = battles[gameState.currentBattle - 1];
+            const totalArrows = battle.arrows;
+            const spawnInterval = (battle.duration * 1000) / totalArrows;
+            
+            let arrowsSpawned = 0;
+            const spawner = setInterval(() => {
+                if (!gameState.isPlaying || arrowsSpawned >= totalArrows) {
+                    clearInterval(spawner);
+                    return;
+                }
+                
+                spawnArrow();
+                arrowsSpawned++;
+            }, spawnInterval);
+        }
+
+        function spawnArrow() {
+            const arrowType = arrowTypes[Math.floor(Math.random() * arrowTypes.length)];
+            const arrow = document.createElement('div');
+            arrow.className = `falling-arrow ${arrowType}`;
+            arrow.textContent = arrowType.toUpperCase();
+            arrow.style.top = '0px';
+            arrow.style.left = getArrowPosition(arrowType);
+            arrow.dataset.type = arrowType;
+            
+            elements.fallingArrows.appendChild(arrow);
+            gameState.activeArrows.push({
+                element: arrow,
+                type: arrowType,
+                y: 0,
+                hit: false
+            });
+        }
+
+        function getArrowPosition(type) {
+            const positions = {
+                'up': '135px',
+                'left': '225px',
+                'down': '315px',
+                'right': '405px'
             };
+            return positions[type];
+        }
+
+        function updateGame() {
+            if (!gameState.isPlaying) return;
             
-            // Create a fallback dog outline if image doesn't load
-            dogImage.onerror = function() {
-                console.log('Dog image failed to load, using fallback');
-                drawCurrentState();
-            };
-            
-            // Draw the initial outline
-            drawCurrentState();
-            
-            // Create color palette (first 5 colors initially)
-            createPalette(5);
-            
-            // Set up canvas event listeners
-            setupCanvasListeners();
-            
-            // Set up completion button
-            document.getElementById('continue-btn').addEventListener('click', () => {
-                window.location.href = "next-stage.html";
+            // Update falling arrows
+            gameState.activeArrows.forEach((arrowObj, index) => {
+                arrowObj.y += gameState.arrowSpeed;
+                arrowObj.element.style.top = arrowObj.y + 'px';
+                
+                // Check if arrow reached target
+                if (arrowObj.y > 250 && !arrowObj.hit) {
+                    // Missed arrow - lose health
+                    gameState.playerHealth = Math.max(0, gameState.playerHealth - 5);
+                    gameState.combo = 0;
+                    updateUI();
+                    removeArrow(index);
+                }
             });
             
-            // Set up submit button
-            submitBtn.addEventListener('click', submitDrawing);
-            
-            // Set up undo button
-            undoBtn.addEventListener('click', undoLastStroke);
+            requestAnimationFrame(updateGame);
         }
-        
-        // Set up appropriate canvas listeners based on current state
-        function setupCanvasListeners() {
-            // Remove all existing listeners
-            canvas.removeEventListener('dragover', dragOver);
-            canvas.removeEventListener('drop', drop);
-            canvas.removeEventListener('mousedown', startPainting);
-            canvas.removeEventListener('mousemove', paint);
-            canvas.removeEventListener('mouseup', stopPainting);
-            canvas.removeEventListener('mouseleave', stopPainting);
+
+        function checkArrowHit(key) {
+            const arrowType = keyMap[key];
+            if (!arrowType) return;
             
-            if (currentState === STATE_PAINT) {
-                // Paint mode listeners
-                canvas.addEventListener('mousedown', startPainting);
-                canvas.addEventListener('mousemove', paint);
-                canvas.addEventListener('mouseup', stopPainting);
-                canvas.addEventListener('mouseleave', stopPainting);
-                canvas.classList.add('paint-brush');
-            } else {
-                // Numbered coloring listeners
-                canvas.addEventListener('dragover', dragOver);
-                canvas.addEventListener('drop', drop);
-                canvas.classList.remove('paint-brush');
+            let hit = false;
+            gameState.activeArrows.forEach((arrowObj, index) => {
+                if (arrowObj.type === arrowType && arrowObj.y > 200 && arrowObj.y < 280 && !arrowObj.hit) {
+                    // Successful hit!
+                    arrowObj.hit = true;
+                    arrowObj.element.style.background = '#0f0';
+                    arrowObj.element.style.borderColor = '#0f0';
+                    
+                    gameState.score += 100;
+                    gameState.combo++;
+                    gameState.maxCombo = Math.max(gameState.maxCombo, gameState.combo);
+                    gameState.ubbaHealth = Math.max(0, gameState.ubbaHealth - 2);
+                    
+                    // Show combo
+                    if (gameState.combo > 1) {
+                        elements.combo.textContent = `COMBO: ${gameState.combo}`;
+                        elements.combo.style.display = 'block';
+                    }
+                    
+                    setTimeout(() => removeArrow(index), 200);
+                    hit = true;
+                    updateUI();
+                }
+            });
+            
+            if (!hit) {
+                // Miss - lose combo
+                gameState.combo = 0;
+                elements.combo.style.display = 'none';
             }
         }
-        
-        // Create the color palette
-        function createPalette(count, isPaintMode = false) {
-            palette.innerHTML = '';
-            
-            if (isPaintMode) {
-                // Create ROYGBIV palette for paint mode
-                paintColors.forEach((color, index) => {
-                    const colorDiv = document.createElement('div');
-                    colorDiv.className = 'color-option';
-                    colorDiv.style.backgroundColor = color.color;
-                    colorDiv.dataset.color = color.color;
-                    colorDiv.title = color.name;
-                    
-                    colorDiv.addEventListener('click', () => {
-                        selectedPaintColor = color.color;
-                        // Highlight selected color
-                        document.querySelectorAll('.color-option').forEach(opt => {
-                            opt.style.borderColor = '#333';
-                        });
-                        colorDiv.style.borderColor = '#ff0000';
-                    });
-                    
-                    palette.appendChild(colorDiv);
-                });
-                
-                // Select first color by default
-                if (paintColors.length > 0) {
-                    selectedPaintColor = paintColors[0].color;
-                    palette.firstChild.style.borderColor = '#ff0000';
-                }
-            } else {
-                // Create numbered palette
-                for (let i = 0; i < count; i++) {
-                    const color = colors[i];
-                    const colorDiv = document.createElement('div');
-                    colorDiv.className = 'color-option';
-                    colorDiv.style.backgroundColor = color.color;
-                    colorDiv.innerHTML = `<span class="number">${color.number}</span>`;
-                    colorDiv.dataset.number = color.number;
-                    colorDiv.dataset.color = color.color;
-                    colorDiv.draggable = true;
-                    
-                    colorDiv.addEventListener('dragstart', dragStart);
-                    palette.appendChild(colorDiv);
-                }
+
+        function removeArrow(index) {
+            if (gameState.activeArrows[index]) {
+                gameState.activeArrows[index].element.remove();
+                gameState.activeArrows.splice(index, 1);
             }
         }
-        
-        // Draw based on current state
-        function drawCurrentState() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        function updateUI() {
+            elements.score.textContent = `SCORE: ${gameState.score}`;
+            elements.playerHealth.style.width = `${gameState.playerHealth}%`;
+            elements.ubbaHealth.style.width = `${gameState.ubbaHealth}%`;
             
-            if (currentState === STATE_PAINT) {
-                // Draw the dog outline - create a simple fallback if image doesn't load
-                if (dogImage.complete && dogImage.naturalWidth > 0) {
-                    ctx.drawImage(dogImage, 0, 0, canvas.width, canvas.height);
+            // Update arrow colors based on key presses
+            document.querySelectorAll('.arrow').forEach(arrow => {
+                const key = arrow.dataset.key;
+                if (gameState.keys[key]) {
+                    arrow.classList.add('active');
                 } else {
-                    // Draw a simple dog outline as fallback
-                    ctx.strokeStyle = '#8b0000';
-                    ctx.lineWidth = 3;
-                    ctx.beginPath();
-                    ctx.rect(50, 50, 500, 500);
-                    ctx.stroke();
-                }
-                
-                // Redraw all paint strokes
-                paintStrokes.forEach(stroke => {
-                    ctx.strokeStyle = stroke.color;
-                    ctx.lineWidth = stroke.size;
-                    ctx.lineCap = 'round';
-                    ctx.beginPath();
-                    stroke.points.forEach((point, index) => {
-                        if (index === 0) {
-                            ctx.moveTo(point.x, point.y);
-                        } else {
-                            ctx.lineTo(point.x, point.y);
-                        }
-                    });
-                    ctx.stroke();
-                });
-                return;
-            }
-            
-            // First draw all filled sections
-            currentSections.forEach((section, index) => {
-                const sectionId = `${section.number}-${index}`;
-                if (completedSections.includes(sectionId)) {
-                    ctx.fillStyle = colors.find(c => c.number === section.number).color;
-                    ctx.beginPath();
-                    ctx.moveTo(section.path[0].x, section.path[0].y);
-                    for (let i = 1; i < section.path.length; i++) {
-                        ctx.lineTo(section.path[i].x, section.path[i].y);
-                    }
-                    ctx.closePath();
-                    ctx.fill();
+                    arrow.classList.remove('active');
                 }
             });
-            
-            // Then draw all outlines and numbers (except in paint mode)
-            if (currentState !== STATE_PAINT) {
-                ctx.strokeStyle = '#8b0000';
-                ctx.lineWidth = 3;
-                ctx.font = 'bold 28px Arial';
-                ctx.fillStyle = '#8b0000';
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                
-                currentSections.forEach((section, index) => {
-                    ctx.beginPath();
-                    ctx.moveTo(section.path[0].x, section.path[0].y);
-                    for (let i = 1; i < section.path.length; i++) {
-                        ctx.lineTo(section.path[i].x, section.path[i].y);
-                    }
-                    ctx.closePath();
-                    ctx.stroke();
-                    
-                    // Calculate center for number
-                    const center = getCenter(section.path);
-                    
-                    // Draw number with outline (always visible)
-                    ctx.save();
-                    ctx.strokeStyle = '#000';
-                    ctx.lineWidth = 6;
-                    ctx.strokeText(section.number, center.x, center.y);
-                    ctx.fillStyle = '#fff'; // White numbers for visibility
-                    ctx.fillText(section.number, center.x, center.y);
-                    ctx.restore();
-                });
-            }
         }
-        
-        // Calculate center point of a polygon
-        function getCenter(points) {
-            let x = 0, y = 0;
-            points.forEach(point => {
-                x += point.x;
-                y += point.y;
-            });
-            return {
-                x: x / points.length,
-                y: y / points.length
-            };
-        }
-        
-        // Check if point is inside a polygon
-        function isPointInPath(path, x, y) {
-            ctx.beginPath();
-            ctx.moveTo(path[0].x, path[0].y);
-            for (let i = 1; i < path.length; i++) {
-                ctx.lineTo(path[i].x, path[i].y);
-            }
-            ctx.closePath();
-            return ctx.isPointInPath(x, y);
-        }
-        
-        // Create explosive pixel effect
-        function createExplosion(x, y, color) {
-            for (let i = 0; i < 50; i++) {
-                const particle = document.createElement('div');
-                particle.className = 'pixel-explosion';
-                particle.style.left = `${x}px`;
-                particle.style.top = `${y}px`;
-                particle.style.background = color;
-                particle.style.transform = `translate(${Math.random() * 100 - 50}px, ${Math.random() * 100 - 50}px)`;
-                particle.style.animation = `explode ${Math.random() * 0.5 + 0.5}s forwards`;
-                document.querySelector('.coloring-area').appendChild(particle);
-                
-                // Remove after animation
-                setTimeout(() => {
-                    particle.remove();
-                }, 1000);
-            }
-        }
-        
-        // Create color burst effect
-        function createColorBurst() {
-            const colors = ['#8b0000', '#ff0000', '#ff4500', '#ffd700', '#00ffff', '#4b0082'];
-            const area = document.querySelector('.coloring-area');
-            const rect = area.getBoundingClientRect();
+
+        function endBattle(victory) {
+            gameState.isPlaying = false;
             
-            for (let i = 0; i < 30; i++) {
-                const burst = document.createElement('div');
-                burst.className = 'color-burst';
-                burst.style.background = colors[Math.floor(Math.random() * colors.length)];
-                burst.style.left = `${Math.random() * rect.width}px`;
-                burst.style.top = `${Math.random() * rect.height}px`;
-                burst.style.animation = `implode ${Math.random() * 0.5 + 0.5}s forwards`;
-                area.appendChild(burst);
-                
-                setTimeout(() => {
-                    burst.remove();
-                }, 1000);
-            }
-        }
-        
-        // Trigger the transformation to complex shape
-        function transformToComplexShape() {
-            if (isTransitioning) return;
-            isTransitioning = true;
+            elements.resultTitle.textContent = victory ? 'VICTORY!' : 'DEFEAT!';
+            elements.resultScore.textContent = `SCORE: ${gameState.score}`;
+            elements.resultCombo.textContent = `MAX COMBO: ${gameState.maxCombo}`;
             
-            // Block input during transition
-            inputBlocker.style.display = 'block';
-            
-            // Shake the canvas violently
-            document.querySelector('.coloring-area').classList.add('shake');
-            
-            // Show glitch effect
-            glitchEffect.style.opacity = '0.7';
-            
-            // Create explosive effects from filled sections
-            currentSections.forEach((section, index) => {
-                const sectionId = `${section.number}-${index}`;
-                if (completedSections.includes(sectionId)) {
-                    const center = getCenter(section.path);
-                    const rect = canvas.getBoundingClientRect();
-                    const x = rect.left + center.x;
-                    const y = rect.top + center.y;
-                    createExplosion(x, y, colors.find(c => c.number === section.number).color);
-                }
-            });
-            
-            // Global color burst
-            createColorBurst();
-            
-            // After effects, transform the shape
-            setTimeout(() => {
-                currentState = STATE_COMPLEX;
-                currentSections = complexSections;
-                createPalette(8); // Show all colors
-                
-                // Keep track of completed sections
-                const newCompleted = [];
-                complexSections.forEach((section, index) => {
-                    if (completedSections.includes(`${section.number}-0`)) {
-                        newCompleted.push(`${section.number}-${index}`);
-                    }
-                });
-                completedSections = newCompleted;
-                
-                // Reset visual effects
-                document.querySelector('.coloring-area').classList.remove('shake');
-                glitchEffect.style.opacity = '0';
-                transitionOverlay.style.opacity = '0';
-                
-                // Draw new outline
-                drawCurrentState();
-                
-                // Show creepy message
-                hiddenMessage.textContent = "UBBA HAS TRANSFORMED";
-                hiddenMessage.style.opacity = '1';
-                setTimeout(() => {
-                    hiddenMessage.style.opacity = '0';
-                }, 2000);
-                
-                // Re-enable input
-                setTimeout(() => {
-                    inputBlocker.style.display = 'none';
-                    isTransitioning = false;
-                }, 500);
-            }, 1500);
-        }
-        
-        // Transform to paint mode
-        function transformToPaintMode() {
-            if (isTransitioning) return;
-            isTransitioning = true;
-            
-            // Block input during transition
-            inputBlocker.style.display = 'block';
-            
-            // Shake the canvas violently
-            document.querySelector('.coloring-area').classList.add('shake');
-            
-            // Show glitch effect
-            glitchEffect.style.opacity = '0.7';
-            
-            // Create explosive effects from filled sections
-            currentSections.forEach((section, index) => {
-                const sectionId = `${section.number}-${index}`;
-                if (completedSections.includes(sectionId)) {
-                    const center = getCenter(section.path);
-                    const rect = canvas.getBoundingClientRect();
-                    const x = rect.left + center.x;
-                    const y = rect.top + center.y;
-                    createExplosion(x, y, colors.find(c => c.number === section.number).color);
-                }
-            });
-            
-            // Global color burst
-            createColorBurst();
-            
-            // After effects, transform to paint mode
-            setTimeout(() => {
-                currentState = STATE_PAINT;
-                createPalette(paintColors.length, true); // Create paint palette
-                setupCanvasListeners(); // Switch to paint mode listeners
-                
-                // Reset visual effects
-                document.querySelector('.coloring-area').classList.remove('shake');
-                glitchEffect.style.opacity = '0';
-                transitionOverlay.style.opacity = '0';
-                
-                // Clear paint strokes for fresh start
-                paintStrokes = [];
-                
-                // Draw dog outline
-                drawCurrentState();
-                
-                // Show submit and undo buttons
-                submitBtn.style.display = 'block';
-                undoBtn.style.display = 'block';
-                
-                // Show creepy message
-                hiddenMessage.textContent = "PAINT UBBAS TRUE FORM";
-                hiddenMessage.style.opacity = '1';
-                setTimeout(() => {
-                    hiddenMessage.style.opacity = '0';
-                }, 2000);
-                
-                // Re-enable input
-                setTimeout(() => {
-                    inputBlocker.style.display = 'none';
-                    isTransitioning = false;
-                }, 500);
-            }, 1500);
-        }
-        
-        // Paint mode functions
-        let currentStroke = null;
-        
-        function startPainting(e) {
-            if (!selectedPaintColor) return;
-            isPainting = true;
-            
-            const rect = canvas.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const y = e.clientY - rect.top;
-            
-            // Start a new stroke
-            currentStroke = {
-                color: selectedPaintColor,
-                size: brushSize,
-                points: [{x, y}]
-            };
-            
-            ctx.beginPath();
-            ctx.moveTo(x, y);
-        }
-        
-        function stopPainting() {
-            if (isPainting && currentStroke && currentStroke.points.length > 0) {
-                // Save the completed stroke
-                paintStrokes.push(currentStroke);
-                currentStroke = null;
-            }
-            isPainting = false;
-            ctx.beginPath();
-        }
-        
-        function paint(e) {
-            if (!isPainting || !selectedPaintColor || !currentStroke) return;
-            
-            const rect = canvas.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const y = e.clientY - rect.top;
-            
-            // Add point to current stroke
-            currentStroke.points.push({x, y});
-            
-            ctx.lineWidth = brushSize;
-            ctx.lineCap = 'round';
-            ctx.strokeStyle = selectedPaintColor;
-            
-            ctx.lineTo(x, y);
-            ctx.stroke();
-            ctx.beginPath();
-            ctx.moveTo(x, y);
-        }
-        
-        function undoLastStroke() {
-            if (paintStrokes.length > 0) {
-                paintStrokes.pop();
-                drawCurrentState(); // Redraw everything without the last stroke
-            }
-        }
-        
-        function submitDrawing() {
-            // Show completion message
-            completionMessage.style.display = 'flex';
-            submitBtn.style.display = 'none';
-            undoBtn.style.display = 'none';
-        }
-        
-        // Drag and drop functions
-        function dragStart(e) {
-            if (isTransitioning) {
-                e.preventDefault();
-                return;
-            }
-            currentColor = {
-                number: parseInt(e.target.dataset.number),
-                color: e.target.dataset.color
-            };
-            e.dataTransfer.setData('text/plain', e.target.dataset.number);
-        }
-        
-        function dragOver(e) {
-            if (isTransitioning) {
-                e.preventDefault();
-                return;
-            }
-            e.preventDefault();
-        }
-        
-        function drop(e) {
-            if (isTransitioning) {
-                e.preventDefault();
-                return;
-            }
-            e.preventDefault();
-            if (!currentColor || isTransitioning) return;
-            
-            const rect = canvas.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const y = e.clientY - rect.top;
-            
-            // Find which section was clicked
-            let filledSection = false;
-            
-            currentSections.forEach((section, index) => {
-                const sectionId = `${section.number}-${index}`;
-                
-                if (section.number === currentColor.number && 
-                    isPointInPath(section.path, x, y) &&
-                    !completedSections.includes(sectionId)) {
-                    
-                    // Mark as completed
-                    completedSections.push(sectionId);
-                    filledSection = true;
-                    
-                    // Redraw to show changes
-                    drawCurrentState();
-                    
-                    // Show hidden message randomly
-                    if (Math.random() < 0.3) {
-                        hiddenMessage.style.opacity = '1';
-                        setTimeout(() => {
-                            hiddenMessage.style.opacity = '0';
-                        }, 1000);
-                    }
-                }
-            });
-            
-            if (filledSection) {
-                // Check if we should transform to complex shape (2/5 unique numbers filled in simple form)
-                if (currentState === STATE_NUMBERED) {
-                    const uniqueCompleted = [...new Set(completedSections.map(id => id.split('-')[0]))];
-                    if (uniqueCompleted.length >= 2) {
-                        transformToComplexShape();
-                    }
-                }
-                // Check if we should transform to paint mode (7/8 unique numbers filled in complex form)
-                else if (currentState === STATE_COMPLEX) {
-                    const uniqueCompleted = [...new Set(completedSections.map(id => id.split('-')[0]))];
-                    if (uniqueCompleted.length >= 7) {
-                        transformToPaintMode();
-                    }
-                }
-                
-                // Check if all sections are completed (for numbered modes)
-                if (currentState !== STATE_PAINT && completedSections.length === currentSections.length) {
-                    setTimeout(() => {
-                        completionMessage.style.display = 'flex';
-                    }, 1000);
-                }
+            // Show appropriate next buttons
+            elements.nextButtons.innerHTML = '';
+            if (gameState.currentBattle < 3) {
+                elements.nextButtons.innerHTML = `<button class="battle-button" onclick="startBattle(${gameState.currentBattle + 1})">BATTLE ${gameState.currentBattle + 1}</button>`;
+            } else {
+                elements.nextButtons.innerHTML = `<button class="battle-button" onclick="location.reload()">PLAY AGAIN</button>`;
             }
             
-            currentColor = null;
+            elements.resultsScreen.style.display = 'flex';
         }
-        
-        // Start the game
-        initGame();
+
+        // Event Listeners
+        document.addEventListener('keydown', (e) => {
+            const key = e.key.toLowerCase();
+            if (gameState.keys.hasOwnProperty(key) && gameState.isPlaying) {
+                gameState.keys[key] = true;
+                checkArrowHit(key);
+                updateUI();
+            }
+        });
+
+        document.addEventListener('keyup', (e) => {
+            const key = e.key.toLowerCase();
+            if (gameState.keys.hasOwnProperty(key)) {
+                gameState.keys[key] = false;
+                updateUI();
+            }
+        });
+
+        // Start game loop
+        updateGame();
     </script>
 </body>
 </html>
