@@ -601,7 +601,7 @@
             const arrow = document.createElement('div');
             arrow.className = `falling-arrow ${type}`;
             arrow.textContent = getArrowSymbol(type);
-            arrow.style.top = '0px';
+            arrow.style.top = '100px'; // Start from bottom
             arrow.style.left = '50%';
             arrow.style.transform = 'translateX(-50%)';
             arrow.dataset.type = type;
@@ -613,7 +613,7 @@
                 element: arrow,
                 type: type,
                 side: side,
-                y: 0,
+                y: 100, // Start from bottom
                 hit: false,
                 lane: lane
             });
@@ -634,11 +634,12 @@
             
             // Update falling arrows
             gameState.activeArrows.forEach((arrowObj, index) => {
-                arrowObj.y += CONFIG.ARROW_SPEED;
+                // Move arrows upward
+                arrowObj.y -= CONFIG.ARROW_SPEED;
                 arrowObj.element.style.top = arrowObj.y + 'px';
                 
-                // Check if arrow reached bottom
-                if (arrowObj.y > 100 && !arrowObj.hit) {
+                // Check if arrow reached top (hit zone)
+                if (arrowObj.y < 30 && arrowObj.y > 0 && !arrowObj.hit) {
                     if (arrowObj.side === 'left' && !gameState.isBotTurn) {
                         // Player missed arrow
                         gameState.playerHealth = Math.max(0, gameState.playerHealth - CONFIG.HEALTH_LOSS);
@@ -646,6 +647,11 @@
                         updateUI();
                         createMissEffect(arrowObj.lane);
                     }
+                    removeArrow(index);
+                }
+                
+                // Remove arrows that go off screen
+                if (arrowObj.y < -50) {
                     removeArrow(index);
                 }
             });
@@ -662,7 +668,7 @@
             let hit = false;
             gameState.activeArrows.forEach((arrowObj, index) => {
                 if (arrowObj.type === arrowType && arrowObj.side === 'left' && 
-                    arrowObj.y > 80 && arrowObj.y < 100 && !arrowObj.hit) {
+                    arrowObj.y < 30 && arrowObj.y > 0 && !arrowObj.hit) {
                     
                     // Successful hit!
                     arrowObj.hit = true;
@@ -770,8 +776,8 @@
             elements.playerHealth.style.width = `${gameState.playerHealth}%`;
             elements.ubbaHealth.style.width = `${gameState.ubbaHealth}%`;
             
-            // Update static arrow colors based on key presses
-            document.querySelectorAll('.static-arrow').forEach(arrow => {
+            // Update static arrow colors based on key presses - only player side
+            document.querySelectorAll('.lane-side:first-child .static-arrow').forEach(arrow => {
                 const key = arrow.textContent.toLowerCase();
                 if (gameState.keys[key]) {
                     arrow.classList.add('active');
