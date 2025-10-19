@@ -110,18 +110,6 @@
             border-radius: 10px;
         }
 
-        .lane-label {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            font-size: 24px;
-            font-weight: bold;
-            color: #fff;
-            z-index: 5;
-            text-shadow: 1px 1px 2px #000;
-        }
-
         /* Static Arrows */
         .static-arrow {
             position: absolute;
@@ -141,6 +129,7 @@
             border-radius: 8px;
             transition: all 0.1s ease;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+            z-index: 10;
         }
 
         .static-arrow.active {
@@ -153,6 +142,16 @@
         .static-arrow.left { border-color: #4ecdc4; }
         .static-arrow.down { border-color: #ffe66d; }
         .static-arrow.right { border-color: #ff9f1c; }
+
+        /* Falling Arrows Container */
+        #falling-arrows-container {
+            position: absolute;
+            top: 200px;
+            left: 0;
+            width: 100%;
+            height: calc(100vh - 400px);
+            pointer-events: none;
+        }
 
         /* Falling Arrows */
         .falling-arrow {
@@ -168,8 +167,7 @@
             font-weight: bold;
             color: #fff;
             border-radius: 8px;
-            transition: top 0.05s linear;
-            z-index: 2;
+            z-index: 5;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
         }
 
@@ -190,10 +188,10 @@
             border-color: #ff9f1c; 
         }
 
-        /* Characters */
+        /* Characters - Moved to bottom */
         #characters {
             position: absolute;
-            bottom: 150px;
+            bottom: 50px;
             left: 0;
             width: 100%;
             display: flex;
@@ -203,7 +201,7 @@
 
         .character {
             width: 200px;
-            height: 300px;
+            height: 200px;
             border: 3px solid #fff;
             display: flex;
             align-items: center;
@@ -414,6 +412,9 @@
             </div>
         </div>
 
+        <!-- Falling Arrows Container -->
+        <div id="falling-arrows-container"></div>
+
         <!-- Characters -->
         <div id="characters">
             <div class="character" id="player-character">YOU</div>
@@ -441,7 +442,7 @@
     <script>
         // Game Configuration
         const CONFIG = {
-            ARROW_SPEED: 5,
+            ARROW_SPEED: 3,
             BOT_SEQUENCE_DELAY: 2000,
             PLAYER_TURN_DELAY: 1000,
             LEVEL_DURATION: 4000,
@@ -477,6 +478,14 @@
             's': 'down',
             'w': 'up',
             'd': 'right'
+        };
+
+        // Arrow positions on screen
+        const ARROW_POSITIONS = {
+            'left': { left: '135px' },
+            'down': { left: '255px' },
+            'up': { left: '375px' },
+            'right': { left: '495px' }
         };
 
         // Predefined sequences for each level
@@ -528,7 +537,8 @@
             ubbaHealth: document.querySelector('#ubba-health .health-fill'),
             resultTitle: document.getElementById('result-title'),
             resultScore: document.getElementById('result-score'),
-            resultCombo: document.getElementById('result-combo')
+            resultCombo: document.getElementById('result-combo'),
+            fallingArrowsContainer: document.getElementById('falling-arrows-container')
         };
 
         function startGame() {
@@ -595,27 +605,24 @@
         }
 
         function spawnArrow(type, side) {
-            const laneId = `lane-${side === 'right' ? 'ubba-' : ''}${type}`;
-            const lane = document.getElementById(laneId);
-            
             const arrow = document.createElement('div');
             arrow.className = `falling-arrow ${type}`;
             arrow.textContent = getArrowSymbol(type);
-            arrow.style.top = '100px'; // Start from bottom
-            arrow.style.left = '50%';
-            arrow.style.transform = 'translateX(-50%)';
+            
+            // Position arrow at bottom of screen
+            arrow.style.bottom = '0px';
+            arrow.style.left = ARROW_POSITIONS[type].left;
             arrow.dataset.type = type;
             arrow.dataset.side = side;
             
-            lane.appendChild(arrow);
+            elements.fallingArrowsContainer.appendChild(arrow);
             
             gameState.activeArrows.push({
                 element: arrow,
                 type: type,
                 side: side,
-                y: 100, // Start from bottom
-                hit: false,
-                lane: lane
+                y: 0, // Start from bottom
+                hit: false
             });
         }
 
@@ -635,23 +642,22 @@
             // Update falling arrows
             gameState.activeArrows.forEach((arrowObj, index) => {
                 // Move arrows upward
-                arrowObj.y -= CONFIG.ARROW_SPEED;
-                arrowObj.element.style.top = arrowObj.y + 'px';
+                arrowObj.y += CONFIG.ARROW_SPEED;
+                arrowObj.element.style.bottom = arrowObj.y + 'px';
                 
-                // Check if arrow reached top (hit zone)
-                if (arrowObj.y < 30 && arrowObj.y > 0 && !arrowObj.hit) {
+                // Check if arrow reached hit zone (near the static arrows)
+                if (arrowObj.y > 350 && arrowObj.y < 450 && !arrowObj.hit) {
                     if (arrowObj.side === 'left' && !gameState.isBotTurn) {
                         // Player missed arrow
                         gameState.playerHealth = Math.max(0, gameState.playerHealth - CONFIG.HEALTH_LOSS);
                         gameState.combo = 0;
                         updateUI();
-                        createMissEffect(arrowObj.lane);
+                        createMissEffect(arrowObj.element);
                     }
-                    removeArrow(index);
                 }
                 
                 // Remove arrows that go off screen
-                if (arrowObj.y < -50) {
+                if (arrowObj.y > 600) {
                     removeArrow(index);
                 }
             });
@@ -668,7 +674,7 @@
             let hit = false;
             gameState.activeArrows.forEach((arrowObj, index) => {
                 if (arrowObj.type === arrowType && arrowObj.side === 'left' && 
-                    arrowObj.y < 30 && arrowObj.y > 0 && !arrowObj.hit) {
+                    arrowObj.y > 350 && arrowObj.y < 450 && !arrowObj.hit) {
                     
                     // Successful hit!
                     arrowObj.hit = true;
@@ -687,7 +693,7 @@
                         elements.comboDisplay.style.display = 'block';
                     }
                     
-                    createHitEffect(arrowObj.lane);
+                    createHitEffect(arrowObj.element);
                     setTimeout(() => removeArrow(index), 200);
                     hit = true;
                     updateUI();
@@ -709,8 +715,8 @@
             }
         }
 
-        function createHitEffect(lane) {
-            const rect = lane.getBoundingClientRect();
+        function createHitEffect(element) {
+            const rect = element.getBoundingClientRect();
             const effect = document.createElement('div');
             effect.className = 'hit-effect';
             effect.style.left = (rect.left + rect.width / 2) + 'px';
@@ -722,8 +728,8 @@
             }, 300);
         }
 
-        function createMissEffect(lane) {
-            const rect = lane.getBoundingClientRect();
+        function createMissEffect(element) {
+            const rect = element.getBoundingClientRect();
             const effect = document.createElement('div');
             effect.className = 'miss-effect';
             effect.style.left = (rect.left + rect.width / 2) + 'px';
