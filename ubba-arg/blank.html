@@ -362,19 +362,6 @@ function showEffectAtStatic(staticRect, cls) {
   } catch(e){}
 }
 
-/* show small hit/miss effect */
-function showEffect(el, cls) {
-  try {
-    const r = el.getBoundingClientRect();
-    const e = document.createElement('div');
-    e.className = cls === 'hit' ? 'hit' : 'miss';
-    e.style.left = (r.left + r.width/2 - 40) + 'px';
-    e.style.top = (r.top + r.height/2 - 40) + 'px';
-    document.body.appendChild(e);
-    setTimeout(()=>e.remove(), 360);
-  } catch(e){}
-}
-
 /* handle player key presses with chord logic */
 document.addEventListener('keydown', (ev) => {
   if (!state.playing || state.isBotPhase) return;
@@ -385,7 +372,7 @@ document.addEventListener('keydown', (ev) => {
   state.recentKeyPresses.push({ type: KEY_MAP[key], time: now });
   // purge old
   while(state.recentKeyPresses.length && now - state.recentKeyPresses[0].time > CONFIG.chordWindow) state.recentKeyPresses.shift();
-  flashStatic('player', KEY_MAP[key], 150);
+  // REMOVED: flashStatic('player', KEY_MAP[key], 150); - No green flash on key press
   attemptHit(KEY_MAP[key]);
 });
 
