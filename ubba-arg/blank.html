@@ -359,8 +359,9 @@ function loop() {
     a.y += (currentSpeed() / 60); // Convert % per second to % per frame (assuming 60fps)
     a.el.style.bottom = a.y + '%';
     
-    // Check if arrow reached the top (0%)
-    if (a.y < 0) {
+    // Check if arrow reached the top (convert % back to pixels for detection)
+    const arrowBottom = percentToPx(a.y);
+    if (arrowBottom < 0) {
       // arrow went off top -> if player arrow, count miss (hp loss)
       if (a.side === 'player' && !a.hit) {
         a.hit = true;
