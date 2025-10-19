@@ -124,7 +124,8 @@ const CONFIG = {
   rounds: 3,
   chordWindow: 220,   // ms window to consider multiple key presses a chord
   arrowMaxAge: 4000,  // 4 seconds max arrow lifetime
-  playerTurnTimeout: 3000 // 3 seconds extra beyond bot time
+  playerTurnTimeout: 3000, // 3 seconds extra beyond bot time
+  playerMaxHP: 8      // Player now has 8 HP max
 };
 
 /* State */
@@ -134,7 +135,7 @@ const state = {
   score: 0,
   combo: 0,
   maxCombo: 0,
-  playerHP: 100,
+  playerHP: CONFIG.playerMaxHP, // Start with 8 HP
   ubbaHP: 100,
   arrows: [],        // {el,type,side,y,hit,spawnTime,groupId}
   sequence: [],      // current sequence (items string or array)
@@ -363,6 +364,11 @@ function loop() {
           showEffectAtStatic(staticRect, 'miss');
         }
         updateHUD();
+        // Check if player died
+        if (state.playerHP <= 0) {
+          finishGame();
+          return;
+        }
       }
       if (a.el && a.el.parentElement) a.el.remove();
       state.arrows.splice(i,1);
@@ -413,6 +419,10 @@ function attemptHit(pressedType) {
     state.playerHP = Math.max(0, state.playerHP - CONFIG.hpLoss);
     state.combo = 0;
     updateHUD();
+    // Check if player died
+    if (state.playerHP <= 0) {
+      finishGame();
+    }
     return;
   }
 
@@ -434,6 +444,10 @@ function attemptHit(pressedType) {
     state.playerHP = Math.max(0, state.playerHP - CONFIG.hpLoss);
     state.combo = 0;
     updateHUD();
+    // Check if player died
+    if (state.playerHP <= 0) {
+      finishGame();
+    }
     return;
   }
 
@@ -480,7 +494,7 @@ function attemptHit(pressedType) {
     state.score += 100 * Math.max(1, required.length);
     state.combo += 1;
     state.maxCombo = Math.max(state.maxCombo, state.combo);
-    state.playerHP = Math.min(100, state.playerHP + CONFIG.hpGain);
+    state.playerHP = Math.min(CONFIG.playerMaxHP, state.playerHP + CONFIG.hpGain);
     state.ubbaHP = Math.max(0, state.ubbaHP - CONFIG.hpLoss * required.length);
     updateHUD();
   } else {
@@ -492,6 +506,10 @@ function attemptHit(pressedType) {
     state.playerHP = Math.max(0, state.playerHP - CONFIG.hpLoss);
     state.combo = 0;
     updateHUD();
+    // Check if player died
+    if (state.playerHP <= 0) {
+      finishGame();
+    }
   }
 
   checkRoundCompletion();
@@ -584,7 +602,9 @@ function updateHUD() {
   els.combo.style.display = state.combo > 1 ? 'block' : 'none';
   els.combo.textContent = `COMBO: ${state.combo}`;
   els.level.textContent = `LEVEL ${state.round}`;
-  els.playerFill.style.width = `${state.playerHP}%`;
+  // Calculate percentage for player HP bar (8 HP max)
+  const playerHPPercent = (state.playerHP / CONFIG.playerMaxHP) * 100;
+  els.playerFill.style.width = `${playerHPPercent}%`;
   els.ubbaFill.style.width = `${state.ubbaHP}%`;
 }
 
@@ -593,7 +613,8 @@ function startGame(){
   state.playing = true;
   state.round = 1;
   state.score = 0; state.combo = 0; state.maxCombo = 0;
-  state.playerHP = 100; state.ubbaHP = 100;
+  state.playerHP = CONFIG.playerMaxHP; // Start with 8 HP
+  state.ubbaHP = 100;
   state.botTurnDuration = 0;
   updateHUD();
   els.start.style.display = 'none'; els.results.style.display = 'none';
