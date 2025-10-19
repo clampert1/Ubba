@@ -3,135 +3,85 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>UBBA DANCE BATTLE</title>
+<title>UBBA Dance Battle</title>
 <style>
-/* === BASIC SETUP === */
-* {margin:0;padding:0;box-sizing:border-box;}
-body {
-  background:#000;color:#fff;font-family:Arial, sans-serif;
-  overflow:hidden;user-select:none;
-}
-#game-container {position:relative;width:100vw;height:100vh;overflow:hidden;}
-#background {
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:#000;color:#fff;font-family:Arial, sans-serif;overflow:hidden;}
+#game-container{position:relative;width:100vw;height:100vh;}
+#background{
   position:absolute;top:0;left:0;width:100%;height:100%;
   background:url('https://raw.githubusercontent.com/clampert1/Ubba/main/ubba-arg/assets/cameras/office.png') center/cover no-repeat;
   filter:brightness(0.4);
 }
 
-/* === HEALTH BARS === */
-#health-container {
+/* === HEALTH === */
+#health-container{
   position:absolute;top:20px;left:50%;transform:translateX(-50%);
   width:80%;display:flex;justify-content:space-between;align-items:center;
 }
-.health-bar {
-  width:400px;height:30px;background:#333;border:2px solid #fff;
-  border-radius:5px;overflow:hidden;position:relative;
-}
-.health-fill {position:absolute;top:0;left:0;height:100%;background:#0f0;transition:width 0.3s ease;}
-#ubba-health .health-fill {background:#f00;right:0;left:auto;}
-.health-label {
-  position:absolute;width:100%;text-align:center;line-height:30px;
-  font-weight:bold;text-shadow:1px 1px 2px #000;
-}
+.health-bar{width:400px;height:30px;background:#333;border:2px solid #fff;border-radius:5px;overflow:hidden;position:relative;}
+.health-fill{position:absolute;top:0;left:0;height:100%;background:#0f0;transition:width .3s ease;}
+#ubba-health .health-fill{background:#f00;right:0;left:auto;}
+.health-label{position:absolute;width:100%;text-align:center;line-height:30px;font-weight:bold;text-shadow:1px 1px 2px #000;}
 
-/* === ARROW LANES === */
-#lanes-container {
-  position:absolute;top:80px;left:0;width:100%;height:120px;
-  display:flex;justify-content:space-between;padding:0 50px;
+/* === ARROW ZONES === */
+#lanes-container{
+  position:absolute;top:80px;left:50%;transform:translateX(-50%);
+  display:flex;gap:200px;
 }
-.lane-side {display:flex;gap:15px;}
-.arrow-lane {
-  width:100px;height:100px;background:rgba(0,0,0,0.6);
-  border:2px solid #444;border-radius:10px;position:relative;overflow:hidden;
+.lane-side{display:flex;gap:20px;}
+.arrow-lane{width:90px;height:100px;position:relative;}
+.static-arrow{
+  position:absolute;bottom:0;left:50%;transform:translateX(-50%);
+  width:70px;height:70px;border:3px solid;border-radius:8px;
+  background:#222;display:flex;align-items:center;justify-content:center;
+  color:#fff;font-size:22px;font-weight:bold;transition:.1s;
 }
+.static-arrow.active{background:#0f0;transform:translateX(-50%) scale(1.15);}
+.static-arrow.left{border-color:#4ecdc4;}
+.static-arrow.down{border-color:#ffe66d;}
+.static-arrow.up{border-color:#ff6b6b;}
+.static-arrow.right{border-color:#ff9f1c;}
 
-/* === STATIC TARGET ARROWS === */
-.static-arrow {
-  position:absolute;bottom:10px;left:50%;transform:translateX(-50%);
-  width:70px;height:70px;background:#222;border:3px solid;
-  display:flex;align-items:center;justify-content:center;
-  font-size:24px;font-weight:bold;color:#fff;border-radius:8px;
-  transition:all 0.1s ease;z-index:10;
-}
-.static-arrow.active {background:#0f0;transform:translateX(-50%) scale(1.1);box-shadow:0 0 15px #0f0;}
-.static-arrow.up {border-color:#ff6b6b;}
-.static-arrow.left {border-color:#4ecdc4;}
-.static-arrow.down {border-color:#ffe66d;}
-.static-arrow.right {border-color:#ff9f1c;}
-
-/* === FALLING/RAISING ARROWS === */
-#falling-arrows-container {
-  position:absolute;bottom:0;left:0;width:100%;height:100%;pointer-events:none;
-}
-.falling-arrow {
-  position:absolute;width:70px;height:70px;border:3px solid;
-  border-radius:8px;display:flex;align-items:center;justify-content:center;
-  font-size:24px;font-weight:bold;color:#fff;
+/* === FALLING ARROWS === */
+#falling-arrows-container{position:absolute;bottom:0;left:0;width:100%;height:100%;pointer-events:none;}
+.falling-arrow{
+  position:absolute;width:70px;height:70px;border:3px solid;border-radius:8px;
+  display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:bold;
 }
 .falling-arrow.left{background:#4ecdc4;border-color:#4ecdc4;}
-.falling-arrow.down{background:#ffe66d;border-color:#ffe66d;color:#000;}
+.falling-arrow.down{background:#ffe66d;color:#000;border-color:#ffe66d;}
 .falling-arrow.up{background:#ff6b6b;border-color:#ff6b6b;}
 .falling-arrow.right{background:#ff9f1c;border-color:#ff9f1c;}
 
 /* === CHARACTERS === */
-#characters {
-  position:absolute;bottom:50px;left:0;width:100%;
-  display:flex;justify-content:space-between;padding:0 100px;
+#characters{
+  position:absolute;bottom:60px;left:50%;transform:translateX(-50%);
+  display:flex;justify-content:space-between;gap:400px;
 }
-.character {
-  width:200px;height:200px;border:3px solid #fff;border-radius:10px;
-  display:flex;align-items:center;justify-content:center;
-  font-size:24px;box-shadow:0 8px 16px rgba(0,0,0,0.5);
+.character{
+  width:180px;height:180px;border:3px solid #fff;border-radius:10px;
+  display:flex;align-items:center;justify-content:center;font-size:24px;
 }
-#player-character {background:linear-gradient(135deg,#1e3c72,#2a5298);}
-#ubba-character {
+#player-character{background:linear-gradient(135deg,#1e3c72,#2a5298);}
+#ubba-character{
   background:url('https://raw.githubusercontent.com/clampert1/Ubba/main/ubba-arg/assets/sprites/ubba.png') center/contain no-repeat;
   background-color:#000;
 }
 
-/* === SCREENS === */
-#start-screen,#results-screen {
+/* === UI === */
+#score-display{position:absolute;top:130px;left:50%;transform:translateX(-50%);font-size:26px;}
+#combo-display{position:absolute;top:165px;left:50%;transform:translateX(-50%);font-size:22px;display:none;}
+#bot-turn{position:absolute;top:200px;left:50%;transform:translateX(-50%);font-size:30px;color:#ff0;display:none;font-weight:bold;}
+#level-display{position:absolute;top:240px;left:50%;transform:translateX(-50%);font-size:24px;}
+#start-screen,#results-screen{
   position:absolute;top:0;left:0;width:100%;height:100%;
   background:rgba(0,0,0,0.85);
-  display:flex;flex-direction:column;justify-content:center;align-items:center;
-  z-index:100;text-align:center;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:100;
 }
 #results-screen{display:none;}
-.battle-button {
-  background:linear-gradient(135deg,#ff6b6b,#ff8e8e);
-  color:#fff;border:3px solid #fff;padding:20px 40px;margin:20px;
-  font-size:24px;border-radius:10px;cursor:pointer;transition:.3s;
-}
-.battle-button:hover {transform:translateY(-3px);background:linear-gradient(135deg,#ff8e8e,#ffaaaa);}
-
-/* === UI === */
-#score-display {
-  position:absolute;top:120px;left:50%;transform:translateX(-50%);
-  font-size:28px;color:#0f0;text-shadow:2px 2px 4px #000;font-weight:bold;
-}
-#combo-display {
-  position:absolute;top:160px;left:50%;transform:translateX(-50%);
-  font-size:24px;color:#0ff;text-shadow:2px 2px 4px #000;display:none;
-}
-#bot-turn {
-  position:absolute;top:200px;left:50%;transform:translateX(-50%);
-  font-size:32px;color:#ff0;text-shadow:2px 2px 4px #000;
-  display:none;font-weight:bold;animation:pulse 1.5s infinite;
-}
-@keyframes pulse{0%{opacity:.7;}50%{opacity:1;}100%{opacity:.7;}}
-#level-display {
-  position:absolute;top:250px;left:50%;transform:translateX(-50%);
-  font-size:26px;color:#fff;text-shadow:2px 2px 4px #000;font-weight:bold;
-}
-
-/* Effects */
-.hit-effect,.miss-effect {
-  position:absolute;width:80px;height:80px;border-radius:50%;pointer-events:none;
-  animation:expand .3s forwards;z-index:10;
-}
-.hit-effect{background:rgba(0,255,0,.5);}
-.miss-effect{background:rgba(255,0,0,.5);}
-@keyframes expand{0%{transform:scale(.5);opacity:1;}100%{transform:scale(2);opacity:0;}}
+.battle-button{background:#ff6b6b;color:#fff;border:2px solid #fff;padding:16px 30px;font-size:22px;border-radius:10px;cursor:pointer;}
+.battle-button:hover{background:#ff8b8b;}
 </style>
 </head>
 <body>
@@ -147,13 +97,13 @@ body {
   <div id="level-display">LEVEL 1</div>
 
   <div id="lanes-container">
-    <div class="lane-side">
+    <div class="lane-side" id="player-lane">
       <div class="arrow-lane"><div class="static-arrow left">A</div></div>
       <div class="arrow-lane"><div class="static-arrow down">S</div></div>
       <div class="arrow-lane"><div class="static-arrow up">W</div></div>
       <div class="arrow-lane"><div class="static-arrow right">D</div></div>
     </div>
-    <div class="lane-side">
+    <div class="lane-side" id="ubba-lane">
       <div class="arrow-lane"><div class="static-arrow left">←</div></div>
       <div class="arrow-lane"><div class="static-arrow down">↓</div></div>
       <div class="arrow-lane"><div class="static-arrow up">↑</div></div>
@@ -169,36 +119,27 @@ body {
   </div>
 
   <div id="start-screen">
-    <h1 style="font-size:48px;margin-bottom:20px;color:#ff6b6b;">UBBA DANCE BATTLE</h1>
-    <p style="margin-bottom:10px;font-size:26px;">Watch Ubba's sequence, then repeat it!</p>
-    <p style="margin-bottom:30px;font-size:22px;">Use A S W D keys when arrows reach targets</p>
-    <p style="margin-bottom:10px;font-size:20px;color:#ffe66d;">Hit: +2 HP | Miss/Spam: -1 HP</p>
-    <button class="battle-button" onclick="startGame()">START BATTLE</button>
+    <h1 style="font-size:44px;margin-bottom:20px;">UBBA DANCE BATTLE</h1>
+    <button class="battle-button" onclick="startGame()">START</button>
   </div>
-
   <div id="results-screen">
-    <h1 id="result-title" style="font-size:48px;margin-bottom:20px;">BATTLE COMPLETE!</h1>
-    <p id="result-score" style="font-size:32px;margin-bottom:10px;">SCORE: 0</p>
-    <p id="result-combo" style="font-size:28px;margin-bottom:30px;">MAX COMBO: 0</p>
+    <h1 id="result-title" style="font-size:44px;">VICTORY!</h1>
+    <p id="result-score"></p><p id="result-combo"></p>
     <button class="battle-button" onclick="location.reload()">PLAY AGAIN</button>
   </div>
 </div>
 
 <script>
-const CONFIG={ARROW_SPEED:3,SPAWN_RATE:700,HIT_WINDOW:60,HEALTH_GAIN:2,HEALTH_LOSS:1};
+const CONFIG={ARROW_SPEED:3,SPAWN_RATE:700,HIT_TOL:50};
 const KEY_MAP={a:'left',s:'down',w:'up',d:'right'};
 const ARROW_SYMBOLS={left:'←',down:'↓',up:'↑',right:'→'};
-const game={
-  isPlaying:false,isBotTurn:true,score:0,combo:0,maxCombo:0,
-  playerHP:100,ubbaHP:100,level:1,total:3,arrows:[],seq:[],playerSeq:[]
-};
+const game={isPlaying:false,isBotTurn:true,score:0,combo:0,maxCombo:0,playerHP:100,ubbaHP:100,level:1,total:3,seq:[],playerSeq:[],arrows:[]};
 const els={
   start:document.getElementById('start-screen'),
   results:document.getElementById('results-screen'),
   score:document.getElementById('score-display'),
   combo:document.getElementById('combo-display'),
   bot:document.getElementById('bot-turn'),
-  level:document.getElementById('level-display'),
   pHP:document.querySelector('#player-health .health-fill'),
   uHP:document.querySelector('#ubba-health .health-fill'),
   f:document.getElementById('falling-arrows-container'),
@@ -208,54 +149,31 @@ const els={
 };
 
 function startGame(){
-  els.start.style.display='none';
-  game.isPlaying=true;game.level=1;
-  nextLevel();
+  els.start.style.display='none';game.isPlaying=true;nextLevel();
   requestAnimationFrame(loop);
 }
 function nextLevel(){
   game.seq=genSeq();game.playerSeq=[];game.isBotTurn=true;
-  els.bot.style.display='block';els.level.textContent=`LEVEL ${game.level}`;
+  els.bot.style.display='block';
   playBotSeq(()=>{game.isBotTurn=false;spawnPlayerArrows();});
 }
-function genSeq(){
-  const arr=[];const len=8+game.level*4;
-  const types=['left','down','up','right'];
-  for(let i=0;i<len;i++){arr.push(types[Math.floor(Math.random()*4)]);}
-  return arr;
-}
-function playBotSeq(done){
-  let i=0;
-  const t=setInterval(()=>{
-    if(i>=game.seq.length){clearInterval(t);els.bot.style.display='none';done();return;}
-    spawnArrow(game.seq[i],'right');i++;
-  },CONFIG.SPAWN_RATE);
-}
-function spawnPlayerArrows(){
-  let i=0;
-  const t=setInterval(()=>{
-    if(i>=game.seq.length){clearInterval(t);return;}
-    spawnArrow(game.seq[i],'left');i++;
-  },CONFIG.SPAWN_RATE);
-}
+function genSeq(){const arr=[],keys=['left','down','up','right'];for(let i=0;i<8;i++)arr.push(keys[Math.floor(Math.random()*4)]);return arr;}
+function playBotSeq(done){let i=0;const t=setInterval(()=>{if(i>=game.seq.length){clearInterval(t);els.bot.style.display='none';done();return;}spawnArrow(game.seq[i],'right');i++;},CONFIG.SPAWN_RATE);}
+function spawnPlayerArrows(){let i=0;const t=setInterval(()=>{if(i>=game.seq.length){clearInterval(t);return;}spawnArrow(game.seq[i],'left');i++;},CONFIG.SPAWN_RATE);}
 function spawnArrow(type,side){
-  const el=document.createElement('div');
-  el.className=`falling-arrow ${type}`;
-  el.textContent=ARROW_SYMBOLS[type];
-  const laneOffset=side==='left'?200:window.innerWidth-400;
-  const posMap={left:0,down:100,up:200,right:300};
-  el.style.left=laneOffset+posMap[type]+'px';
-  el.style.bottom='0px';
+  const el=document.createElement('div');el.className=`falling-arrow ${type}`;el.textContent=ARROW_SYMBOLS[type];
+  const baseX=(window.innerWidth/2)+(side==='left'?-200:200);
+  const offset={left:-135,down:-45,up:45,right:135};
+  el.style.left=(baseX+offset[type])+'px';
+  const chars=document.getElementById('characters').getBoundingClientRect();
+  el.style.bottom=(window.innerHeight-chars.top+10)+'px';
   els.f.appendChild(el);
-  game.arrows.push({el,type,side,y:0,hit:false});
+  game.arrows.push({el,type,side,y:parseInt(el.style.bottom),hit:false});
 }
 function loop(){
   if(!game.isPlaying)return;
   game.arrows.forEach((a,i)=>{
     a.y+=CONFIG.ARROW_SPEED;a.el.style.bottom=a.y+'px';
-    if(a.y>window.innerHeight-300&&!a.hit&&a.side==='left'&&!game.isBotTurn){
-      miss(a);
-    }
     if(a.y>window.innerHeight){a.el.remove();game.arrows.splice(i,1);}
   });
   requestAnimationFrame(loop);
@@ -263,64 +181,32 @@ function loop(){
 function checkHit(k){
   if(!game.isPlaying||game.isBotTurn)return;
   const type=KEY_MAP[k];if(!type)return;
-  let hit=false;
-  for(let a of game.arrows){
+  highlightKey(type);
+  const target=document.querySelector(`#player-lane .static-arrow.${type}`);
+  const targetRect=target.getBoundingClientRect();
+  for(const a of game.arrows){
+    if(a.side!=='left'||a.type!==type||a.hit)continue;
     const rect=a.el.getBoundingClientRect();
-    if(a.side==='left'&&a.type===type&&!a.hit&&rect.bottom<window.innerHeight-120&&rect.bottom>window.innerHeight-240){
-      hitArrow(a);hit=true;break;
+    const centerA=rect.top+rect.height/2;
+    const centerT=targetRect.top+targetRect.height/2;
+    if(Math.abs(centerA-centerT)<CONFIG.HIT_TOL){
+      a.hit=true;a.el.remove();
+      game.score+=100;game.combo++;game.maxCombo=Math.max(game.maxCombo,game.combo);
+      updateUI();return;
     }
   }
-  if(!hit){game.playerHP=Math.max(0,game.playerHP-CONFIG.HEALTH_LOSS);updateUI();}
+  game.combo=0;updateUI();
 }
-function hitArrow(a){
-  a.hit=true;a.el.style.background='#0f0';a.el.style.borderColor='#0f0';
-  game.score+=100;game.combo++;game.maxCombo=Math.max(game.maxCombo,game.combo);
-  game.playerHP=Math.min(100,game.playerHP+CONFIG.HEALTH_GAIN);
-  game.ubbaHP=Math.max(0,game.ubbaHP-CONFIG.HEALTH_LOSS);
-  effect(a.el,'hit-effect');setTimeout(()=>a.el.remove(),200);
-  updateUI();game.playerSeq.push(a.type);
-  if(game.playerSeq.length===game.seq.length)endLevel();
-}
-function miss(a){
-  a.hit=true;game.combo=0;
-  game.playerHP=Math.max(0,game.playerHP-CONFIG.HEALTH_LOSS);
-  effect(a.el,'miss-effect');
-  updateUI();
-}
-function effect(el,cls){
-  const r=el.getBoundingClientRect();
-  const e=document.createElement('div');
-  e.className=cls;e.style.left=r.left+'px';e.style.top=r.top+'px';
-  document.body.appendChild(e);
-  setTimeout(()=>e.remove(),300);
-}
-function endLevel(){
-  game.level++;
-  if(game.level>game.total||game.playerHP<=0||game.ubbaHP<=0){endGame();return;}
-  setTimeout(nextLevel,1000);
-}
-function endGame(){
-  game.isPlaying=false;
-  const win=game.ubbaHP<=0;
-  els.results.style.display='flex';
-  els.rTitle.textContent=win?'VICTORY!':'DEFEAT!';
-  els.rTitle.style.color=win?'#0f0':'#f00';
-  els.rScore.textContent=`SCORE: ${game.score}`;
-  els.rCombo.textContent=`MAX COMBO: ${game.maxCombo}`;
+function highlightKey(type){
+  const el=document.querySelector(`#player-lane .static-arrow.${type}`);
+  el.classList.add('active');setTimeout(()=>el.classList.remove('active'),150);
 }
 function updateUI(){
   els.score.textContent=`SCORE: ${game.score}`;
-  els.pHP.style.width=game.playerHP+'%';
-  els.uHP.style.width=game.ubbaHP+'%';
   if(game.combo>1){els.combo.style.display='block';els.combo.textContent=`COMBO: ${game.combo}`;}
   else els.combo.style.display='none';
 }
-
-/* === KEY EVENTS === */
-document.addEventListener('keydown',e=>{
-  const k=e.key.toLowerCase();
-  if(KEY_MAP[k])checkHit(k);
-});
+document.addEventListener('keydown',e=>checkHit(e.key.toLowerCase()));
 </script>
 </body>
 </html>
