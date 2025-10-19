@@ -334,7 +334,12 @@ function loop() {
         a.hit = true;
         state.playerHP = Math.max(0, state.playerHP - CONFIG.hpLoss);
         state.combo = 0;
-        showEffect(a.el, 'miss');
+        // Show miss effect aligned with static key
+        const targetRects = computeTargets();
+        const staticRect = targetRects.player[a.type];
+        if (staticRect) {
+          showEffectAtStatic(staticRect, 'miss');
+        }
         updateHUD();
       }
       if (a.el && a.el.parentElement) a.el.remove();
@@ -342,6 +347,19 @@ function loop() {
     }
   }
   requestAnimationFrame(loop);
+}
+
+/* show hit/miss effect aligned with static key */
+function showEffectAtStatic(staticRect, cls) {
+  try {
+    const e = document.createElement('div');
+    e.className = cls === 'hit' ? 'hit' : 'miss';
+    // Center effect on the static key
+    e.style.left = (staticRect.left + staticRect.width/2 - 40) + 'px';
+    e.style.top = (staticRect.top + staticRect.height/2 - 40) + 'px';
+    document.body.appendChild(e);
+    setTimeout(()=>e.remove(), 360);
+  } catch(e){}
 }
 
 /* show small hit/miss effect */
@@ -379,7 +397,11 @@ function attemptHit(pressedType) {
   // gather candidate player-side arrows that are not hit
   const candidates = state.arrows.filter(a => a.side === 'player' && !a.hit);
   if (candidates.length === 0) {
-    // spam penalty
+    // spam penalty - show miss effect on the pressed key
+    const staticRect = targets[pressedType];
+    if (staticRect) {
+      showEffectAtStatic(staticRect, 'miss');
+    }
     state.playerHP = Math.max(0, state.playerHP - CONFIG.hpLoss);
     state.combo = 0;
     updateHUD();
@@ -396,7 +418,11 @@ function attemptHit(pressedType) {
     if (dist <= CONFIG.hitTolerance) near.push(a);
   }
   if (near.length === 0) {
-    // no near arrow -> penalty
+    // no near arrow -> penalty - show miss effect on the pressed key
+    const staticRect = targets[pressedType];
+    if (staticRect) {
+      showEffectAtStatic(staticRect, 'miss');
+    }
     state.playerHP = Math.max(0, state.playerHP - CONFIG.hpLoss);
     state.combo = 0;
     updateHUD();
@@ -435,7 +461,11 @@ function attemptHit(pressedType) {
     // success: remove all chosen group arrows
     chosenGroup.forEach(a=>{
       a.hit = true;
-      showEffect(a.el, 'hit');
+      // Show hit effect aligned with the static key
+      const staticRect = targets[a.type];
+      if (staticRect) {
+        showEffectAtStatic(staticRect, 'hit');
+      }
       if (a.el && a.el.parentElement) a.el.remove();
     });
     state.arrows = state.arrows.filter(a=>!a.hit);
@@ -446,29 +476,17 @@ function attemptHit(pressedType) {
     state.ubbaHP = Math.max(0, state.ubbaHP - CONFIG.hpLoss * required.length);
     updateHUD();
   } else {
-    // partial/no press -> penalty
+    // partial/no press -> penalty - show miss effect on the pressed key
+    const staticRect = targets[pressedType];
+    if (staticRect) {
+      showEffectAtStatic(staticRect, 'miss');
+    }
     state.playerHP = Math.max(0, state.playerHP - CONFIG.hpLoss);
     state.combo = 0;
     updateHUD();
   }
 
   checkRoundCompletion();
-}
-
-/* spawn both player's arrows for sequence (called after Ubba demonstration) */
-function spawnPlayerSequence(seq) {
-  const gap = state.round === 3 ? 350 : CONFIG.spawnGapBase;
-  let i = 0;
-  const groupIdGen = (()=>{let id=0;return ()=>++id;})();
-  const t = setInterval(()=>{
-    if (i >= seq.length) { clearInterval(t); return; }
-    const step = seq[i];
-    if (Array.isArray(step)) {
-      const gid = groupIdGen();
-      step.forEach(t => spawnArrow(t,'player', gid));
-    } else spawnArrow(step,'player', null);
-    i++;
-  }, gap);
 }
 
 /* check round finished and advance or end game */
@@ -504,23 +522,6 @@ function startRound() {
     // once ubba done, spawn player sequence
     spawnPlayerSequence(state.sequence);
   });
-}
-
-/* show ubba's sequence (spawn ubba arrows) */
-function showUbbaSequence(seq, cb) {
-  let i = 0;
-  const gap = state.round === 3 ? 350 : CONFIG.spawnGapBase;
-  // schedule spawn
-  const gidGen = (()=>{let id=0;return ()=>++id;})();
-  const t = setInterval(()=>{
-    if (i >= seq.length) { clearInterval(t); setTimeout(()=>{ state.isBotPhase=false; els.botTurn.style.display='none'; cb(); }, 500); return; }
-    const step = seq[i];
-    if (Array.isArray(step)) {
-      const gid = gidGen();
-      step.forEach(t => spawnArrow(t,'ubba', gid));
-    } else spawnArrow(step,'ubba', null);
-    i++;
-  }, gap);
 }
 
 /* finish game and show results */
@@ -561,15 +562,11 @@ function startGame(){
 document.getElementById('startBtn').addEventListener('click', startGame);
 document.getElementById('replay').addEventListener('click', ()=> location.reload());
 
-/* attempt to hit was handled in keydown earlier */
-
 /* loop runner */
 requestAnimationFrame(loop);
 
 /* ensure S/down stays white (fix for earlier issue) */
 document.querySelectorAll('.static.down').forEach(s=>s.style.color = '#fff');
-
-/* Expose spawnArrow for chord group spawning (used above) — already defined */
 
 /* Clean-up on resize (no-op; spawn uses live static rects) */
 window.addEventListener('resize', ()=>{ /* positions recomputed on spawn */ });
