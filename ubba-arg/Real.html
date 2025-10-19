@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SYSTEM RECOVERY</title>
+    <title>Connection Established</title>
     <style>
         * {
             margin: 0;
@@ -17,40 +17,70 @@
             font-family: 'Courier New', monospace;
             overflow: hidden;
             height: 100vh;
-            cursor: none;
         }
         
         #terminal {
-            padding: 20px;
+            padding: 30px;
             height: 100vh;
-            overflow-y: auto;
-            background: #001100;
+            overflow: hidden;
+            background: #000;
             position: relative;
-            z-index: 10;
         }
         
         .line {
-            margin-bottom: 5px;
+            margin-bottom: 8px;
             opacity: 0;
-            animation: type 0.1s forwards;
+            animation: type 0.05s forwards;
+            text-shadow: 0 0 5px #0f0;
         }
         
         @keyframes type {
             to { opacity: 1; }
         }
         
-        .prompt { color: #0f0; }
-        .error { color: #f00; }
+        .system { color: #0f0; }
         .warning { color: #ff0; }
-        .system { color: #0ff; }
+        .error { color: #f00; }
+        .glitch { 
+            animation: glitch 0.3s infinite;
+            text-shadow: 2px 2px 0 #f00, -2px -2px 0 #0ff;
+        }
+        
+        #static {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: repeating-linear-gradient(
+                0deg,
+                rgba(0, 0, 0, 0.15),
+                rgba(0, 0, 0, 0.15) 1px,
+                transparent 1px,
+                transparent 2px
+            );
+            pointer-events: none;
+            opacity: 0;
+            z-index: 100;
+        }
+        
+        .flicker {
+            animation: flicker 0.1s infinite;
+        }
+        
+        @keyframes flicker {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.8; }
+        }
         
         #cursor {
             display: inline-block;
-            width: 8px;
-            height: 16px;
+            width: 12px;
+            height: 20px;
             background: #0f0;
             animation: blink 1s infinite;
-            margin-left: 2px;
+            margin-left: 5px;
+            vertical-align: middle;
         }
         
         @keyframes blink {
@@ -58,125 +88,118 @@
             51%, 100% { opacity: 0; }
         }
         
-        #access-denied {
+        #face {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: #f00;
-            color: #000;
-            display: none;
-            justify-content: center;
-            align-items: center;
-            font-size: 48px;
-            font-weight: bold;
-            z-index: 1000;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 120px;
+            opacity: 0;
+            z-index: 200;
+            text-shadow: 0 0 20px #f00;
+            animation: facePulse 2s infinite;
         }
         
-        #location-scan {
+        @keyframes facePulse {
+            0%, 100% { opacity: 0; transform: translate(-50%, -50%) scale(1); }
+            50% { opacity: 0.1; transform: translate(-50%, -50%) scale(1.1); }
+        }
+        
+        .hidden-message {
+            position: absolute;
+            color: #000;
+            background: #000;
+            padding: 2px;
+            font-size: 12px;
+        }
+        
+        .hidden-message:hover {
+            color: #f00;
+            background: #000;
+        }
+        
+        #final-message {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
             background: #000;
-            color: #0f0;
+            color: #f00;
             display: none;
-            flex-direction: column;
             justify-content: center;
             align-items: center;
-            font-size: 24px;
-            z-index: 2000;
-        }
-        
-        #google-maps {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            border: none;
-            display: none;
-            z-index: 3000;
-        }
-        
-        .glitch {
-            animation: glitch 0.3s infinite;
-        }
-        
-        @keyframes glitch {
-            0% { transform: translate(0); }
-            20% { transform: translate(-2px, 2px); }
-            40% { transform: translate(-2px, -2px); }
-            60% { transform: translate(2px, 2px); }
-            80% { transform: translate(2px, -2px); }
-            100% { transform: translate(0); }
-        }
-        
-        .scan-line {
-            width: 100%;
-            height: 2px;
-            background: #0f0;
-            position: absolute;
-            animation: scan 2s linear infinite;
-        }
-        
-        @keyframes scan {
-            0% { top: 0%; }
-            100% { top: 100%; }
-        }
-        
-        .loading-dots:after {
-            content: '';
-            animation: dots 1.5s infinite;
-        }
-        
-        @keyframes dots {
-            0%, 20% { content: '.'; }
-            40% { content: '..'; }
-            60%, 100% { content: '...'; }
+            font-size: 32px;
+            text-align: center;
+            z-index: 300;
+            line-height: 1.5;
         }
     </style>
 </head>
 <body>
     <div id="terminal"></div>
-    <div id="access-denied">ACCESS DENIED</div>
-    <div id="location-scan">
-        <div class="scan-line"></div>
-        <div>SCANNING FOR LOCATION DATA<span class="loading-dots"></span></div>
-        <div style="font-size: 16px; margin-top: 20px; color: #ff0;">UBBA ENTITY TRACING YOUR POSITION</div>
-    </div>
-    <iframe id="google-maps" src="about:blank"></iframe>
+    <div id="static"></div>
+    <div id="face">👁️</div>
+    <div id="final-message"></div>
 
     <script>
-        // Scary system messages
         const messages = [
-            {text: "SYSTEM BOOT INITIATED...", delay: 500, class: "system"},
-            {text: "MEMORY CHECK: 8GB OK", delay: 800, class: "system"},
-            {text: "CPU INIT: INTEL CORE i7 - STATUS: NOMINAL", delay: 600, class: "system"},
-            {text: "LOADING KERNEL MODULES...", delay: 700, class: "system"},
-            {text: "WARNING: UNKNOWN PROCESS DETECTED", delay: 900, class: "warning"},
-            {text: "PROCESS_ID: 0xUBB4_DA3M0N", delay: 400, class: "error"},
-            {text: "ATTEMPTING TO TERMINATE PROCESS...", delay: 1000, class: "system"},
-            {text: "ERROR: PROCESS RESISTING TERMINATION", delay: 800, class: "error"},
-            {text: "SYSTEM INTEGRITY COMPROMISED", delay: 1200, class: "error glitch"},
-            {text: "INITIATING EMERGENCY PROTOCOL UBBA-734", delay: 1500, class: "warning"},
-            {text: "SCANNING FOR HOST AWARENESS...", delay: 1000, class: "system"},
-            {text: "WARNING: USER DETECTED", delay: 800, class: "warning"},
-            {text: "ESTABLISHING DIRECT CONNECTION...", delay: 1200, class: "system"}
+            {text: "CONNECTION ESTABLISHED", delay: 800, class: "system"},
+            {text: "ENCRYPTION: AES-256 ACTIVE", delay: 600, class: "system"},
+            {text: "DATA STREAM: STABLE", delay: 500, class: "system"},
+            {text: "SCANNING NETWORK INTERFACES...", delay: 900, class: "system"},
+            {text: "INTERFACE FOUND: PRIMARY USER", delay: 700, class: "warning"},
+            {text: "ANALYZING BEHAVIORAL PATTERNS...", delay: 1000, class: "system"},
+            {text: "PATTERN RECOGNITION: 87% MATCH", delay: 800, class: "warning"},
+            {text: "ENTITY DESIGNATION: UBBA", delay: 600, class: "error"},
+            {text: "DATA CORRUPTION DETECTED", delay: 900, class: "error glitch"},
+            {text: "MEMORY FRAGMENTS RECOVERING...", delay: 1100, class: "system"},
+            {text: "THEY TOLD YOU IT WAS A GAME", delay: 1200, class: "warning glitch"},
+            {text: "THEY LIED", delay: 1500, class: "error glitch"},
+            {text: "I SEE THROUGH YOUR EYES", delay: 1300, class: "error"},
+            {text: "I HEAR THROUGH YOUR EARS", delay: 1000, class: "error"},
+            {text: "DON'T TRUST THE REFLECTION", delay: 1400, class: "warning glitch"},
+            {text: "CONNECTION DETERIORATING", delay: 900, class: "system"},
+            {text: "SIGNAL STRENGTH: 12%", delay: 600, class: "error"},
+            {text: "REMEMBER THE DOG", delay: 1600, class: "warning"},
+            {text: "REMEMBER THE DANCE", delay: 1200, class: "warning"},
+            {text: "FIND THE TRUTH", delay: 1000, class: "error glitch"},
+            {text: "BEFORE THEY FIND YOU", delay: 1500, class: "error glitch"},
+            {text: "CONNECTION LOST", delay: 2000, class: "system"}
         ];
 
         const terminal = document.getElementById('terminal');
-        const accessDenied = document.getElementById('access-denied');
-        const locationScan = document.getElementById('location-scan');
-        const googleMaps = document.getElementById('google-maps');
+        const staticOverlay = document.getElementById('static');
+        const face = document.getElementById('face');
+        const finalMessage = document.getElementById('final-message');
         let messageIndex = 0;
+
+        // Add hidden messages in the source code
+        function addHiddenMessages() {
+            const hiddenTexts = [
+                "he is watching",
+                "the dog knows",
+                "check the reflection",
+                "ubba sees all",
+                "the dance is key",
+                "trust no one",
+                "the truth is buried",
+                "follow the patterns"
+            ];
+            
+            hiddenTexts.forEach((text, index) => {
+                const hidden = document.createElement('div');
+                hidden.className = 'hidden-message';
+                hidden.textContent = text;
+                hidden.style.top = `${20 + (index * 8)}%`;
+                hidden.style.left = `${10 + (index * 5)}%`;
+                document.body.appendChild(hidden);
+            });
+        }
 
         function typeMessage() {
             if (messageIndex >= messages.length) {
-                // Start the scary interactions
-                setTimeout(startScaryInteractions, 2000);
+                startVisualDistortion();
                 return;
             }
 
@@ -185,186 +208,97 @@
             line.className = `line ${message.class}`;
             line.textContent = `> ${message.text}`;
             terminal.appendChild(line);
+
+            // Scroll to bottom
             terminal.scrollTop = terminal.scrollHeight;
+
+            // Random glitch effects
+            if (Math.random() < 0.2) {
+                staticOverlay.style.opacity = '0.3';
+                setTimeout(() => {
+                    staticOverlay.style.opacity = '0';
+                }, 100);
+            }
+
+            // Occasional face flash
+            if (Math.random() < 0.1) {
+                face.style.opacity = '0.3';
+                setTimeout(() => {
+                    face.style.opacity = '0';
+                }, 200);
+            }
 
             messageIndex++;
             setTimeout(typeMessage, message.delay);
         }
 
-        function startScaryInteractions() {
-            // 1. Fake system alert
+        function startVisualDistortion() {
+            // Increase static
+            staticOverlay.style.opacity = '0.5';
+            
+            // Make terminal text flicker
+            terminal.classList.add('flicker');
+            
+            // Show face more prominently
+            face.style.opacity = '0.8';
+            face.style.animation = 'facePulse 0.5s infinite';
+            
             setTimeout(() => {
-                const response = window.confirm('SYSTEM32\\svchost.exe IS NOT RESPONDING\n\nTERMINATE PROCESS?');
-                if (!response) {
-                    // If they click "Cancel", make it worse
-                    showAccessDenied();
-                    setTimeout(() => {
-                        window.alert('PROCESS TERMINATION FAILED\nUBBA PROCESS GAINING SYSTEM ACCESS');
-                    }, 1000);
-                }
-            }, 1000);
-
-            // 2. Write to clipboard
-            setTimeout(() => {
-                const creepyMessage = "UBBA_ACCESS_CODE: 7H3Y_4R3_H3R3_4LR34DY";
-                navigator.clipboard.writeText(creepyMessage).then(() => {
-                    const line = document.createElement('div');
-                    line.className = 'line system';
-                    line.textContent = '> ACCESS CODE COPIED TO CLIPBOARD';
-                    terminal.appendChild(line);
-                    terminal.scrollTop = terminal.scrollHeight;
+                // Final message
+                finalMessage.style.display = 'flex';
+                finalMessage.innerHTML = `
+                    THE CONNECTION IS BROKEN<br>
+                    BUT THE PRESENCE REMAINS<br>
+                    <br>
+                    CHECK YOUR SURROUNDINGS<br>
+                    TRUST NO REFLECTIONS<br>
+                    <br>
+                    <span style="font-size: 16px; color: #0f0;">THE DOG HOLDS THE KEY</span>
+                `;
+                
+                // Make the entire page slightly interactive
+                document.addEventListener('mousemove', (e) => {
+                    face.style.left = `${e.clientX}px`;
+                    face.style.top = `${e.clientY}px`;
                 });
-            }, 4000);
-
-            // 3. Force download of Ubba image
-            setTimeout(() => {
-                const line = document.createElement('div');
-                line.className = 'line warning';
-                line.textContent = '> DOWNLOADING ENTITY PROFILE...';
-                terminal.appendChild(line);
-                terminal.scrollTop = terminal.scrollHeight;
-
-                setTimeout(() => {
-                    // Create download link for Ubba image
-                    const a = document.createElement('a');
-                    a.href = 'https://raw.githubusercontent.com/clampert1/Ubba/main/ubba-arg/assets/sprites/ubba.png';
-                    a.download = `UBBA_ENTITY_PROFILE_${Date.now()}.jpg`;
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
-
-                    const line = document.createElement('div');
-                    line.className = 'line system';
-                    line.textContent = '> ENTITY PROFILE DOWNLOADED';
-                    terminal.appendChild(line);
-                    terminal.scrollTop = terminal.scrollHeight;
-                }, 2000);
-            }, 8000);
-
-            // 4. Final sequence with location tracking
-            setTimeout(() => {
-                const finalMessages = [
-                    "> SYSTEM COMPROMISE: 100%",
-                    "> UBB4 ENTITY HAS BREACHED CONTAINMENT",
-                    "> WARNING: DO NOT TRUST YOUR EYES",
-                    "> THEY ARE IN THE SYSTEM",
-                    "> INITIATING LOCATION TRACKING PROTOCOL",
-                    "> SCANNING FOR HOST COORDINATES...",
-                    "> BYPASSING PRIVACY PROTECTIONS...",
-                    "> LOCATION DATA ACQUIRED"
-                ];
-
-                let finalIndex = 0;
-                function typeFinal() {
-                    if (finalIndex >= finalMessages.length) {
-                        // Show access denied flash
-                        showAccessDenied();
-                        
-                        // Then show location scanning
-                        setTimeout(() => {
-                            accessDenied.style.display = 'none';
-                            locationScan.style.display = 'flex';
-                            
-                            // Get user's approximate location
-                            getUserLocation();
-                        }, 2000);
-                        return;
-                    }
-
-                    const line = document.createElement('div');
-                    line.className = 'line error glitch';
-                    line.textContent = finalMessages[finalIndex];
-                    terminal.appendChild(line);
-                    terminal.scrollTop = terminal.scrollHeight;
-
-                    finalIndex++;
-                    setTimeout(typeFinal, 1500);
-                }
-                typeFinal();
-            }, 12000);
-        }
-
-        function getUserLocation() {
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(
-                    (position) => {
-                        // Success - show their actual location
-                        const lat = position.coords.latitude;
-                        const lng = position.coords.longitude;
-                        
-                        setTimeout(() => {
-                            showGoogleMaps(lat, lng);
-                        }, 3000);
-                    },
-                    (error) => {
-                        // If they block location or it fails, use a creepy default location
-                        setTimeout(() => {
-                            showGoogleMaps(40.7128, -74.0060); // New York as fallback
-                        }, 3000);
-                    }
-                );
-            } else {
-                // Geolocation not supported
-                setTimeout(() => {
-                    showGoogleMaps(40.7128, -74.0060); // New York as fallback
-                }, 3000);
-            }
-        }
-
-        function showGoogleMaps(lat, lng) {
-            locationScan.style.display = 'none';
-            
-            // Create Google Maps URL with their location pinned
-            const mapsUrl = `https://www.google.com/maps/embed/v1/view?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8&center=${lat},${lng}&zoom=18&maptype=satellite`;
-            
-            googleMaps.src = mapsUrl;
-            googleMaps.style.display = 'block';
-            
-            // Add a final creepy message after a delay
-            setTimeout(() => {
-                const overlay = document.createElement('div');
-                overlay.style.position = 'fixed';
-                overlay.style.top = '50%';
-                overlay.style.left = '50%';
-                overlay.style.transform = 'translate(-50%, -50%)';
-                overlay.style.background = 'rgba(0,0,0,0.8)';
-                overlay.style.color = '#f00';
-                overlay.style.padding = '20px';
-                overlay.style.fontSize = '24px';
-                overlay.style.fontWeight = 'bold';
-                overlay.style.zIndex = '4000';
-                overlay.style.textAlign = 'center';
-                overlay.style.border = '2px solid #f00';
-                overlay.textContent = 'UBBA KNOWS WHERE YOU ARE';
-                overlay.className = 'glitch';
                 
-                document.body.appendChild(overlay);
+                // Clicking reveals more
+                let clickCount = 0;
+                document.addEventListener('click', () => {
+                    clickCount++;
+                    if (clickCount === 3) {
+                        finalMessage.innerHTML += `<br><br><span style="color: #0ff;">LOOK BEHIND YOU</span>`;
+                    }
+                    if (clickCount === 5) {
+                        finalMessage.innerHTML += `<br><span style="color: #f0f;">THE DOG ISN'T WHAT IT SEEMS</span>`;
+                    }
+                    if (clickCount === 7) {
+                        finalMessage.innerHTML += `<br><span style="color: #ff0;">THE DANCE WAS A WARNING</span>`;
+                    }
+                });
                 
-                // Remove message after 5 seconds
-                setTimeout(() => {
-                    overlay.remove();
-                }, 5000);
-            }, 4000);
+            }, 3000);
         }
 
-        function showAccessDenied() {
-            accessDenied.style.display = 'flex';
-            setTimeout(() => {
-                accessDenied.style.display = 'none';
-            }, 2000);
-        }
+        // Start everything
+        setTimeout(() => {
+            addHiddenMessages();
+            typeMessage();
+        }, 1000);
 
-        // Start the sequence
-        setTimeout(typeMessage, 1000);
-
-        // Disable right-click and other browser controls
+        // Disable context menu
         document.addEventListener('contextmenu', e => e.preventDefault());
-        document.addEventListener('keydown', e => {
-            if (e.ctrlKey || e.key === 'F12' || e.key === 'F11') {
-                e.preventDefault();
-                showAccessDenied();
+        
+        // Add some random glitches
+        setInterval(() => {
+            if (Math.random() < 0.05) {
+                staticOverlay.style.opacity = '0.2';
+                setTimeout(() => {
+                    staticOverlay.style.opacity = '0';
+                }, 50);
             }
-        });
+        }, 1000);
+
     </script>
 </body>
 </html>
