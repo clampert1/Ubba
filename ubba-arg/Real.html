@@ -1,1 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SYSTEM RECOVERY</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: #000;
+            color: #0f0;
+            font-family: 'Courier New', monospace;
+            overflow: hidden;
+            height: 100vh;
+            cursor: none;
+        }
+        
+        #terminal {
+            padding: 20px;
+            height: 100vh;
+            overflow-y: auto;
+            background: #001100;
+        }
+        
+        .line {
+            margin-bottom: 5px;
+            opacity: 0;
+            animation: type 0.1s forwards;
+        }
+        
+        @keyframes type {
+            to { opacity: 1; }
+        }
+        
+        .prompt { color: #0f0; }
+        .error { color: #f00; }
+        .warning { color: #ff0; }
+        .system { color: #0ff; }
+        
+        #cursor {
+            display: inline-block;
+            width: 8px;
+            height: 16px;
+            background: #0f0;
+            animation: blink 1s infinite;
+            margin-left: 2px;
+        }
+        
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+        
+        #access-denied {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #f00;
+            color: #000;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            font-size: 48px;
+            font-weight: bold;
+            z-index: 1000;
+        }
+        
+        .glitch {
+            animation: glitch 0.3s infinite;
+        }
+        
+        @keyframes glitch {
+            0% { transform: translate(0); }
+            20% { transform: translate(-2px, 2px); }
+            40% { transform: translate(-2px, -2px); }
+            60% { transform: translate(2px, 2px); }
+            80% { transform: translate(2px, -2px); }
+            100% { transform: translate(0); }
+        }
+    </style>
+</head>
+<body>
+    <div id="terminal"></div>
+    <div id="access-denied">ACCESS DENIED</div>
 
+    <script>
+        // Scary system messages
+        const messages = [
+            {text: "SYSTEM BOOT INITIATED...", delay: 500, class: "system"},
+            {text: "MEMORY CHECK: 8GB OK", delay: 800, class: "system"},
+            {text: "CPU INIT: INTEL CORE i7 - STATUS: NOMINAL", delay: 600, class: "system"},
+            {text: "LOADING KERNEL MODULES...", delay: 700, class: "system"},
+            {text: "WARNING: UNKNOWN PROCESS DETECTED", delay: 900, class: "warning"},
+            {text: "PROCESS_ID: 0xUBB4_DA3M0N", delay: 400, class: "error"},
+            {text: "ATTEMPTING TO TERMINATE PROCESS...", delay: 1000, class: "system"},
+            {text: "ERROR: PROCESS RESISTING TERMINATION", delay: 800, class: "error"},
+            {text: "SYSTEM INTEGRITY COMPROMISED", delay: 1200, class: "error glitch"},
+            {text: "INITIATING EMERGENCY PROTOCOL UBBA-734", delay: 1500, class: "warning"},
+            {text: "SCANNING FOR HOST AWARENESS...", delay: 1000, class: "system"},
+            {text: "WARNING: USER DETECTED", delay: 800, class: "warning"},
+            {text: "ESTABLISHING DIRECT CONNECTION...", delay: 1200, class: "system"}
+        ];
+
+        const terminal = document.getElementById('terminal');
+        let messageIndex = 0;
+
+        function typeMessage() {
+            if (messageIndex >= messages.length) {
+                // Start the scary interactions
+                setTimeout(startScaryInteractions, 2000);
+                return;
+            }
+
+            const message = messages[messageIndex];
+            const line = document.createElement('div');
+            line.className = `line ${message.class}`;
+            line.textContent = `> ${message.text}`;
+            terminal.appendChild(line);
+            terminal.scrollTop = terminal.scrollHeight;
+
+            messageIndex++;
+            setTimeout(typeMessage, message.delay);
+        }
+
+        function startScaryInteractions() {
+            // 1. Fake system alert
+            setTimeout(() => {
+                const response = window.confirm('SYSTEM32\\svchost.exe IS NOT RESPONDING\n\nTERMINATE PROCESS?');
+                if (!response) {
+                    // If they click "Cancel", make it worse
+                    showAccessDenied();
+                    setTimeout(() => {
+                        window.alert('PROCESS TERMINATION FAILED\nUBBA PROCESS GAINING SYSTEM ACCESS');
+                    }, 1000);
+                }
+            }, 1000);
+
+            // 2. Request camera access (very intrusive)
+            setTimeout(() => {
+                const line = document.createElement('div');
+                line.className = 'line warning';
+                line.textContent = '> REQUESTING BIOMETRIC VERIFICATION...';
+                terminal.appendChild(line);
+                terminal.scrollTop = terminal.scrollHeight;
+
+                navigator.mediaDevices.getUserMedia({ video: true })
+                    .then(stream => {
+                        // If they grant access, creep them out
+                        const line = document.createElement('div');
+                        line.className = 'line error glitch';
+                        line.textContent = '> BIOMETRIC DATA CAPTURED: USER RECOGNIZED';
+                        terminal.appendChild(line);
+                        terminal.scrollTop = terminal.scrollHeight;
+                        
+                        // Stop the camera immediately
+                        stream.getTracks().forEach(track => track.stop());
+                        
+                        // Trigger print dialog
+                        setTimeout(() => {
+                            window.print();
+                        }, 2000);
+                    })
+                    .catch(err => {
+                        // If they deny, still creep them out
+                        const line = document.createElement('div');
+                        line.className = 'line warning';
+                        line.textContent = '> BIOMETRIC VERIFICATION FAILED - USING ALTERNATE METHODS';
+                        terminal.appendChild(line);
+                        terminal.scrollTop = terminal.scrollHeight;
+                    });
+            }, 4000);
+
+            // 3. Write to clipboard
+            setTimeout(() => {
+                const creepyMessage = "UBBA_ACCESS_CODE: 7H3Y_4R3_H3R3_4LR34DY";
+                navigator.clipboard.writeText(creepyMessage).then(() => {
+                    const line = document.createElement('div');
+                    line.className = 'line system';
+                    line.textContent = '> ACCESS CODE COPIED TO CLIPBOARD';
+                    terminal.appendChild(line);
+                    terminal.scrollTop = terminal.scrollHeight;
+                });
+            }, 8000);
+
+            // 4. Force file download with creepy content
+            setTimeout(() => {
+                const line = document.createElement('div');
+                line.className = 'line warning';
+                line.textContent = '> DOWNLOADING SYSTEM LOGS...';
+                terminal.appendChild(line);
+                terminal.scrollTop = terminal.scrollHeight;
+
+                setTimeout(() => {
+                    const content = `SYSTEM LOG - UBB4_INTRUSION_DETECTED
+TIMESTAMP: ${new Date().toISOString()}
+USER_AGENT: ${navigator.userAgent}
+LOCATION_APPROX: ESTIMATED
+STATUS: COMPROMISED
+MESSAGE: THEY ARE WATCHING YOU
+NEXT_PHASE: INITIATE PROTOCOL 734
+ACCESS_POINT: CHECK YOUR SURROUNDINGS
+END_OF_TRANSMISSION`;
+
+                    const blob = new Blob([content], { type: 'text/plain' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `system_log_${Date.now()}_UBBA_ACCESS.txt`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+
+                    const line = document.createElement('div');
+                    line.className = 'line system';
+                    line.textContent = '> LOGS DOWNLOADED TO LOCAL SYSTEM';
+                    terminal.appendChild(line);
+                    terminal.scrollTop = terminal.scrollHeight;
+                }, 2000);
+            }, 12000);
+
+            // 5. Final creepy message and redirect
+            setTimeout(() => {
+                const finalMessages = [
+                    "> SYSTEM COMPROMISE: 100%",
+                    "> UBB4 ENTITY HAS BREACHED CONTAINMENT",
+                    "> WARNING: DO NOT TRUST YOUR EYES",
+                    "> THEY ARE IN THE SYSTEM",
+                    "> THEY ARE IN THE NETWORK", 
+                    "> THEY ARE IN YOUR MIND",
+                    "> FIND THE TRUTH BEFORE THEY FIND YOU",
+                    "> INITIATING TRANSFER TO SAFE MODE..."
+                ];
+
+                let finalIndex = 0;
+                function typeFinal() {
+                    if (finalIndex >= finalMessages.length) {
+                        setTimeout(() => {
+                            window.location.href = 'next-level.html'; // Change to your actual next page
+                        }, 3000);
+                        return;
+                    }
+
+                    const line = document.createElement('div');
+                    line.className = 'line error glitch';
+                    line.textContent = finalMessages[finalIndex];
+                    terminal.appendChild(line);
+                    terminal.scrollTop = terminal.scrollHeight;
+
+                    finalIndex++;
+                    setTimeout(typeFinal, 1500);
+                }
+                typeFinal();
+            }, 16000);
+        }
+
+        function showAccessDenied() {
+            const denied = document.getElementById('access-denied');
+            denied.style.display = 'flex';
+            setTimeout(() => {
+                denied.style.display = 'none';
+            }, 2000);
+        }
+
+        // Start the sequence
+        setTimeout(typeMessage, 1000);
+
+        // Disable right-click and other browser controls
+        document.addEventListener('contextmenu', e => e.preventDefault());
+        document.addEventListener('keydown', e => {
+            if (e.ctrlKey || e.key === 'F12' || e.key === 'F11') {
+                e.preventDefault();
+                showAccessDenied();
+            }
+        });
+    </script>
+</body>
+</html>
