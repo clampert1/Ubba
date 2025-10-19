@@ -480,12 +480,20 @@
             'd': 'right'
         };
 
-        // Arrow positions on screen
+        // Arrow positions on screen - fixed for both sides
         const ARROW_POSITIONS = {
             'left': { left: '135px' },
             'down': { left: '255px' },
             'up': { left: '375px' },
             'right': { left: '495px' }
+        };
+
+        // Ubba's arrow positions (right side)
+        const UBBA_ARROW_POSITIONS = {
+            'left': { left: 'calc(100vw - 495px)' },
+            'down': { left: 'calc(100vw - 375px)' },
+            'up': { left: 'calc(100vw - 255px)' },
+            'right': { left: 'calc(100vw - 135px)' }
         };
 
         // Predefined sequences for each level
@@ -609,9 +617,16 @@
             arrow.className = `falling-arrow ${type}`;
             arrow.textContent = getArrowSymbol(type);
             
-            // Position arrow at bottom of screen
-            arrow.style.bottom = '0px';
-            arrow.style.left = ARROW_POSITIONS[type].left;
+            // Position arrow at top of the falling container (higher up)
+            arrow.style.top = '0px';
+            
+            // Set horizontal position based on side
+            if (side === 'left') {
+                arrow.style.left = ARROW_POSITIONS[type].left;
+            } else {
+                arrow.style.left = UBBA_ARROW_POSITIONS[type].left;
+            }
+            
             arrow.dataset.type = type;
             arrow.dataset.side = side;
             
@@ -621,7 +636,7 @@
                 element: arrow,
                 type: type,
                 side: side,
-                y: 0, // Start from bottom
+                y: 0, // Start from top
                 hit: false
             });
         }
@@ -641,9 +656,9 @@
             
             // Update falling arrows
             gameState.activeArrows.forEach((arrowObj, index) => {
-                // Move arrows upward
+                // Move arrows downward (toward the bottom)
                 arrowObj.y += CONFIG.ARROW_SPEED;
-                arrowObj.element.style.bottom = arrowObj.y + 'px';
+                arrowObj.element.style.top = arrowObj.y + 'px';
                 
                 // Check if arrow reached hit zone (near the static arrows)
                 if (arrowObj.y > 350 && arrowObj.y < 450 && !arrowObj.hit) {
