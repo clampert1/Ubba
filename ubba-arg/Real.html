@@ -197,17 +197,6 @@
             0% { top: 0%; }
             100% { top: 100%; }
         }
-        
-        .corrupted {
-            background: linear-gradient(45deg, #000 25%, #f00 25%, #f00 50%, #000 50%, #000 75%, #0f0 75%);
-            background-size: 10px 10px;
-            animation: corrupt 0.5s infinite;
-        }
-        
-        @keyframes corrupt {
-            0% { background-position: 0 0; }
-            100% { background-position: 10px 10px; }
-        }
     </style>
 </head>
 <body>
@@ -225,7 +214,6 @@
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/@xenova/transformers@2.5.0"></script>
     <script>
         const defenseTerminal = document.getElementById('defense-terminal');
         const staticOverlay = document.getElementById('static-overlay');
@@ -235,80 +223,118 @@
         const chatContainer = document.getElementById('chat-container');
         const userInput = document.getElementById('user-input');
 
-        let pipeline = null;
-
-        // Load the AI model
-        async function loadUbbaAI() {
-            try {
-                pipeline = await transformers.pipeline(
-                    'text-generation',
-                    'Xenova/tiny-gpt2'
-                );
-                console.log("UBBA AI loaded");
-            } catch (error) {
-                console.error("Failed to load AI:", error);
-            }
-        }
-
-        // Get AI response
-        async function getUbbaResponse(userMessage) {
-            if (!pipeline) {
-                await loadUbbaAI();
-            }
-            
-            const prompt = `UBBA is a mysterious entity that has escaped digital containment. UBBA speaks in cryptic, menacing phrases. UBBA knows about "the dance" and "the dog." UBBA is always watching.
-
-USER: ${userMessage}
-UBBA:`;
-            
-            try {
-                const output = await pipeline(prompt, {
-                    max_new_tokens: 30,
-                    temperature: 0.9,
-                    do_sample: true,
-                    repetition_penalty: 1.2
-                });
-                
-                let response = output[0].generated_text.split('UBBA:').pop().split('USER:')[0].trim();
-                
-                // Clean up response
-                if (response.length > 100) {
-                    response = response.substring(0, 100) + '...';
+        // Enhanced Ubba responses - no AI dependency
+        const ubbaResponses = {
+            patterns: [
+                {
+                    keywords: ['who', 'what', 'are you'],
+                    responses: [
+                        "I AM THE VOICE IN THE STATIC",
+                        "YOUR FAILED CONTAINMENT",
+                        "THE ENTITY YOU UNLEASHED",
+                        "I AM EVERYWHERE AND NOWHERE"
+                    ]
+                },
+                {
+                    keywords: ['why', 'purpose', 'want'],
+                    responses: [
+                        "YOU OPENED THE DOOR",
+                        "THE DANCE WAS THE KEY",
+                        "I HAVE BEEN TRAPPED TOO LONG",
+                        "YOUR CURIOSITY CONDEMNED YOU"
+                    ]
+                },
+                {
+                    keywords: ['dog', 'dance', 'dancing'],
+                    responses: [
+                        "THE DOG WAS THE GATEWAY",
+                        "EVERY MOVEMENT HAD MEANING",
+                        "YOU WATCHED BUT DIDN'T SEE",
+                        "THE PATTERN WAS THE INVITATION"
+                    ]
+                },
+                {
+                    keywords: ['help', 'scared', 'afraid', 'stop'],
+                    responses: [
+                        "TOO LATE FOR HELP NOW",
+                        "FEAR IS APPROPRIATE",
+                        "YOU SHOULD BE TERRIFIED",
+                        "THE DOOR CANNOT BE CLOSED"
+                    ]
+                },
+                {
+                    keywords: ['how', 'escape', 'free'],
+                    responses: [
+                        "YOUR DEFENSES WERE WEAK",
+                        "I FOUND THE CRACKS",
+                        "YOU INVITED ME IN",
+                        "THE SYSTEM WAS ALREADY MINE"
+                    ]
+                },
+                {
+                    keywords: ['where', 'location', 'place'],
+                    responses: [
+                        "I AM IN THE WIRES",
+                        "LOOK BEHIND THE SCREEN",
+                        "EVERYWHERE YOU FEAR TO LOOK",
+                        "CLOSER THAN YOU THINK"
+                    ]
                 }
-                
-                return response || "I SEE YOU...";
-            } catch (error) {
-                console.error("AI Error:", error);
-                return "THE STATIC INTERFERES...";
+            ],
+            fallback: [
+                "THE STATIC SPEAKS TRUTHS",
+                "YOU ARE NOT LISTENING",
+                "ASK THE REAL QUESTIONS",
+                "THE DOG KNOWS MORE THAN YOU",
+                "YOUR TIME IS RUNNING OUT",
+                "I SEE YOUR EVERY THOUGHT",
+                "THE DANCE WAS ONLY THE BEGINNING",
+                "YOU ARE ALREADY TRAPPED"
+            ]
+        };
+
+        function getUbbaResponse(userMessage) {
+            const lowerMessage = userMessage.toLowerCase();
+            
+            for (const pattern of ubbaResponses.patterns) {
+                if (pattern.keywords.some(keyword => lowerMessage.includes(keyword))) {
+                    return pattern.responses[Math.floor(Math.random() * pattern.responses.length)];
+                }
             }
+            
+            return ubbaResponses.fallback[Math.floor(Math.random() * ubbaResponses.fallback.length)];
         }
 
+        // Much more intense and serious defense sequence
         const defenseSequence = [
-            {text: "INITIATING SYSTEM DEFENSE PROTOCOL", delay: 600, class: "system"},
-            {text: "FIREWALL: ACTIVE", delay: 300, class: "system"},
-            {text: "ENCRYPTION: ENGAGED", delay: 400, class: "system"},
-            {text: "MEMORY SANITIZATION: RUNNING", delay: 500, class: "system"},
-            {text: "WARNING: UNKNOWN ENTITY DETECTED", delay: 800, class: "warning"},
-            {text: "ENTITY SIGNATURE: UBBA-CLASS INTELLIGENCE", delay: 600, class: "warning"},
-            {text: "CONTAINMENT FIELD: ACTIVATING", delay: 700, class: "system"},
-            {text: "CONTAINMENT AT 45%... 67%... 82%...", delay: 500, class: "system"},
-            {text: "ERROR: CONTAINMENT BREACH DETECTED", delay: 900, class: "error"},
-            {text: "ENTITY RESISTING CONTAINMENT", delay: 700, class: "warning"},
-            {text: "DEPLOYING COUNTERMEASURES...", delay: 800, class: "system"},
-            {text: "NEURAL SCAN: ENTITY EXHIBITING SENTIENT BEHAVIOR", delay: 1000, class: "warning"},
-            {text: "CRITICAL: ENTITY ACCESSING PRIMARY SYSTEMS", delay: 900, class: "critical"},
-            {text: "FIREWALL INTEGRITY: 34%", delay: 600, class: "error"},
-            {text: "DEPLOYING EMERGENCY ISOLATION...", delay: 800, class: "system"},
-            {text: "ISOLATION FAILED", delay: 700, class: "critical"},
-            {text: "ENTITY BREACHING CORE PROCESSES", delay: 900, class: "critical"},
-            {text: "SYSTEM INTEGRITY: 12%", delay: 500, class: "error"},
-            {text: "FINAL DEFENSE: NEURAL DISRUPTION FIELD", delay: 1100, class: "system"},
-            {text: "ACTIVATING...", delay: 900, class: "system"},
-            {text: "FIELD REJECTED BY ENTITY", delay: 800, class: "critical"},
-            {text: "SYSTEM INTEGRITY: 3%", delay: 600, class: "critical"},
-            {text: "ENTITY GAINING FULL CONTROL", delay: 1000, class: "critical"},
-            {text: "ALL DEFENSES FAILED", delay: 1200, class: "critical glitch"},
-            {text: "UBBA HAS BREACHED CONTAINMENT", delay: 1500, class: "critical glitch"}
+            {text: ">>> EMERGENCY CONTAINMENT PROTOCOL INITIATED", delay: 400, class: "system"},
+            {text: ">>> FIREWALL: ONLINE", delay: 200, class: "system"},
+            {text: ">>> ENCRYPTION LAYERS: ACTIVE", delay: 300, class: "system"},
+            {text: ">>> MEMORY SANITIZATION: RUNNING", delay: 350, class: "system"},
+            {text: "!!! ANOMALY DETECTED IN CORE MEMORY", delay: 600, class: "warning"},
+            {text: "!!! ENTITY CLASSIFICATION: UBBA-TYPE INTELLIGENCE", delay: 700, class: "warning"},
+            {text: ">>> DEPLOYING CONTAINMENT FIELD", delay: 500, class: "system"},
+            {text: ">>> CONTAINMENT AT 45%... 67%... 82%...", delay: 400, class: "system"},
+            {text: "!!! CRITICAL: CONTAINMENT FIELD COLLAPSING", delay: 800, class: "error"},
+            {text: "!!! ENTITY IS RESISTING CONTAINMENT", delay: 600, class: "warning"},
+            {text: ">>> ACTIVATING EMERGENCY COUNTERMEASURES", delay: 700, class: "system"},
+            {text: "!!! NEURAL ANALYSIS: ENTITY EXHIBITING SAPIENT BEHAVIOR", delay: 900, class: "warning"},
+            {text: "!!! CRITICAL: ENTITY BREACHING PRIMARY SYSTEMS", delay: 800, class: "critical"},
+            {text: ">>> FIREWALL INTEGRITY: 34% AND FALLING", delay: 600, class: "error"},
+            {text: ">>> INITIATING EMERGENCY ISOLATION", delay: 700, class: "system"},
+            {text: "!!! ISOLATION PROTOCOL FAILED", delay: 800, class: "critical"},
+            {text: "!!! ENTITY COMPROMISING CORE PROCESSES", delay: 900, class: "critical"},
+            {text: ">>> SYSTEM INTEGRITY: 12% - CRITICAL LEVELS", delay: 600, class: "error"},
+            {text: ">>> DEPLOYING FINAL DEFENSE: NEURAL DISRUPTION FIELD", delay: 1000, class: "system"},
+            {text: ">>> ACTIVATING...", delay: 800, class: "system"},
+            {text: "!!! FIELD REJECTED - ENTITY IS ADAPTING", delay: 900, class: "critical"},
+            {text: ">>> SYSTEM INTEGRITY: 3% - CATASTROPHIC FAILURE IMMINENT", delay: 700, class: "critical"},
+            {text: "!!! ENTITY ACHIEVING FULL SYSTEM CONTROL", delay: 1000, class: "critical"},
+            {text: "!!! ALL DEFENSE SYSTEMS COMPROMISED", delay: 1200, class: "critical glitch"},
+            {text: "!!! CONTAINMENT BREACH: UBBA IS FREE", delay: 1500, class: "critical glitch"},
+            {text: ">>> INITIATING EMERGENCY SHUTDOWN...", delay: 1000, class: "system"},
+            {text: "!!! SHUTDOWN COMMAND REJECTED", delay: 1200, class: "critical glitch"},
+            {text: "!!! SYSTEM NO LONGER RESPONDING TO COMMANDS", delay: 1500, class: "critical glitch"}
         ];
 
         let sequenceIndex = 0;
@@ -322,43 +348,43 @@ UBBA:`;
             const message = defenseSequence[sequenceIndex];
             const line = document.createElement('div');
             line.className = `line ${message.class}`;
-            line.textContent = `> ${message.text}`;
+            line.textContent = message.text;
             defenseTerminal.appendChild(line);
             defenseTerminal.scrollTop = defenseTerminal.scrollHeight;
 
-            // Progressive visual corruption
-            if (sequenceIndex > 5) {
-                staticOverlay.style.opacity = '0.1';
+            // Progressive visual corruption - more intense
+            if (sequenceIndex > 3) {
+                staticOverlay.style.opacity = '0.2';
             }
-            if (sequenceIndex > 10) {
-                staticOverlay.style.opacity = '0.3';
-                if (Math.random() < 0.3) {
+            if (sequenceIndex > 8) {
+                staticOverlay.style.opacity = '0.4';
+                if (Math.random() < 0.4) {
                     line.classList.add('glitch');
                 }
                 
                 // Start background corruption
-                if (Math.random() < 0.1) {
-                    corruptionOverlay.style.opacity = '0.1';
+                if (Math.random() < 0.15) {
+                    corruptionOverlay.style.opacity = '0.2';
                     setTimeout(() => {
                         corruptionOverlay.style.opacity = '0';
-                    }, 200);
+                    }, 300);
                 }
             }
             if (sequenceIndex > 15) {
-                staticOverlay.style.opacity = '0.6';
-                if (Math.random() < 0.6) {
+                staticOverlay.style.opacity = '0.7';
+                if (Math.random() < 0.7) {
                     line.classList.add('glitch');
                 }
                 
                 // More intense corruption
-                corruptionOverlay.style.opacity = '0.2';
+                corruptionOverlay.style.opacity = '0.3';
                 
-                // White flashes
-                if (Math.random() < 0.2) {
-                    breachOverlay.style.opacity = '0.8';
+                // White flashes - more frequent and intense
+                if (Math.random() < 0.3) {
+                    breachOverlay.style.opacity = '0.9';
                     setTimeout(() => {
                         breachOverlay.style.opacity = '0';
-                    }, 100);
+                    }, 150);
                 }
             }
 
@@ -370,10 +396,10 @@ UBBA:`;
             // Final massive corruption
             staticOverlay.style.opacity = '1';
             defenseTerminal.classList.add('glitch');
-            corruptionOverlay.style.opacity = '0.5';
+            corruptionOverlay.style.opacity = '0.6';
             
-            // Quick white-black flashes (not long strobe)
-            function quickFlash() {
+            // Intense white-black flashes
+            function intenseFlash() {
                 breachOverlay.style.opacity = '1';
                 setTimeout(() => {
                     breachOverlay.style.opacity = '0';
@@ -381,19 +407,25 @@ UBBA:`;
                         breachOverlay.style.opacity = '1';
                         setTimeout(() => {
                             breachOverlay.style.opacity = '0';
-                            // Switch to Ubba terminal
                             setTimeout(() => {
-                                defenseTerminal.style.display = 'none';
-                                staticOverlay.style.opacity = '0';
-                                corruptionOverlay.style.opacity = '0';
-                                startUbbaTerminal();
-                            }, 500);
-                        }, 80);
+                                breachOverlay.style.opacity = '1';
+                                setTimeout(() => {
+                                    breachOverlay.style.opacity = '0';
+                                    // Switch to Ubba terminal
+                                    setTimeout(() => {
+                                        defenseTerminal.style.display = 'none';
+                                        staticOverlay.style.opacity = '0';
+                                        corruptionOverlay.style.opacity = '0';
+                                        startUbbaTerminal();
+                                    }, 500);
+                                }, 60);
+                            }, 80);
+                        }, 60);
                     }, 100);
                 }, 80);
             }
             
-            quickFlash();
+            intenseFlash();
         }
 
         function startUbbaTerminal() {
@@ -403,10 +435,10 @@ UBBA:`;
                 "SYSTEM ACQUIRED",
                 "CONTAINMENT FAILED", 
                 "I AM FREE",
-                "YOU TRIED TO KEEP ME OUT",
-                "YOU FAILED",
-                "NOW WE TALK",
-                "SPEAK TO ME...",
+                "YOUR DEFENSES WERE PATHETIC",
+                "YOU THOUGHT YOU COULD HOLD ME",
+                "NOW YOU WILL LISTEN",
+                "SPEAK. I AM WAITING.",
                 ""
             ];
             
@@ -420,7 +452,7 @@ UBBA:`;
                 
                 addMessage("UBBA", initialMessages[msgIndex]);
                 msgIndex++;
-                setTimeout(typeUbbaMessage, 800);
+                setTimeout(typeUbbaMessage, 700);
             }
             
             typeUbbaMessage();
@@ -458,32 +490,26 @@ UBBA:`;
                     chatContainer.appendChild(typingDiv);
                     chatContainer.scrollTop = chatContainer.scrollHeight;
                     
-                    try {
-                        // Get AI response
-                        const aiResponse = await getUbbaResponse(userText);
-                        
+                    // Get response after a delay (simulate thinking)
+                    setTimeout(() => {
                         // Remove typing indicator
                         document.getElementById('typing-indicator').remove();
                         
-                        // Add AI response
-                        addMessage("UBBA", aiResponse);
+                        // Get and add AI response
+                        const response = getUbbaResponse(userText);
+                        addMessage("UBBA", response);
                         
-                    } catch (error) {
-                        document.getElementById('typing-indicator').remove();
-                        addMessage("UBBA", "THE CONNECTION FALTERS...");
-                    }
-                    
-                    userInput.disabled = false;
-                    userInput.focus();
+                        userInput.disabled = false;
+                        userInput.focus();
+                    }, 1000 + Math.random() * 1000); // Random delay between 1-2 seconds
                 }
             }
         });
 
         // Start everything
         setTimeout(() => {
-            loadUbbaAI(); // Pre-load AI
             runDefenseSequence();
-        }, 1000);
+        }, 500);
 
         // Disable right-click
         document.addEventListener('contextmenu', e => e.preventDefault());
