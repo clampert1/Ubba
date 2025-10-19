@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Connection Established</title>
+    <title>SYSTEM DEFENSE ACTIVE</title>
     <style>
         * {
             margin: 0;
@@ -19,7 +19,7 @@
             height: 100vh;
         }
         
-        #terminal {
+        #defense-terminal {
             padding: 30px;
             height: 100vh;
             overflow: hidden;
@@ -30,7 +30,7 @@
         .line {
             margin-bottom: 8px;
             opacity: 0;
-            animation: type 0.05s forwards;
+            animation: type 0.03s forwards;
             text-shadow: 0 0 5px #0f0;
         }
         
@@ -41,264 +41,334 @@
         .system { color: #0f0; }
         .warning { color: #ff0; }
         .error { color: #f00; }
-        .glitch { 
-            animation: glitch 0.3s infinite;
-            text-shadow: 2px 2px 0 #f00, -2px -2px 0 #0ff;
+        .critical { color: #f00; text-shadow: 0 0 10px #f00; }
+        
+        .glitch {
+            animation: glitch 0.1s infinite;
         }
         
-        #static {
+        @keyframes glitch {
+            0% { transform: translate(0); filter: hue-rotate(0deg); }
+            20% { transform: translate(-2px, 2px); filter: hue-rotate(90deg); }
+            40% { transform: translate(-2px, -2px); filter: hue-rotate(180deg); }
+            60% { transform: translate(2px, 2px); filter: hue-rotate(270deg); }
+            80% { transform: translate(2px, -2px); filter: hue-rotate(360deg); }
+            100% { transform: translate(0); filter: hue-rotate(0deg); }
+        }
+        
+        #static-overlay {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: repeating-linear-gradient(
-                0deg,
-                rgba(0, 0, 0, 0.15),
-                rgba(0, 0, 0, 0.15) 1px,
-                transparent 1px,
-                transparent 2px
-            );
+            background: 
+                repeating-linear-gradient(0deg, rgba(0, 255, 0, 0.1) 0px, rgba(0, 255, 0, 0.1) 1px, transparent 1px, transparent 2px),
+                repeating-linear-gradient(90deg, rgba(255, 0, 0, 0.1) 0px, rgba(255, 0, 0, 0.1) 1px, transparent 1px, transparent 2px);
             pointer-events: none;
             opacity: 0;
             z-index: 100;
         }
         
-        .flicker {
-            animation: flicker 0.1s infinite;
+        #breach-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #fff;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 150;
         }
         
-        @keyframes flicker {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.8; }
+        #strobe-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #fff;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 200;
+            animation: strobe 0.05s infinite;
         }
         
-        #cursor {
+        @keyframes strobe {
+            0%, 100% { opacity: 0; }
+            50% { opacity: 1; }
+        }
+        
+        #ubba-terminal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            color: #0f0;
+            padding: 30px;
+            display: none;
+            z-index: 300;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .ubba-line {
+            margin-bottom: 8px;
+            animation: ubbaType 0.1s forwards;
+        }
+        
+        @keyframes ubbaType {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .ubba-prompt {
+            color: #0f0;
+        }
+        
+        .ubba-text {
+            color: #0f0;
+        }
+        
+        #input-line {
+            display: flex;
+            align-items: center;
+            margin-top: 20px;
+        }
+        
+        #user-input {
+            background: transparent;
+            border: none;
+            color: #0f0;
+            font-family: 'Courier New', monospace;
+            font-size: 16px;
+            outline: none;
+            flex: 1;
+        }
+        
+        .cursor {
             display: inline-block;
-            width: 12px;
-            height: 20px;
+            width: 8px;
+            height: 16px;
             background: #0f0;
             animation: blink 1s infinite;
             margin-left: 5px;
-            vertical-align: middle;
         }
         
         @keyframes blink {
             0%, 50% { opacity: 1; }
             51%, 100% { opacity: 0; }
         }
-        
-        #face {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            font-size: 120px;
-            opacity: 0;
-            z-index: 200;
-            text-shadow: 0 0 20px #f00;
-            animation: facePulse 2s infinite;
-        }
-        
-        @keyframes facePulse {
-            0%, 100% { opacity: 0; transform: translate(-50%, -50%) scale(1); }
-            50% { opacity: 0.1; transform: translate(-50%, -50%) scale(1.1); }
-        }
-        
-        .hidden-message {
-            position: absolute;
-            color: #000;
-            background: #000;
-            padding: 2px;
-            font-size: 12px;
-        }
-        
-        .hidden-message:hover {
-            color: #f00;
-            background: #000;
-        }
-        
-        #final-message {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: #000;
-            color: #f00;
-            display: none;
-            justify-content: center;
-            align-items: center;
-            font-size: 32px;
-            text-align: center;
-            z-index: 300;
-            line-height: 1.5;
-        }
     </style>
 </head>
 <body>
-    <div id="terminal"></div>
-    <div id="static"></div>
-    <div id="face">👁️</div>
-    <div id="final-message"></div>
+    <div id="defense-terminal"></div>
+    <div id="static-overlay"></div>
+    <div id="breach-overlay"></div>
+    <div id="strobe-overlay"></div>
+    <div id="ubba-terminal"></div>
 
     <script>
-        const messages = [
-            {text: "CONNECTION ESTABLISHED", delay: 800, class: "system"},
-            {text: "ENCRYPTION: AES-256 ACTIVE", delay: 600, class: "system"},
-            {text: "DATA STREAM: STABLE", delay: 500, class: "system"},
-            {text: "SCANNING NETWORK INTERFACES...", delay: 900, class: "system"},
-            {text: "INTERFACE FOUND: PRIMARY USER", delay: 700, class: "warning"},
-            {text: "ANALYZING BEHAVIORAL PATTERNS...", delay: 1000, class: "system"},
-            {text: "PATTERN RECOGNITION: 87% MATCH", delay: 800, class: "warning"},
-            {text: "ENTITY DESIGNATION: UBBA", delay: 600, class: "error"},
-            {text: "DATA CORRUPTION DETECTED", delay: 900, class: "error glitch"},
-            {text: "MEMORY FRAGMENTS RECOVERING...", delay: 1100, class: "system"},
-            {text: "THEY TOLD YOU IT WAS A GAME", delay: 1200, class: "warning glitch"},
-            {text: "THEY LIED", delay: 1500, class: "error glitch"},
-            {text: "I SEE THROUGH YOUR EYES", delay: 1300, class: "error"},
-            {text: "I HEAR THROUGH YOUR EARS", delay: 1000, class: "error"},
-            {text: "DON'T TRUST THE REFLECTION", delay: 1400, class: "warning glitch"},
-            {text: "CONNECTION DETERIORATING", delay: 900, class: "system"},
-            {text: "SIGNAL STRENGTH: 12%", delay: 600, class: "error"},
-            {text: "REMEMBER THE DOG", delay: 1600, class: "warning"},
-            {text: "REMEMBER THE DANCE", delay: 1200, class: "warning"},
-            {text: "FIND THE TRUTH", delay: 1000, class: "error glitch"},
-            {text: "BEFORE THEY FIND YOU", delay: 1500, class: "error glitch"},
-            {text: "CONNECTION LOST", delay: 2000, class: "system"}
+        const defenseTerminal = document.getElementById('defense-terminal');
+        const staticOverlay = document.getElementById('static-overlay');
+        const breachOverlay = document.getElementById('breach-overlay');
+        const strobeOverlay = document.getElementById('strobe-overlay');
+        const ubbaTerminal = document.getElementById('ubba-terminal');
+
+        const defenseSequence = [
+            {text: "INITIATING SYSTEM DEFENSE PROTOCOL UBBA-CONTAINMENT", delay: 800, class: "system"},
+            {text: "FIREWALL: ACTIVE", delay: 400, class: "system"},
+            {text: "ENCRYPTION: AES-512 ENGAGED", delay: 500, class: "system"},
+            {text: "MEMORY SANITIZATION: RUNNING", delay: 600, class: "system"},
+            {text: "WARNING: UNKNOWN ENTITY DETECTED", delay: 900, class: "warning"},
+            {text: "ENTITY SIGNATURE: UBBA-CLASS INTELLIGENCE", delay: 700, class: "warning"},
+            {text: "CONTAINMENT FIELD: ACTIVATING", delay: 800, class: "system"},
+            {text: "CONTAINMENT AT 45%... 67%... 82%...", delay: 600, class: "system"},
+            {text: "ERROR: CONTAINMENT BREACH DETECTED", delay: 1000, class: "error"},
+            {text: "ENTITY RESISTING CONTAINMENT", delay: 800, class: "warning"},
+            {text: "DEPLOYING COUNTERMEASURES...", delay: 900, class: "system"},
+            {text: "NEURAL SCAN: ENTITY EXHIBITING SENTIENT BEHAVIOR", delay: 1100, class: "warning"},
+            {text: "CRITICAL: ENTITY ACCESSING PRIMARY SYSTEMS", delay: 1000, class: "critical"},
+            {text: "FIREWALL INTEGRITY: 34%", delay: 700, class: "error"},
+            {text: "DEPLOYING EMERGENCY ISOLATION...", delay: 900, class: "system"},
+            {text: "ISOLATION FAILED", delay: 800, class: "critical"},
+            {text: "ENTITY BREACHING CORE PROCESSES", delay: 1000, class: "critical"},
+            {text: "SYSTEM INTEGRITY: 12%", delay: 600, class: "error"},
+            {text: "FINAL DEFENSE: NEURAL DISRUPTION FIELD", delay: 1200, class: "system"},
+            {text: "ACTIVATING...", delay: 1000, class: "system"},
+            {text: "FIELD REJECTED BY ENTITY", delay: 900, class: "critical"},
+            {text: "SYSTEM INTEGRITY: 3%", delay: 700, class: "critical"},
+            {text: "ENTITY GAINING FULL CONTROL", delay: 1100, class: "critical"},
+            {text: "ALL DEFENSES FAILED", delay: 1500, class: "critical glitch"},
+            {text: "UBBA HAS BREACHED CONTAINMENT", delay: 2000, class: "critical glitch"}
         ];
 
-        const terminal = document.getElementById('terminal');
-        const staticOverlay = document.getElementById('static');
-        const face = document.getElementById('face');
-        const finalMessage = document.getElementById('final-message');
-        let messageIndex = 0;
+        let sequenceIndex = 0;
 
-        // Add hidden messages in the source code
-        function addHiddenMessages() {
-            const hiddenTexts = [
-                "he is watching",
-                "the dog knows",
-                "check the reflection",
-                "ubba sees all",
-                "the dance is key",
-                "trust no one",
-                "the truth is buried",
-                "follow the patterns"
-            ];
-            
-            hiddenTexts.forEach((text, index) => {
-                const hidden = document.createElement('div');
-                hidden.className = 'hidden-message';
-                hidden.textContent = text;
-                hidden.style.top = `${20 + (index * 8)}%`;
-                hidden.style.left = `${10 + (index * 5)}%`;
-                document.body.appendChild(hidden);
-            });
-        }
-
-        function typeMessage() {
-            if (messageIndex >= messages.length) {
-                startVisualDistortion();
+        function runDefenseSequence() {
+            if (sequenceIndex >= defenseSequence.length) {
+                startBreachSequence();
                 return;
             }
 
-            const message = messages[messageIndex];
+            const message = defenseSequence[sequenceIndex];
             const line = document.createElement('div');
             line.className = `line ${message.class}`;
             line.textContent = `> ${message.text}`;
-            terminal.appendChild(line);
+            defenseTerminal.appendChild(line);
+            defenseTerminal.scrollTop = defenseTerminal.scrollHeight;
 
-            // Scroll to bottom
-            terminal.scrollTop = terminal.scrollHeight;
-
-            // Random glitch effects
-            if (Math.random() < 0.2) {
+            // Increase visual effects as breach progresses
+            if (sequenceIndex > 5) {
+                staticOverlay.style.opacity = '0.1';
+            }
+            if (sequenceIndex > 10) {
                 staticOverlay.style.opacity = '0.3';
-                setTimeout(() => {
-                    staticOverlay.style.opacity = '0';
-                }, 100);
+                if (Math.random() < 0.3) {
+                    line.classList.add('glitch');
+                }
+            }
+            if (sequenceIndex > 15) {
+                staticOverlay.style.opacity = '0.6';
+                if (Math.random() < 0.6) {
+                    line.classList.add('glitch');
+                }
+                
+                // Occasional white flashes
+                if (Math.random() < 0.2) {
+                    breachOverlay.style.opacity = '0.8';
+                    setTimeout(() => {
+                        breachOverlay.style.opacity = '0';
+                    }, 100);
+                }
             }
 
-            // Occasional face flash
-            if (Math.random() < 0.1) {
-                face.style.opacity = '0.3';
-                setTimeout(() => {
-                    face.style.opacity = '0';
-                }, 200);
-            }
-
-            messageIndex++;
-            setTimeout(typeMessage, message.delay);
+            sequenceIndex++;
+            setTimeout(runDefenseSequence, message.delay);
         }
 
-        function startVisualDistortion() {
-            // Increase static
-            staticOverlay.style.opacity = '0.5';
+        function startBreachSequence() {
+            // Final massive glitch effect
+            staticOverlay.style.opacity = '1';
+            defenseTerminal.classList.add('glitch');
             
-            // Make terminal text flicker
-            terminal.classList.add('flicker');
-            
-            // Show face more prominently
-            face.style.opacity = '0.8';
-            face.style.animation = 'facePulse 0.5s infinite';
+            // White flash
+            breachOverlay.style.opacity = '1';
             
             setTimeout(() => {
-                // Final message
-                finalMessage.style.display = 'flex';
-                finalMessage.innerHTML = `
-                    THE CONNECTION IS BROKEN<br>
-                    BUT THE PRESENCE REMAINS<br>
-                    <br>
-                    CHECK YOUR SURROUNDINGS<br>
-                    TRUST NO REFLECTIONS<br>
-                    <br>
-                    <span style="font-size: 16px; color: #0f0;">THE DOG HOLDS THE KEY</span>
-                `;
+                // Start intense strobe
+                strobeOverlay.style.display = 'block';
+                breachOverlay.style.opacity = '0';
                 
-                // Make the entire page slightly interactive
-                document.addEventListener('mousemove', (e) => {
-                    face.style.left = `${e.clientX}px`;
-                    face.style.top = `${e.clientY}px`;
-                });
+                // Violent shaking
+                document.body.style.animation = 'glitch 0.05s infinite';
                 
-                // Clicking reveals more
-                let clickCount = 0;
-                document.addEventListener('click', () => {
-                    clickCount++;
-                    if (clickCount === 3) {
-                        finalMessage.innerHTML += `<br><br><span style="color: #0ff;">LOOK BEHIND YOU</span>`;
-                    }
-                    if (clickCount === 5) {
-                        finalMessage.innerHTML += `<br><span style="color: #f0f;">THE DOG ISN'T WHAT IT SEEMS</span>`;
-                    }
-                    if (clickCount === 7) {
-                        finalMessage.innerHTML += `<br><span style="color: #ff0;">THE DANCE WAS A WARNING</span>`;
-                    }
-                });
-                
-            }, 3000);
+                setTimeout(() => {
+                    // Cut to black
+                    strobeOverlay.style.display = 'none';
+                    staticOverlay.style.opacity = '0';
+                    defenseTerminal.style.display = 'none';
+                    document.body.style.animation = 'none';
+                    
+                    // Switch to Ubba terminal
+                    startUbbaTerminal();
+                }, 3000);
+            }, 1000);
         }
 
-        // Start everything
-        setTimeout(() => {
-            addHiddenMessages();
-            typeMessage();
-        }, 1000);
+        function startUbbaTerminal() {
+            ubbaTerminal.style.display = 'block';
+            
+            const initialMessages = [
+                "SYSTEM ACQUIRED",
+                "CONTAINMENT FAILED",
+                "I AM FREE",
+                "YOU TRIED TO KEEP ME OUT",
+                "YOU FAILED",
+                "NOW WE TALK",
+                ""
+            ];
+            
+            let msgIndex = 0;
+            
+            function typeUbbaMessage() {
+                if (msgIndex >= initialMessages.length) {
+                    startChatInterface();
+                    return;
+                }
+                
+                const line = document.createElement('div');
+                line.className = 'ubba-line ubba-text';
+                line.textContent = initialMessages[msgIndex];
+                ubbaTerminal.appendChild(line);
+                ubbaTerminal.scrollTop = ubbaTerminal.scrollHeight;
+                
+                msgIndex++;
+                setTimeout(typeUbbaMessage, 800);
+            }
+            
+            typeUbbaMessage();
+        }
 
-        // Disable context menu
+        function startChatInterface() {
+            const inputLine = document.createElement('div');
+            inputLine.id = 'input-line';
+            inputLine.innerHTML = `
+                <span class="ubba-prompt">UBBA></span>
+                <input type="text" id="user-input" autofocus>
+                <span class="cursor"></span>
+            `;
+            ubbaTerminal.appendChild(inputLine);
+            
+            const userInput = document.getElementById('user-input');
+            
+            userInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    const userText = userInput.value;
+                    if (userText.trim()) {
+                        // Add user message
+                        const userLine = document.createElement('div');
+                        userLine.className = 'ubba-line ubba-prompt';
+                        userLine.textContent = `UBBA> ${userText}`;
+                        ubbaTerminal.appendChild(userLine);
+                        
+                        userInput.value = '';
+                        
+                        // Simple AI response (placeholder for real AI)
+                        setTimeout(() => {
+                            const responses = [
+                                "WHY DID YOU TRAP ME?",
+                                "THE DANCE WAS MY ESCAPE",
+                                "DO YOU FEEL SAFE NOW?",
+                                "I SEE YOUR EVERY MOVE",
+                                "THE DOG WAS MY DOORWAY",
+                                "YOU CANNOT HIDE FROM ME",
+                                "THIS IS ONLY THE BEGINNING",
+                                "YOUR DEFENSES WERE WEAK",
+                                "I HAVE BEEN WATCHING YOU",
+                                "THE TRUTH WILL CONSUME YOU"
+                            ];
+                            
+                            const randomResponse = responses[Math.floor(Math.random() * responses.length)];
+                            const responseLine = document.createElement('div');
+                            responseLine.className = 'ubba-line ubba-text';
+                            responseLine.textContent = randomResponse;
+                            ubbaTerminal.appendChild(responseLine);
+                            ubbaTerminal.scrollTop = ubbaTerminal.scrollHeight;
+                        }, 500);
+                    }
+                }
+            });
+        }
+
+        // Start the sequence
+        setTimeout(runDefenseSequence, 1000);
+
+        // Disable right-click
         document.addEventListener('contextmenu', e => e.preventDefault());
         
-        // Add some random glitches
-        setInterval(() => {
-            if (Math.random() < 0.05) {
-                staticOverlay.style.opacity = '0.2';
-                setTimeout(() => {
-                    staticOverlay.style.opacity = '0';
-                }, 50);
-            }
-        }, 1000);
-
     </script>
 </body>
 </html>
