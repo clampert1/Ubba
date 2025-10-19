@@ -28,7 +28,7 @@ html,body{height:100%;background:#000;color:#fff;font-family:Arial,Helvetica,san
 .static.up{border-color:#ff6b6b}
 .static.right{border-color:#ff9f1c}
 .static.active{background:#0f0;color:#000;transform:translateX(-50%) scale(1.06);box-shadow:0 0 18px rgba(0,255,0,.6)}
-.static.miss{background:#ff0000;color:#fff;transform:translateX(-50%) scale(1.06);box-shadow:0 0 18px rgba(255,0,0,.6)}
+.static.miss{background:#ff0000;color:#fff;border-color:#ff0000;transform:translateX(-50%) scale(1.06);box-shadow:0 0 18px rgba(255,0,0,.6)}
 
 /* characters bottom */
 #characters{position:absolute;left:50%;transform:translateX(-50%);bottom:50px;display:flex;justify-content:space-between;width:95%;max-width:1320px;padding:0 28px;z-index:70}
@@ -339,7 +339,10 @@ function loop(currentTime) {
   // move arrows
   for (let i = state.arrows.length - 1; i >= 0; i--) {
     const a = state.arrows[i];
-    if (a.hit) { state.arrows.splice(i,1); continue; }
+    if (a.hit) { 
+      state.arrows.splice(i,1); 
+      continue; 
+    }
     
     // Frame-independent movement
     const frameSpeed = currentSpeed() * (deltaTime / (1000/60));
@@ -347,20 +350,24 @@ function loop(currentTime) {
     a.el.style.bottom = a.y + 'px';
     
     const rect = a.el.getBoundingClientRect();
-    // Check if arrow went off top of screen
-    if (rect.bottom < 0) {
+    // Check if arrow went off top of screen (bottom of rect is above top of viewport)
+    if (rect.bottom < -50) {
       // arrow went off top -> if player arrow, count miss (hp loss)
       if (a.side === 'player' && !a.hit) {
         a.hit = true;
         state.playerHP = Math.max(0, state.playerHP - CONFIG.hpLoss);
         state.combo = 0;
-        showEffect(a.el, 'miss');
         updateHUD();
       }
+      // Always remove arrow and mark as processed
       if (a.el && a.el.parentElement) a.el.remove();
       state.arrows.splice(i,1);
     }
   }
+  
+  // Check round completion after arrow cleanup
+  checkRoundCompletion();
+  
   requestAnimationFrame(loop);
 }
 
@@ -480,8 +487,8 @@ function attemptHit(pressedType) {
 
 /* check round finished and advance or end game */
 function checkRoundCompletion() {
-  // if player phase and no player arrows remain and ubba timers cleared -> end round
-  const playerArrowsExist = state.arrows.some(a => a.side === 'player' && !a.hit);
+  // if player phase and no player arrows remain -> end round
+  const playerArrowsExist = state.arrows.some(a => a.side === 'player');
   if (!state.isBotPhase && !playerArrowsExist) {
     // round done
     state.round++;
