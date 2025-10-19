@@ -106,6 +106,7 @@ html,body{height:100%;background:#000;color:#fff;font-family:Arial,Helvetica,san
     <h1 id="resultTitle">BATTLE COMPLETE</h1>
     <div id="resultText" style="margin-top:6px"></div>
     <button class="btn" id="replay">PLAY AGAIN</button>
+    <button class="btn" id="nextLevel" style="display:none;margin-top:10px;background:linear-gradient(135deg,#4ecdc4,#1a936f)">CONTINUE TO NEXT LEVEL</button>
   </div>
 </div>
 
@@ -121,7 +122,7 @@ const CONFIG = {
   hpLoss: 1,
   rounds: 3,
   chordWindow: 220,   // ms window to consider multiple key presses a chord
-  arrowMaxAge: 4000,  // 8 seconds max arrow lifetime
+  arrowMaxAge: 8000,  // 8 seconds max arrow lifetime
   playerTurnTimeout: 3000, // 3 seconds extra beyond bot time
   playerMaxHP: 8      // Player now has 8 HP max
 };
@@ -153,6 +154,7 @@ const els = {
   resultTitle: document.getElementById('resultTitle'),
   resultText: document.getElementById('resultText'),
   replay: document.getElementById('replay'),
+  nextLevel: document.getElementById('nextLevel'),
   combo: document.getElementById('combo'),
   level: document.getElementById('level'),
   botTurn: document.getElementById('botTurn'),
@@ -600,9 +602,19 @@ function finishGame(){
   els.results.style.display = 'flex';
   els.start.style.display = 'none';
   const victory = (state.ubbaHP <= 0 && state.playerHP > 0);
+  
   els.resultTitle.textContent = victory ? 'VICTORY!' : 'DEFEAT!';
   els.resultTitle.style.color = victory ? '#1df53a' : '#ff4b4b';
   els.resultText.innerHTML = `MAX COMBO: ${state.maxCombo}`;
+  
+  // Show "Continue to Next Level" button only on victory
+  if (victory) {
+    els.nextLevel.style.display = 'block';
+    els.replay.textContent = 'PLAY AGAIN';
+  } else {
+    els.nextLevel.style.display = 'none';
+    els.replay.textContent = 'TRY AGAIN';
+  }
 }
 
 /* update HUD visual values */
@@ -631,9 +643,16 @@ function startGame(){
   requestAnimationFrame(loop);
 }
 
+/* Go to next level */
+function goToNextLevel() {
+  // Redirect to the next HTML file in the ARG
+  window.location.href = 'Real.html';
+}
+
 /* basic helpers & event wiring */
 document.getElementById('startBtn').addEventListener('click', startGame);
 document.getElementById('replay').addEventListener('click', ()=> location.reload());
+document.getElementById('nextLevel').addEventListener('click', goToNextLevel);
 
 /* Handle window resize to maintain aspect ratio independence */
 window.addEventListener('resize', ()=> {
