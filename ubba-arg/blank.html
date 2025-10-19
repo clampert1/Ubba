@@ -352,21 +352,19 @@ function loop(currentTime) {
     const rect = a.el.getBoundingClientRect();
     // Check if arrow went off top of screen (bottom of rect is above top of viewport)
     if (rect.bottom < -50) {
-      // arrow went off top -> if player arrow, count miss (hp loss)
-      if (a.side === 'player' && !a.hit) {
+      // arrow went off top -> if player arrow AND not bot phase, count miss (hp loss)
+      if (a.side === 'player' && !a.hit && !state.isBotPhase) {
         a.hit = true;
         state.playerHP = Math.max(0, state.playerHP - CONFIG.hpLoss);
         state.combo = 0;
         updateHUD();
       }
       // Always remove arrow and mark as processed
+      a.hit = true;
       if (a.el && a.el.parentElement) a.el.remove();
       state.arrows.splice(i,1);
     }
   }
-  
-  // Check round completion after arrow cleanup
-  checkRoundCompletion();
   
   requestAnimationFrame(loop);
 }
@@ -487,9 +485,12 @@ function attemptHit(pressedType) {
 
 /* check round finished and advance or end game */
 function checkRoundCompletion() {
+  // Only check completion when NOT in bot phase
+  if (state.isBotPhase) return;
+  
   // if player phase and no player arrows remain -> end round
-  const playerArrowsExist = state.arrows.some(a => a.side === 'player');
-  if (!state.isBotPhase && !playerArrowsExist) {
+  const playerArrowsExist = state.arrows.some(a => a.side === 'player' && !a.hit);
+  if (!playerArrowsExist) {
     // round done
     state.round++;
     if (state.round > CONFIG.rounds || state.playerHP <= 0 || state.ubbaHP <= 0) {
