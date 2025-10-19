@@ -135,7 +135,7 @@ const state = {
   maxCombo: 0,
   playerHP: 10,
   ubbaHP: 100,
-  arrows: [],        // {el,type,side,y,hit,spawnTime,groupId}
+  arrows: [],        // {el,type,side,y,hit,spawnTime,groupId,missProcessed}
   sequence: [],      // current sequence (items string or array)
   isBotPhase: true,
   ubbaTimers: [],
@@ -223,7 +223,7 @@ function spawnArrow(type, side, groupId=null) {
 
   els.arrows.appendChild(arrow);
 
-  const obj = { el: arrow, type, side, y: spawnBottom, hit:false, spawnTime:performance.now(), groupId };
+  const obj = { el: arrow, type, side, y: spawnBottom, hit:false, spawnTime:performance.now(), groupId, missProcessed: false };
   state.arrows.push(obj);
 
   // schedule ubba auto-hit for ubba-side arrow(s)
@@ -352,9 +352,9 @@ function loop(currentTime) {
     const rect = a.el.getBoundingClientRect();
     // Check if arrow went off top of screen (bottom of rect is above top of viewport)
     if (rect.bottom < -50) {
-      // arrow went off top -> if player arrow AND not bot phase, count miss (hp loss)
-      if (a.side === 'player' && !a.hit && !state.isBotPhase) {
-        a.hit = true;
+      // arrow went off top -> if player arrow AND not bot phase AND not yet processed, count miss (hp loss)
+      if (a.side === 'player' && !a.missProcessed && !state.isBotPhase) {
+        a.missProcessed = true;
         state.playerHP = Math.max(0, state.playerHP - CONFIG.hpLoss);
         state.combo = 0;
         flashStaticMiss('player', a.type, 140);
