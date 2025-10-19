@@ -1,181 +1,578 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>UBBA DANCE BATTLE — Expert</title>
+<title>UBBA DANCE BATTLE — Fixed Expert</title>
 <style>
-/* --- same layout as before (shortened for brevity) --- */
-body{margin:0;background:#000;color:#fff;font-family:Arial,Helvetica,sans-serif;overflow:hidden}
+/* Minimal essential styles */
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:#000;color:#fff;font-family:Arial,Helvetica,sans-serif;overflow:hidden}
+#game{position:relative;width:100vw;height:100vh}
+#background{position:absolute;inset:0;background:url('https://raw.githubusercontent.com/clampert1/Ubba/main/ubba-arg/assets/cameras/office.png') center/cover no-repeat;filter:brightness(.34);z-index:0}
+
+/* HUD & health */
+#hud{position:absolute;top:16px;left:50%;transform:translateX(-50%);width:88%;max-width:1320px;display:flex;justify-content:space-between;align-items:center;z-index:70}
+.health{width:380px;height:34px;background:#222;border:3px solid #fff;border-radius:6px;overflow:hidden;position:relative}
+.fill{position:absolute;top:0;left:0;height:100%;background:#0f0;width:100%;transition:width .25s}
+#ubbaFill{background:#ff3b3b;left:auto;right:0}
+.label{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-weight:700;text-shadow:1px 1px 3px #000}
+
+/* Top controls (keep wide spacing to left/right) */
+#top-controls{position:absolute;top:72px;left:50%;transform:translateX(-50%);width:100%;max-width:1320px;display:flex;justify-content:space-between;align-items:flex-start;gap:20px;padding:0 28px;z-index:80}
+.lane-side{display:flex;gap:18px;align-items:flex-start}
 .arrow-target{width:86px;height:86px;background:rgba(0,0,0,.55);border-radius:10px;border:4px solid #222;display:flex;align-items:center;justify-content:center;position:relative}
-.static{position:absolute;bottom:6px;left:50%;transform:translateX(-50%);width:70px;height:70px;border-radius:8px;background:#222;color:#fff;font-weight:700;display:flex;align-items:center;justify-content:center;font-size:22px;border:3px solid}
+.static{position:absolute;bottom:6px;left:50%;transform:translateX(-50%);width:70px;height:70px;border-radius:8px;background:#222;color:#fff;font-weight:800;display:flex;align-items:center;justify-content:center;font-size:22px;border:3px solid}
 .static.left{border-color:#4ecdc4}
 .static.down{border-color:#ffe66d}
 .static.up{border-color:#ff6b6b}
 .static.right{border-color:#ff9f1c}
 .static.active{background:#0f0;color:#000;transform:translateX(-50%) scale(1.06);box-shadow:0 0 18px rgba(0,255,0,.6)}
-/* everything else identical to previous version */
+
+/* characters bottom */
+#characters{position:absolute;left:50%;transform:translateX(-50%);bottom:50px;display:flex;justify-content:space-between;width:95%;max-width:1320px;padding:0 28px;z-index:70}
+.char{width:200px;height:200px;border-radius:10px;border:4px solid #fff;display:flex;align-items:center;justify-content:center;font-size:22px}
+#ubbaChar{background:#000 url('https://raw.githubusercontent.com/clampert1/Ubba/main/ubba-arg/assets/sprites/ubba.png') center/contain no-repeat}
+
+/* arrows */
+#arrows{position:absolute;inset:0;pointer-events:none;z-index:75}
+.arrow{position:absolute;width:70px;height:70px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:22px;color:#fff;border:3px solid}
+.arrow.left{background:#4ecdc4;border-color:#4ecdc4}
+.arrow.down{background:#ffe66d;border-color:#ffe66d;color:#000}
+.arrow.up{background:#ff6b6b;border-color:#ff6b6b}
+.arrow.right{background:#ff9f1c;border-color:#ff9f1c}
+
+/* HUD text */
+#score{position:absolute;top:118px;left:50%;transform:translateX(-50%);font-size:22px;color:#dfe;text-shadow:1px 1px 3px #000;z-index:80}
+#combo{position:absolute;top:154px;left:50%;transform:translateX(-50%);font-size:18px;color:#8ff;display:none;z-index:80}
+#level{position:absolute;top:182px;left:50%;transform:translateX(-50%);font-size:20px;color:#fff;z-index:80}
+#botTurn{position:absolute;top:210px;left:50%;transform:translateX(-50%);font-size:28px;color:#ffd700;display:none;z-index:80}
+
+/* overlays */
+#start,#results{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;background:rgba(0,0,0,.8);z-index:140}
+#results{display:none}
+.btn{background:linear-gradient(135deg,#ff6b6b,#ff8e8e);color:#fff;padding:12px 22px;border-radius:10px;border:3px solid #fff;cursor:pointer;font-size:18px;margin-top:12px}
+
+/* effects */
+.hit,.miss{position:absolute;width:80px;height:80px;border-radius:50%;pointer-events:none;z-index:150;animation:eff .35s forwards}
+.hit{background:rgba(0,255,0,.42)}
+.miss{background:rgba(255,0,0,.42)}
+@keyframes eff{from{transform:scale(.6);opacity:1}to{transform:scale(2);opacity:0}}
+@media(max-width:900px){.arrow-target{width:70px;height:70px}.static{width:56px;height:56px;font-size:18px}}
 </style>
 </head>
 <body>
-<!-- use identical body structure from previous working version -->
-<!-- (omitted here for brevity; only script below changed) -->
+<div id="game">
+  <div id="background"></div>
+
+  <div id="hud">
+    <div class="health" id="player"><div class="fill" id="playerFill" style="width:100%"></div><div class="label">PLAYER</div></div>
+    <div class="health" id="ubba"><div class="fill" id="ubbaFill" style="width:100%"></div><div class="label">UBBA</div></div>
+  </div>
+
+  <div id="top-controls">
+    <div class="lane-side" id="player-side">
+      <div class="arrow-target"><div class="static left" data-key="a">A</div></div>
+      <div class="arrow-target"><div class="static down" data-key="s">S</div></div>
+      <div class="arrow-target"><div class="static up" data-key="w">W</div></div>
+      <div class="arrow-target"><div class="static right" data-key="d">D</div></div>
+    </div>
+
+    <div class="lane-side" id="ubba-side">
+      <div class="arrow-target"><div class="static left" data-key="ArrowLeft">←</div></div>
+      <div class="arrow-target"><div class="static down" data-key="ArrowDown">↓</div></div>
+      <div class="arrow-target"><div class="static up" data-key="ArrowUp">↑</div></div>
+      <div class="arrow-target"><div class="static right" data-key="ArrowRight">→</div></div>
+    </div>
+  </div>
+
+  <div id="score">SCORE: 0</div>
+  <div id="combo">COMBO: 0</div>
+  <div id="level">LEVEL 1</div>
+  <div id="botTurn">UBBA'S TURN</div>
+
+  <div id="characters">
+    <div class="char" id="you">YOU</div>
+    <div class="char" id="ubbaChar"></div>
+  </div>
+
+  <div id="arrows"></div>
+
+  <div id="start">
+    <h1 style="margin-bottom:8px;color:#ff6b6b">UBBA DANCE BATTLE</h1>
+    <p style="margin-bottom:14px">Watch Ubba then repeat — keys A S W D. Round 3 is expert with chords.</p>
+    <button class="btn" id="startBtn">START BATTLE</button>
+  </div>
+
+  <div id="results">
+    <h1 id="resultTitle">BATTLE COMPLETE</h1>
+    <div id="resultText" style="margin-top:6px"></div>
+    <button class="btn" id="replay">PLAY AGAIN</button>
+  </div>
+</div>
 
 <script>
+/* Plan executed in code. Minimal comments on why-critical lines only. */
+
+/* Config */
 const CONFIG = {
-  baseSpeed: 3.2,
-  spawnGap: 600,
-  hitTolerance: 56,
+  baseSpeed: 3.2,    // px per frame baseline
+  spawnGapBase: 600, // ms
+  hitTolerance: 56,  // px tolerance (center-to-center)
   hpGain: 2,
   hpLoss: 1,
-  rounds: 3
+  rounds: 3,
+  chordWindow: 220   // ms window to consider multiple key presses a chord
 };
 
+/* State */
 const state = {
-  playing:false, round:1, score:0, combo:0, maxCombo:0,
-  playerHP:100, ubbaHP:100, arrows:[], sequence:[], isBotPhase:true, ubbaTimers:[]
+  playing: false,
+  round: 1,
+  score: 0,
+  combo: 0,
+  maxCombo: 0,
+  playerHP: 100,
+  ubbaHP: 100,
+  arrows: [],        // {el,type,side,y,hit,spawnTime,groupId}
+  sequence: [],      // current sequence (items string or array)
+  isBotPhase: true,
+  ubbaTimers: [],
+  recentKeyPresses: [] // {type, time}
 };
 
-/* previous helper & DOM refs unchanged (reuse from your working version) */
+/* DOM refs */
+const els = {
+  start: document.getElementById('start'),
+  startBtn: document.getElementById('startBtn'),
+  results: document.getElementById('results'),
+  resultTitle: document.getElementById('resultTitle'),
+  resultText: document.getElementById('resultText'),
+  replay: document.getElementById('replay'),
+  score: document.getElementById('score'),
+  combo: document.getElementById('combo'),
+  level: document.getElementById('level'),
+  botTurn: document.getElementById('botTurn'),
+  arrows: document.getElementById('arrows'),
+  playerSide: document.getElementById('player-side'),
+  ubbaSide: document.getElementById('ubba-side'),
+  playerFill: document.getElementById('playerFill'),
+  ubbaFill: document.getElementById('ubbaFill')
+};
 
-/* --- Modified makeSequence --- */
-function makeSequence(round){
+/* maps */
+const KEY_MAP = { a: 'left', s: 'down', w: 'up', d: 'right' };
+const ARROW_SYMBOL = { left: '←', down: '↓', up: '↑', right: '→' };
+
+/* Compute bounding rect map for static targets each spawn (ensures perfect alignment) */
+function computeTargets() {
+  const map = { player: {}, ubba: {} };
+  document.querySelectorAll('#player-side .static').forEach(s=>{
+    if (s.classList.contains('left')) map.player.left = s.getBoundingClientRect();
+    if (s.classList.contains('down')) map.player.down = s.getBoundingClientRect();
+    if (s.classList.contains('up')) map.player.up = s.getBoundingClientRect();
+    if (s.classList.contains('right')) map.player.right = s.getBoundingClientRect();
+  });
+  document.querySelectorAll('#ubba-side .static').forEach(s=>{
+    if (s.classList.contains('left')) map.ubba.left = s.getBoundingClientRect();
+    if (s.classList.contains('down')) map.ubba.down = s.getBoundingClientRect();
+    if (s.classList.contains('up')) map.ubba.up = s.getBoundingClientRect();
+    if (s.classList.contains('right')) map.ubba.right = s.getBoundingClientRect();
+  });
+  return map;
+}
+
+/* Sequence generator — normal rounds single arrows, round 3 expert with chords */
+function makeSequence(round) {
   const base = ['left','down','up','right'];
-  let seq=[];
-  if(round<3){
-    const len = 6 + (round-1)*4;
-    for(let i=0;i<len;i++) seq.push(base[Math.floor(Math.random()*base.length)]);
+  if (round < 3) {
+    const len = 6 + (round - 1) * 4;
+    return Array.from({length: len}, ()=> base[Math.floor(Math.random()*base.length)]);
   } else {
-    // Expert mode: 20–24 steps, including chords
-    const combos=[['up','right'],['left','up'],['down','right'],['left','down','up']];
-    const len=22;
+    const combos = [['up','right'],['left','up'],['down','right'],['left','down','up'],['right','up','left']];
+    const len = 22;
+    const seq = [];
     for(let i=0;i<len;i++){
-      if(Math.random()<0.25) seq.push(combos[Math.floor(Math.random()*combos.length)]);
+      if (Math.random() < 0.28) seq.push(combos[Math.floor(Math.random()*combos.length)]);
       else seq.push(base[Math.floor(Math.random()*base.length)]);
     }
+    return seq;
   }
-  return seq;
 }
 
-/* --- Modified playRound to scale speed --- */
-function playRound(roundNum){
-  state.sequence=makeSequence(roundNum);
-  state.isBotPhase=true;
-  els.botTurn.style.display='block';
-  cleanupRoundPrep();
-  // speed scaling
-  CONFIG.speed = CONFIG.baseSpeed * (roundNum===3?2.0:1);
-  CONFIG.spawnGap = roundNum===3?350:600;
-  // ubba show
-  let idx=0;
-  const spawnInterval=setInterval(()=>{
-    if(idx>=state.sequence.length){
-      clearInterval(spawnInterval);
-      setTimeout(()=>{
-        state.isBotPhase=false;
-        els.botTurn.style.display='none';
-        spawnPlayerSequence(state.sequence);
-      },600);
-      return;
-    }
-    const step=state.sequence[idx];
-    if(Array.isArray(step)) step.forEach(t=>spawnArrow(t,'ubba'));
-    else spawnArrow(step,'ubba');
-    idx++;
-  },CONFIG.spawnGap);
+/* spawn arrow (single) perfectly centered beneath its static target; spawn bottom above characters */
+function spawnArrow(type, side, groupId=null) {
+  const targetRects = computeTargets();
+  const staticRect = side === 'player' ? targetRects.player[type] : targetRects.ubba[type];
+  if (!staticRect) return null;
+
+  const arrow = document.createElement('div');
+  arrow.className = `arrow ${type}`;
+  arrow.textContent = ARROW_SYMBOL[type];
+
+  // center arrow X on the static target center
+  const left = Math.round(staticRect.left + staticRect.width/2 - 35); // arrow width 70
+  arrow.style.left = left + 'px';
+
+  // spawn bottom *above* characters area
+  const charsRect = document.getElementById('characters').getBoundingClientRect();
+  const spawnBottom = Math.max(20, window.innerHeight - charsRect.top + 12);
+  arrow.style.bottom = spawnBottom + 'px';
+
+  els.arrows.appendChild(arrow);
+
+  const obj = { el: arrow, type, side, y: spawnBottom, hit:false, spawnTime:performance.now(), groupId };
+  state.arrows.push(obj);
+
+  // schedule ubba auto-hit for ubba-side arrow(s)
+  if (side === 'ubba') scheduleUbbaForArrow(obj, staticRect);
+
+  return obj;
 }
 
-/* --- Modified spawnPlayerSequence to support chords --- */
-function spawnPlayerSequence(seq){
-  let i=0;
-  const t=setInterval(()=>{
-    if(i>=seq.length){clearInterval(t);return;}
-    const step=seq[i];
-    if(Array.isArray(step)) step.forEach(t=>spawnArrow(t,'player'));
-    else spawnArrow(step,'player');
-    i++;
-  },CONFIG.spawnGap);
-}
+/* schedule ubba flash + removal for single arrow or group; compute time until arrow center reaches target center */
+function scheduleUbbaForArrow(arrowObj, staticRect) {
+  // compute current arrow center Y and static center Y
+  const arrowRect = arrowObj.el.getBoundingClientRect();
+  const arrowCenterY = arrowRect.top + arrowRect.height/2;
+  const staticCenterY = staticRect.top + staticRect.height/2;
+  const distance = arrowCenterY - staticCenterY; // arrow below static -> positive
 
-/* --- Add chord detection --- */
-const chordWindow=200;
-const recentKeys=[];
-document.addEventListener('keydown',e=>{
-  if(!state.playing||state.isBotPhase)return;
-  const k=e.key.toLowerCase();
-  if(!(k in KEY_MAP))return;
-  const now=performance.now();
-  recentKeys.push({key:k,time:now});
-  // clean old
-  while(recentKeys.length&&now-recentKeys[0].time>chordWindow)recentKeys.shift();
-  playerPress(k);
-});
+  // approximate px per ms from speed (speed is px/frame; frame ~16.66ms)
+  const pxPerMs = (currentSpeed()) / (1000/60);
+  const timeMs = Math.max(0, distance / pxPerMs);
 
-/* --- playerPress extended for chords --- */
-function playerPress(key){
-  const type=KEY_MAP[key];
-  flashStatic('player',type,160);
-  const targetPos=computeTargetPositions().player[type];
-  let hitAny=false;
-  // gather arrows by type
-  const matching=state.arrows.filter(a=>a.side==='player'&&!a.hit);
-  // find chord patterns nearby: check if multiple arrows overlap vertically within tolerance
-  const groupHits=matching.filter(a=>{
-    const r=a.el.getBoundingClientRect();
-    const cy=r.top+r.height/2;
-    const scy=targetPos.top+targetPos.height/2;
-    return Math.abs(cy-scy)<=CONFIG.hitTolerance;
-  });
-
-  // determine if a chord arrow group (same Y band) exists
-  if(groupHits.length>1){
-    // if all their types are contained in recent pressed keys set within window, success
-    const pressedSet=new Set(recentKeys.map(k=>KEY_MAP[k.key]));
-    const needTypes=new Set(groupHits.map(a=>a.type));
-    const allPressed=[...needTypes].every(t=>pressedSet.has(t));
-    if(allPressed){
-      hitAny=true;
-      groupHits.forEach(a=>{
-        a.hit=true;
-        showEffect(a.el,'hit');
-        a.el.remove();
-      });
-      state.arrows=state.arrows.filter(a=>!a.hit);
-    }
-  }else{
-    // normal single arrow check
-    for(let i=0;i<state.arrows.length;i++){
-      const a=state.arrows[i];
-      if(a.side!=='player'||a.type!==type||a.hit)continue;
-      const r=a.el.getBoundingClientRect();
-      const cy=r.top+r.height/2;
-      const scy=targetPos.top+targetPos.height/2;
-      if(Math.abs(cy-scy)<=CONFIG.hitTolerance){
-        hitAny=true;
-        a.hit=true;
-        showEffect(a.el,'hit');
-        a.el.remove();
-        state.arrows.splice(i,1);
-        break;
+  // flash a bit earlier
+  const preFlash = 70;
+  const flashTimer = setTimeout(()=> {
+    flashStatic('ubba', arrowObj.type, 110);
+  }, Math.max(0, timeMs - preFlash));
+  // remove at hit time
+  const hitTimer = setTimeout(()=>{
+    if (!arrowObj.hit) {
+      // if this arrow is part of a chord group, remove all group members
+      if (arrowObj.groupId !== null) {
+        const groupMembers = state.arrows.filter(a=>a.groupId === arrowObj.groupId);
+        groupMembers.forEach(g=>{
+          g.hit = true;
+          if (g.el && g.el.parentElement) g.el.remove();
+        });
+        state.arrows = state.arrows.filter(a=>a.groupId !== arrowObj.groupId);
+      } else {
+        arrowObj.hit = true;
+        if (arrowObj.el && arrowObj.el.parentElement) arrowObj.el.remove();
+        state.arrows = state.arrows.filter(a=>a!==arrowObj);
       }
     }
+  }, Math.max(0, timeMs + 12));
+
+  state.ubbaTimers.push(flashTimer, hitTimer);
+}
+
+/* flash static key for given side+type for ms */
+function flashStatic(side, type, ms=140) {
+  const container = side === 'player' ? els.playerSide : els.ubbaSide;
+  const el = Array.from(container.querySelectorAll('.static')).find(s=>s.classList.contains(type));
+  if (!el) return;
+  el.classList.add('active');
+  setTimeout(()=>el.classList.remove('active'), ms);
+}
+
+/* compute current speed (round 3 faster) */
+function currentSpeed() {
+  return CONFIG.baseSpeed * (state.round === 3 ? 2.0 : 1.0);
+}
+
+/* spawn player sequence (handles chords: arrays) */
+function spawnPlayerSequence(seq) {
+  let i = 0;
+  const gap = state.round === 3 ? 350 : CONFIG.spawnGapBase;
+  const idGen = (()=>{let id=0;return ()=>++id;})();
+  const timer = setInterval(()=>{
+    if (i >= seq.length) { clearInterval(timer); return; }
+    const step = seq[i];
+    if (Array.isArray(step)) {
+      const gid = idGen();
+      step.forEach(t=>spawnArrow(t,'player', gid));
+    } else spawnArrow(step,'player', null);
+    i++;
+  }, gap);
+}
+
+/* spawn ubba demonstration (handles chords) */
+function showUbbaSequence(seq, cb) {
+  state.isBotPhase = true;
+  els.botTurn.style.display = 'block';
+  cleanupRoundPrep(); // ensure clean start
+  let i = 0;
+  const gap = state.round === 3 ? 350 : CONFIG.spawnGapBase;
+  const idGen = (()=>{let id=0;return ()=>++id;})();
+  const timer = setInterval(()=>{
+    if (i >= seq.length) { clearInterval(timer); setTimeout(()=>{ state.isBotPhase=false; els.botTurn.style.display='none'; cb(); }, 500); return; }
+    const step = seq[i];
+    if (Array.isArray(step)) {
+      const gid = idGen();
+      step.forEach(t=>spawnArrow(t,'ubba', gid));
+    } else spawnArrow(step,'ubba', null);
+    i++;
+  }, gap);
+}
+
+/* main loop — moves arrows up */
+function loop() {
+  if (!state.playing) return;
+  // move arrows
+  for (let i = state.arrows.length - 1; i >= 0; i--) {
+    const a = state.arrows[i];
+    if (a.hit) { state.arrows.splice(i,1); continue; }
+    a.y += currentSpeed();
+    a.el.style.bottom = a.y + 'px';
+    const rect = a.el.getBoundingClientRect();
+    if (rect.bottom < 0) {
+      // arrow went off top -> if player arrow, count miss (hp loss)
+      if (a.side === 'player' && !a.hit) {
+        a.hit = true;
+        state.playerHP = Math.max(0, state.playerHP - CONFIG.hpLoss);
+        state.combo = 0;
+        showEffect(a.el, 'miss');
+        updateHUD();
+      }
+      if (a.el && a.el.parentElement) a.el.remove();
+      state.arrows.splice(i,1);
+    }
+  }
+  requestAnimationFrame(loop);
+}
+
+/* show small hit/miss effect */
+function showEffect(el, cls) {
+  try {
+    const r = el.getBoundingClientRect();
+    const e = document.createElement('div');
+    e.className = cls === 'hit' ? 'hit' : 'miss';
+    e.style.left = (r.left + r.width/2 - 40) + 'px';
+    e.style.top = (r.top + r.height/2 - 40) + 'px';
+    document.body.appendChild(e);
+    setTimeout(()=>e.remove(), 360);
+  } catch(e){}
+}
+
+/* handle player key presses with chord logic */
+document.addEventListener('keydown', (ev) => {
+  if (!state.playing || state.isBotPhase) return;
+  const key = ev.key.toLowerCase();
+  if (!(key in KEY_MAP)) return;
+  // record press for chord detection
+  const now = performance.now();
+  state.recentKeyPresses.push({ type: KEY_MAP[key], time: now });
+  // purge old
+  while(state.recentKeyPresses.length && now - state.recentKeyPresses[0].time > CONFIG.chordWindow) state.recentKeyPresses.shift();
+  flashStatic('player', KEY_MAP[key], 150);
+  attemptHit(KEY_MAP[key]);
+});
+
+/* attempt to hit — supports chords: if multiple arrows overlap Y band, check recent key buffer */
+function attemptHit(pressedType) {
+  const targets = computeTargets().player;
+  const now = performance.now();
+
+  // gather candidate player-side arrows that are not hit
+  const candidates = state.arrows.filter(a => a.side === 'player' && !a.hit);
+  if (candidates.length === 0) {
+    // spam penalty
+    state.playerHP = Math.max(0, state.playerHP - CONFIG.hpLoss);
+    state.combo = 0;
+    updateHUD();
+    return;
   }
 
-  if(hitAny){
-    state.score+=100;
-    state.combo++;
-    state.maxCombo=Math.max(state.combo,state.maxCombo);
-    state.playerHP=Math.min(100,state.playerHP+CONFIG.hpGain);
-    state.ubbaHP=Math.max(0,state.ubbaHP-CONFIG.hpLoss);
-  }else{
-    state.playerHP=Math.max(0,state.playerHP-CONFIG.hpLoss);
-    state.combo=0;
+  // find arrows near their static centers (within tolerance) and group by Y center rounded
+  const near = [];
+  for (const a of candidates) {
+    const rect = a.el.getBoundingClientRect();
+    const aCenterY = rect.top + rect.height/2;
+    const staticCenterY = (targets[a.type].top + targets[a.type].height/2);
+    const dist = Math.abs(aCenterY - staticCenterY);
+    if (dist <= CONFIG.hitTolerance) near.push(a);
   }
-  updateHUD();
+  if (near.length === 0) {
+    // no near arrow -> penalty
+    state.playerHP = Math.max(0, state.playerHP - CONFIG.hpLoss);
+    state.combo = 0;
+    updateHUD();
+    return;
+  }
+
+  // If multiple near arrows share nearly identical centerY, treat as chord group
+  // group by Y band
+  const grouped = {};
+  for (const a of near) {
+    const rect = a.el.getBoundingClientRect();
+    const center = Math.round(rect.top + rect.height/2);
+    const key = Math.round(center / 8) * 8; // coarse bucket
+    grouped[key] = grouped[key] || [];
+    grouped[key].push(a);
+  }
+  // choose the group that contains the pressedType if possible, else the largest group
+  let chosenGroup = null;
+  for (const k in grouped) {
+    const g = grouped[k];
+    if (g.some(x => x.type === pressedType)) { chosenGroup = g; break; }
+  }
+  if (!chosenGroup) {
+    const keys = Object.keys(grouped);
+    chosenGroup = grouped[keys[0]];
+  }
+
+  // determine keys required
+  const required = [...new Set(chosenGroup.map(a=>a.type))];
+
+  // check recent presses for required set
+  const pressedSet = new Set(state.recentKeyPresses.map(p=>p.type));
+  const allPressed = required.every(r=>pressedSet.has(r));
+
+  if (allPressed) {
+    // success: remove all chosen group arrows
+    chosenGroup.forEach(a=>{
+      a.hit = true;
+      showEffect(a.el, 'hit');
+      if (a.el && a.el.parentElement) a.el.remove();
+    });
+    state.arrows = state.arrows.filter(a=>!a.hit);
+    state.score += 100 * Math.max(1, required.length);
+    state.combo += 1;
+    state.maxCombo = Math.max(state.maxCombo, state.combo);
+    state.playerHP = Math.min(100, state.playerHP + CONFIG.hpGain);
+    state.ubbaHP = Math.max(0, state.ubbaHP - CONFIG.hpLoss * required.length);
+    updateHUD();
+  } else {
+    // partial/no press -> penalty
+    state.playerHP = Math.max(0, state.playerHP - CONFIG.hpLoss);
+    state.combo = 0;
+    updateHUD();
+  }
+
   checkRoundCompletion();
 }
 
-/* all other functions (loop, flashStatic, scheduleUbbaAutoHit, etc.) remain identical */
+/* spawn both player's arrows for sequence (called after Ubba demonstration) */
+function spawnPlayerSequence(seq) {
+  const gap = state.round === 3 ? 350 : CONFIG.spawnGapBase;
+  let i = 0;
+  const groupIdGen = (()=>{let id=0;return ()=>++id;})();
+  const t = setInterval(()=>{
+    if (i >= seq.length) { clearInterval(t); return; }
+    const step = seq[i];
+    if (Array.isArray(step)) {
+      const gid = groupIdGen();
+      step.forEach(t => spawnArrow(t,'player', gid));
+    } else spawnArrow(step,'player', null);
+    i++;
+  }, gap);
+}
+
+/* check round finished and advance or end game */
+function checkRoundCompletion() {
+  // if player phase and no player arrows remain and ubba timers cleared -> end round
+  const playerArrowsExist = state.arrows.some(a => a.side === 'player' && !a.hit);
+  if (!state.isBotPhase && !playerArrowsExist) {
+    // round done
+    state.round++;
+    if (state.round > CONFIG.rounds || state.playerHP <= 0 || state.ubbaHP <= 0) {
+      finishGame();
+    } else {
+      setTimeout(()=>{ updateHUD(); startRound(); }, 900);
+    }
+  }
+}
+
+/* remove leftover arrows and ubba timers */
+function cleanupRoundPrep() {
+  state.ubbaTimers.forEach(t=>clearTimeout(t)); state.ubbaTimers = [];
+  state.arrows.forEach(a=>{ try{ a.el.remove() }catch(e){} });
+  state.arrows = [];
+  state.recentKeyPresses = [];
+}
+
+/* start a round (play ubba then spawn player) */
+function startRound() {
+  state.sequence = makeSequence(state.round);
+  state.isBotPhase = true;
+  els.botTurn.style.display = 'block';
+  cleanupRoundPrep();
+  showUbbaSequence(state.sequence, ()=> {
+    // once ubba done, spawn player sequence
+    spawnPlayerSequence(state.sequence);
+  });
+}
+
+/* show ubba's sequence (spawn ubba arrows) */
+function showUbbaSequence(seq, cb) {
+  let i = 0;
+  const gap = state.round === 3 ? 350 : CONFIG.spawnGapBase;
+  // schedule spawn
+  const gidGen = (()=>{let id=0;return ()=>++id;})();
+  const t = setInterval(()=>{
+    if (i >= seq.length) { clearInterval(t); setTimeout(()=>{ state.isBotPhase=false; els.botTurn.style.display='none'; cb(); }, 500); return; }
+    const step = seq[i];
+    if (Array.isArray(step)) {
+      const gid = gidGen();
+      step.forEach(t => spawnArrow(t,'ubba', gid));
+    } else spawnArrow(step,'ubba', null);
+    i++;
+  }, gap);
+}
+
+/* finish game and show results */
+function finishGame(){
+  state.playing = false;
+  cleanupRoundPrep();
+  els.results.style.display = 'flex';
+  els.start.style.display = 'none';
+  const victory = (state.ubbaHP <= 0 && state.playerHP > 0) || (state.score >= 800);
+  els.resultTitle.textContent = victory ? 'VICTORY!' : 'DEFEAT!';
+  els.resultTitle.style.color = victory ? '#1df53a' : '#ff4b4b';
+  els.resultText.innerHTML = `SCORE: ${state.score} • MAX COMBO: ${state.maxCombo}`;
+}
+
+/* update HUD visual values */
+function updateHUD() {
+  els.score.textContent = `SCORE: ${state.score}`;
+  els.combo.style.display = state.combo > 1 ? 'block' : 'none';
+  els.combo.textContent = `COMBO: ${state.combo}`;
+  els.level.textContent = `LEVEL ${state.round}`;
+  els.playerFill.style.width = `${state.playerHP}%`;
+  els.ubbaFill.style.width = `${state.ubbaHP}%`;
+}
+
+/* start game */
+function startGame(){
+  state.playing = true;
+  state.round = 1;
+  state.score = 0; state.combo = 0; state.maxCombo = 0;
+  state.playerHP = 100; state.ubbaHP = 100;
+  updateHUD();
+  els.start.style.display = 'none'; els.results.style.display = 'none';
+  startRound();
+  requestAnimationFrame(loop);
+}
+
+/* basic helpers & event wiring */
+document.getElementById('startBtn').addEventListener('click', startGame);
+document.getElementById('replay').addEventListener('click', ()=> location.reload());
+
+/* attempt to hit was handled in keydown earlier */
+
+/* loop runner */
+requestAnimationFrame(loop);
+
+/* ensure S/down stays white (fix for earlier issue) */
+document.querySelectorAll('.static.down').forEach(s=>s.style.color = '#fff');
+
+/* Expose spawnArrow for chord group spawning (used above) — already defined */
+
+/* Clean-up on resize (no-op; spawn uses live static rects) */
+window.addEventListener('resize', ()=>{ /* positions recomputed on spawn */ });
 </script>
 </body>
 </html>
