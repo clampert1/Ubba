@@ -22,13 +22,12 @@ html,body{height:100%;background:#000;color:#fff;font-family:Arial,Helvetica,san
 #top-controls{position:absolute;top:72px;left:50%;transform:translateX(-50%);width:100%;max-width:1320px;display:flex;justify-content:space-between;align-items:flex-start;gap:20px;padding:0 28px;z-index:80}
 .lane-side{display:flex;gap:18px;align-items:flex-start}
 .arrow-target{width:86px;height:86px;background:rgba(0,0,0,.55);border-radius:10px;border:4px solid #222;display:flex;align-items:center;justify-content:center;position:relative}
-.static{position:absolute;bottom:6px;left:50%;transform:translateX(-50%);width:70px;height:70px;border-radius:8px;background:#222;color:#fff;font-weight:800;display:flex;align-items:center;justify-content:center;font-size:22px;border:3px solid;transition:background .15s,border-color .15s,transform .15s}
+.static{position:absolute;bottom:6px;left:50%;transform:translateX(-50%);width:70px;height:70px;border-radius:8px;background:#222;color:#fff;font-weight:800;display:flex;align-items:center;justify-content:center;font-size:22px;border:3px solid}
 .static.left{border-color:#4ecdc4}
 .static.down{border-color:#ffe66d}
 .static.up{border-color:#ff6b6b}
 .static.right{border-color:#ff9f1c}
 .static.active{background:#0f0;color:#000;transform:translateX(-50%) scale(1.06);box-shadow:0 0 18px rgba(0,255,0,.6)}
-.static.miss{background:#ff0000;color:#fff;border-color:#ff0000;transform:translateX(-50%) scale(1.06);box-shadow:0 0 18px rgba(255,0,0,.6)}
 
 /* characters bottom */
 #characters{position:absolute;left:50%;transform:translateX(-50%);bottom:50px;display:flex;justify-content:space-between;width:95%;max-width:1320px;padding:0 28px;z-index:70}
@@ -133,14 +132,13 @@ const state = {
   score: 0,
   combo: 0,
   maxCombo: 0,
-  playerHP: 10,
+  playerHP: 100,
   ubbaHP: 100,
-  arrows: [],        // {el,type,side,y,hit,spawnTime,groupId,missProcessed}
+  arrows: [],        // {el,type,side,y,hit,spawnTime,groupId}
   sequence: [],      // current sequence (items string or array)
   isBotPhase: true,
   ubbaTimers: [],
-  recentKeyPresses: [], // {type, time}
-  lastFrameTime: performance.now()
+  recentKeyPresses: [] // {type, time}
 };
 
 /* DOM refs */
@@ -223,7 +221,7 @@ function spawnArrow(type, side, groupId=null) {
 
   els.arrows.appendChild(arrow);
 
-  const obj = { el: arrow, type, side, y: spawnBottom, hit:false, spawnTime:performance.now(), groupId, missProcessed: false };
+  const obj = { el: arrow, type, side, y: spawnBottom, hit:false, spawnTime:performance.now(), groupId };
   state.arrows.push(obj);
 
   // schedule ubba auto-hit for ubba-side arrow(s)
@@ -280,15 +278,6 @@ function flashStatic(side, type, ms=140) {
   setTimeout(()=>el.classList.remove('active'), ms);
 }
 
-/* flash static key RED for miss */
-function flashStaticMiss(side, type, ms=140) {
-  const container = side === 'player' ? els.playerSide : els.ubbaSide;
-  const el = Array.from(container.querySelectorAll('.static')).find(s=>s.classList.contains(type));
-  if (!el) return;
-  el.classList.add('miss');
-  setTimeout(()=>el.classList.remove('miss'), ms);
-}
-
 /* compute current speed (round 3 faster) */
 function currentSpeed() {
   return CONFIG.baseSpeed * (state.round === 3 ? 2.0 : 1.0);
@@ -329,52 +318,29 @@ function showUbbaSequence(seq, cb) {
   }, gap);
 }
 
-/* main loop — moves arrows up with frame-independent timing */
-function loop(currentTime) {
+/* main loop — moves arrows up */
+function loop() {
   if (!state.playing) return;
-  
-  const deltaTime = currentTime - state.lastFrameTime;
-  state.lastFrameTime = currentTime;
-  
   // move arrows
   for (let i = state.arrows.length - 1; i >= 0; i--) {
     const a = state.arrows[i];
-    if (a.hit) { 
-      state.arrows.splice(i,1); 
-      continue; 
-    }
-    
-    // Frame-independent movement
-    const frameSpeed = currentSpeed() * (deltaTime / (1000/60));
-    a.y += frameSpeed;
+    if (a.hit) { state.arrows.splice(i,1); continue; }
+    a.y += currentSpeed();
     a.el.style.bottom = a.y + 'px';
-    
     const rect = a.el.getBoundingClientRect();
-    // Check if arrow went off top of screen (bottom of rect is above top of viewport)
-    if (rect.bottom < -50) {
-      // arrow went off top -> if player arrow AND not bot phase AND not yet processed, count miss (hp loss)
-      if (a.side === 'player' && !a.missProcessed && !state.isBotPhase) {
-        a.missProcessed = true;
+    if (rect.bottom < 0) {
+      // arrow went off top -> if player arrow, count miss (hp loss)
+      if (a.side === 'player' && !a.hit) {
+        a.hit = true;
         state.playerHP = Math.max(0, state.playerHP - CONFIG.hpLoss);
         state.combo = 0;
-        flashStaticMiss('player', a.type, 140);
+        showEffect(a.el, 'miss');
         updateHUD();
-        // Check if player died
-        if (state.playerHP <= 0) {
-          finishGame();
-          return;
-        }
       }
-      // Always remove arrow and mark as processed
-      a.hit = true;
       if (a.el && a.el.parentElement) a.el.remove();
       state.arrows.splice(i,1);
     }
   }
-  
-  // Check round completion
-  checkRoundCompletion();
-  
   requestAnimationFrame(loop);
 }
 
@@ -401,6 +367,7 @@ document.addEventListener('keydown', (ev) => {
   state.recentKeyPresses.push({ type: KEY_MAP[key], time: now });
   // purge old
   while(state.recentKeyPresses.length && now - state.recentKeyPresses[0].time > CONFIG.chordWindow) state.recentKeyPresses.shift();
+  flashStatic('player', KEY_MAP[key], 150);
   attemptHit(KEY_MAP[key]);
 });
 
@@ -413,13 +380,9 @@ function attemptHit(pressedType) {
   const candidates = state.arrows.filter(a => a.side === 'player' && !a.hit);
   if (candidates.length === 0) {
     // spam penalty
-    flashStaticMiss('player', pressedType, 150);
     state.playerHP = Math.max(0, state.playerHP - CONFIG.hpLoss);
     state.combo = 0;
     updateHUD();
-    if (state.playerHP <= 0) {
-      finishGame();
-    }
     return;
   }
 
@@ -434,13 +397,9 @@ function attemptHit(pressedType) {
   }
   if (near.length === 0) {
     // no near arrow -> penalty
-    flashStaticMiss('player', pressedType, 150);
     state.playerHP = Math.max(0, state.playerHP - CONFIG.hpLoss);
     state.combo = 0;
     updateHUD();
-    if (state.playerHP <= 0) {
-      finishGame();
-    }
     return;
   }
 
@@ -477,38 +436,46 @@ function attemptHit(pressedType) {
     chosenGroup.forEach(a=>{
       a.hit = true;
       showEffect(a.el, 'hit');
-      flashStatic('player', a.type, 150);
       if (a.el && a.el.parentElement) a.el.remove();
     });
     state.arrows = state.arrows.filter(a=>!a.hit);
     state.score += 100 * Math.max(1, required.length);
     state.combo += 1;
     state.maxCombo = Math.max(state.maxCombo, state.combo);
-    state.playerHP = Math.min(10, state.playerHP + CONFIG.hpGain);
+    state.playerHP = Math.min(100, state.playerHP + CONFIG.hpGain);
     state.ubbaHP = Math.max(0, state.ubbaHP - CONFIG.hpLoss * required.length);
     updateHUD();
   } else {
     // partial/no press -> penalty
-    flashStaticMiss('player', pressedType, 150);
     state.playerHP = Math.max(0, state.playerHP - CONFIG.hpLoss);
     state.combo = 0;
     updateHUD();
-    if (state.playerHP <= 0) {
-      finishGame();
-    }
   }
 
   checkRoundCompletion();
 }
 
+/* spawn both player's arrows for sequence (called after Ubba demonstration) */
+function spawnPlayerSequence(seq) {
+  const gap = state.round === 3 ? 350 : CONFIG.spawnGapBase;
+  let i = 0;
+  const groupIdGen = (()=>{let id=0;return ()=>++id;})();
+  const t = setInterval(()=>{
+    if (i >= seq.length) { clearInterval(t); return; }
+    const step = seq[i];
+    if (Array.isArray(step)) {
+      const gid = groupIdGen();
+      step.forEach(t => spawnArrow(t,'player', gid));
+    } else spawnArrow(step,'player', null);
+    i++;
+  }, gap);
+}
+
 /* check round finished and advance or end game */
 function checkRoundCompletion() {
-  // Only check completion when NOT in bot phase
-  if (state.isBotPhase) return;
-  
-  // if player phase and no player arrows remain -> end round
+  // if player phase and no player arrows remain and ubba timers cleared -> end round
   const playerArrowsExist = state.arrows.some(a => a.side === 'player' && !a.hit);
-  if (!playerArrowsExist) {
+  if (!state.isBotPhase && !playerArrowsExist) {
     // round done
     state.round++;
     if (state.round > CONFIG.rounds || state.playerHP <= 0 || state.ubbaHP <= 0) {
@@ -539,6 +506,23 @@ function startRound() {
   });
 }
 
+/* show ubba's sequence (spawn ubba arrows) */
+function showUbbaSequence(seq, cb) {
+  let i = 0;
+  const gap = state.round === 3 ? 350 : CONFIG.spawnGapBase;
+  // schedule spawn
+  const gidGen = (()=>{let id=0;return ()=>++id;})();
+  const t = setInterval(()=>{
+    if (i >= seq.length) { clearInterval(t); setTimeout(()=>{ state.isBotPhase=false; els.botTurn.style.display='none'; cb(); }, 500); return; }
+    const step = seq[i];
+    if (Array.isArray(step)) {
+      const gid = gidGen();
+      step.forEach(t => spawnArrow(t,'ubba', gid));
+    } else spawnArrow(step,'ubba', null);
+    i++;
+  }, gap);
+}
+
 /* finish game and show results */
 function finishGame(){
   state.playing = false;
@@ -557,7 +541,7 @@ function updateHUD() {
   els.combo.style.display = state.combo > 1 ? 'block' : 'none';
   els.combo.textContent = `COMBO: ${state.combo}`;
   els.level.textContent = `LEVEL ${state.round}`;
-  els.playerFill.style.width = `${(state.playerHP / 10) * 100}%`;
+  els.playerFill.style.width = `${state.playerHP}%`;
   els.ubbaFill.style.width = `${state.ubbaHP}%`;
 }
 
@@ -566,8 +550,7 @@ function startGame(){
   state.playing = true;
   state.round = 1;
   state.score = 0; state.combo = 0; state.maxCombo = 0;
-  state.playerHP = 10; state.ubbaHP = 100;
-  state.lastFrameTime = performance.now();
+  state.playerHP = 100; state.ubbaHP = 100;
   updateHUD();
   els.start.style.display = 'none'; els.results.style.display = 'none';
   startRound();
@@ -578,8 +561,15 @@ function startGame(){
 document.getElementById('startBtn').addEventListener('click', startGame);
 document.getElementById('replay').addEventListener('click', ()=> location.reload());
 
+/* attempt to hit was handled in keydown earlier */
+
+/* loop runner */
+requestAnimationFrame(loop);
+
 /* ensure S/down stays white (fix for earlier issue) */
 document.querySelectorAll('.static.down').forEach(s=>s.style.color = '#fff');
+
+/* Expose spawnArrow for chord group spawning (used above) — already defined */
 
 /* Clean-up on resize (no-op; spawn uses live static rects) */
 window.addEventListener('resize', ()=>{ /* positions recomputed on spawn */ });
