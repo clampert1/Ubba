@@ -3,727 +3,597 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Arrow Rhythm Game</title>
+    <title>UBBA DANCE BATTLE</title>
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
-        
+
         body {
-            background: #0a0a1a;
-            color: white;
-            height: 100vh;
+            background: #000;
+            color: #fff;
+            font-family: 'Courier New', monospace;
             overflow: hidden;
-            display: flex;
-            flex-direction: column;
+            user-select: none;
         }
-        
-        .game-container {
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-            background-image: url('https://raw.githubusercontent.com/clampert1/Ubba/main/ubba-arg/assets/cameras/office.png');
-            background-size: cover;
-            background-position: center;
+
+        #game-container {
             position: relative;
+            width: 100vw;
+            height: 100vh;
+            background: #000;
         }
-        
-        .game-container::before {
-            content: '';
+
+        #background {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(10, 10, 26, 0.7);
-            z-index: 0;
+            background: url('https://raw.githubusercontent.com/clampert1/Ubba/main/ubba-arg/assets/cameras/office.png') no-repeat center center;
+            background-size: cover;
+            filter: brightness(0.3);
         }
-        
-        .top-section {
+
+        /* Health Bars */
+        #health-container {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80%;
             display: flex;
             justify-content: space-between;
-            padding: 20px;
-            z-index: 10;
-            position: relative;
-        }
-        
-        .player-title {
-            font-size: 1.8rem;
-            font-weight: bold;
-            text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
-        }
-        
-        .player-title.player1 {
-            color: #4cc9f0;
-        }
-        
-        .player-title.player2 {
-            color: #f72585;
-        }
-        
-        .controls {
-            display: flex;
-            justify-content: center;
-            gap: 20px;
-            margin-top: 20px;
-            z-index: 10;
-            position: relative;
-        }
-        
-        .key {
-            width: 80px;
-            height: 80px;
-            background: rgba(255, 255, 255, 0.15);
-            border-radius: 10px;
-            display: flex;
-            justify-content: center;
             align-items: center;
-            font-size: 28px;
-            font-weight: bold;
-            color: white;
-            box-shadow: 0 6px 0 rgba(0, 0, 0, 0.3);
-            transition: all 0.1s;
-            border: 2px solid rgba(255, 255, 255, 0.2);
         }
-        
-        .key.active {
-            transform: translateY(6px);
-            box-shadow: none;
-            background: rgba(255, 255, 255, 0.3);
+
+        .health-bar {
+            width: 300px;
+            height: 30px;
+            background: #333;
+            border: 2px solid #fff;
+            position: relative;
         }
-        
-        .key.w {
-            color: #ff5252;
+
+        .health-fill {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            background: #0f0;
+            transition: width 0.3s ease;
         }
-        
-        .key.a {
-            color: #4caf50;
+
+        #ubba-health .health-fill {
+            background: #f00;
         }
-        
-        .key.s {
-            color: #2196f3;
-        }
-        
-        .key.d {
-            color: #ff9800;
-        }
-        
-        .game-area {
+
+        /* Arrow Lanes */
+        #lanes-container {
+            position: absolute;
+            top: 80px;
+            left: 0;
+            width: 100%;
+            height: 120px;
             display: flex;
-            flex: 1;
             justify-content: space-between;
             padding: 0 50px;
-            z-index: 10;
-            position: relative;
         }
-        
-        .track {
-            width: 45%;
-            height: 100%;
-            position: relative;
-        }
-        
-        .hit-line {
-            position: absolute;
-            top: 120px;
-            width: 100%;
-            height: 4px;
-            background: rgba(255, 255, 255, 0.7);
-            z-index: 10;
-        }
-        
-        .arrow {
-            position: absolute;
-            width: 70px;
-            height: 70px;
+
+        .lane-side {
             display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 32px;
-            border-radius: 10px;
-            z-index: 5;
-            bottom: 0;
-            transition: transform 0.1s;
+            gap: 20px;
         }
-        
-        .arrow.up {
-            background: #ff5252;
-            left: 50%;
-            transform: translateX(-50%);
-        }
-        
-        .arrow.left {
-            background: #4caf50;
-            left: 25%;
-            transform: translateX(-50%);
-        }
-        
-        .arrow.down {
-            background: #2196f3;
-            left: 50%;
-            transform: translateX(-50%);
-        }
-        
-        .arrow.right {
-            background: #ff9800;
-            left: 75%;
-            transform: translateX(-50%);
-        }
-        
-        .hit-effect {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            opacity: 0;
-            transition: opacity 0.2s;
-            top: 0;
-            left: 0;
-        }
-        
-        .hit-effect.active {
-            opacity: 1;
-        }
-        
-        .hit-good {
-            background: radial-gradient(circle, rgba(76, 175, 80, 0.4) 0%, transparent 70%);
-        }
-        
-        .hit-bad {
-            background: radial-gradient(circle, rgba(255, 82, 82, 0.4) 0%, transparent 70%);
-        }
-        
-        .health-bar {
-            width: 100%;
-            height: 40px;
-            background: rgba(0, 0, 0, 0.5);
-            z-index: 10;
-            position: relative;
-            display: flex;
-            align-items: center;
-            padding: 0 20px;
-        }
-        
-        .health-fill {
-            height: 70%;
-            width: 50%;
-            background: linear-gradient(90deg, #ff5252 0%, #4caf50 100%);
-            border-radius: 5px;
-            transition: width 0.3s;
-        }
-        
-        .health-text {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-weight: bold;
-            font-size: 1.2rem;
-        }
-        
-        .score {
-            font-size: 1.5rem;
-            font-weight: bold;
-            color: #ffcc00;
-            text-shadow: 0 0 10px rgba(255, 204, 0, 0.5);
-            z-index: 10;
-            position: relative;
-            text-align: center;
-            margin-top: 10px;
-        }
-        
-        .instructions {
-            position: absolute;
-            bottom: 60px;
-            left: 0;
-            width: 100%;
-            text-align: center;
-            color: rgba(255, 255, 255, 0.7);
-            z-index: 10;
-            font-size: 1.1rem;
-        }
-        
-        .key-hitbox {
-            position: absolute;
-            width: 90px;
-            height: 90px;
-            top: 110px;
-            border: 2px dashed rgba(255, 255, 255, 0.3);
-            border-radius: 10px;
-            z-index: 8;
-        }
-        
-        .key-hitbox.w {
-            left: calc(50% - 45px);
-        }
-        
-        .key-hitbox.a {
-            left: calc(25% - 45px);
-        }
-        
-        .key-hitbox.s {
-            left: calc(50% - 45px);
-        }
-        
-        .key-hitbox.d {
-            left: calc(75% - 45px);
-        }
-        
-        .arrow-hitbox {
-            position: absolute;
+
+        .arrow-lane {
             width: 100px;
             height: 100px;
-            border: 2px dashed rgba(255, 255, 255, 0.3);
-            border-radius: 10px;
-            z-index: 7;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid #666;
+            position: relative;
+            overflow: hidden;
         }
-        
-        .countdown {
+
+        .lane-label {
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            font-size: 5rem;
+            font-size: 24px;
             font-weight: bold;
-            color: white;
-            text-shadow: 0 0 20px rgba(255, 255, 255, 0.7);
-            z-index: 20;
-            opacity: 0;
-            transition: opacity 0.5s;
+            color: #fff;
+            z-index: 5;
         }
-        
-        .countdown.active {
-            opacity: 1;
+
+        /* Static Arrows */
+        .static-arrow {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60px;
+            height: 60px;
+            background: #333;
+            border: 3px solid;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            font-weight: bold;
+            color: #fff;
+        }
+
+        .static-arrow.up { border-color: #f00; }
+        .static-arrow.left { border-color: #f00; }
+        .static-arrow.down { border-color: #f00; }
+        .static-arrow.right { border-color: #f00; }
+
+        /* Falling Arrows */
+        .falling-arrow {
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            background: #400;
+            border: 3px solid #f00;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            font-weight: bold;
+            color: #fff;
+            transition: top 0.05s linear;
+            z-index: 2;
+        }
+
+        /* Characters */
+        #characters {
+            position: absolute;
+            bottom: 150px;
+            left: 0;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            padding: 0 100px;
+        }
+
+        .character {
+            width: 200px;
+            height: 300px;
+            border: 3px solid #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: white;
+        }
+
+        #player-character {
+            background: #00f;
+        }
+
+        #ubba-character {
+            background: url('https://raw.githubusercontent.com/clampert1/Ubba/main/ubba-arg/assets/sprites/ubba.png') no-repeat center center;
+            background-size: contain;
+            background-color: #000;
+        }
+
+        /* Game States */
+        #start-screen, #results-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            color: #fff;
+            font-size: 24px;
+        }
+
+        #results-screen {
+            display: none;
+        }
+
+        .battle-button {
+            background: #f00;
+            color: white;
+            border: 3px solid #fff;
+            padding: 20px 40px;
+            margin: 20px;
+            font-size: 24px;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+        }
+
+        /* Score and Combo */
+        #score-display {
+            position: absolute;
+            top: 120px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 28px;
+            color: #0f0;
+            text-shadow: 2px 2px 4px #000;
+        }
+
+        #combo-display {
+            position: absolute;
+            top: 160px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 24px;
+            color: #0ff;
+            text-shadow: 2px 2px 4px #000;
+            display: none;
+        }
+
+        /* Bot Turn Indicator */
+        #bot-turn {
+            position: absolute;
+            top: 200px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 32px;
+            color: #ff0;
+            text-shadow: 2px 2px 4px #000;
+            display: none;
         }
     </style>
 </head>
 <body>
-    <div class="game-container">
-        <div class="top-section">
-            <div class="player-title player1">PLAYER</div>
-            <div class="player-title player2">BOT</div>
-        </div>
+    <div id="game-container">
+        <div id="background"></div>
         
-        <div class="controls">
-            <div class="key w">W</div>
-            <div class="key a">A</div>
-            <div class="key s">S</div>
-            <div class="key d">D</div>
-        </div>
-        
-        <div class="score">Score: <span id="score">0</span></div>
-        
-        <div class="game-area">
-            <div class="track" id="track1">
-                <div class="hit-line"></div>
-                <div class="key-hitbox w"></div>
-                <div class="key-hitbox a"></div>
-                <div class="key-hitbox s"></div>
-                <div class="key-hitbox d"></div>
-                <div class="hit-effect hit-good" id="hit-effect1"></div>
-                <div class="hit-effect hit-bad" id="miss-effect1"></div>
+        <!-- Health Bars -->
+        <div id="health-container">
+            <div class="health-bar" id="player-health">
+                <div class="health-fill" style="width: 100%"></div>
+                <div style="position: absolute; top: 0; left: 0; width: 100%; text-align: center; color: white; line-height: 30px;">PLAYER</div>
             </div>
-            
-            <div class="track" id="track2">
-                <div class="hit-line"></div>
-                <div class="key-hitbox w"></div>
-                <div class="key-hitbox a"></div>
-                <div class="key-hitbox s"></div>
-                <div class="key-hitbox d"></div>
-                <div class="hit-effect hit-good" id="hit-effect2"></div>
-                <div class="hit-effect hit-bad" id="miss-effect2"></div>
+            <div class="health-bar" id="ubba-health">
+                <div class="health-fill" style="width: 100%"></div>
+                <div style="position: absolute; top: 0; left: 0; width: 100%; text-align: center; color: white; line-height: 30px;">UBBA</div>
             </div>
         </div>
-        
-        <div class="countdown" id="countdown">3</div>
-        
-        <div class="instructions">
-            <p>Watch the bot complete the pattern, then repeat it 0.5 seconds later. Match the arrows with WASD keys.</p>
+
+        <!-- Score Display -->
+        <div id="score-display">SCORE: 0</div>
+        <div id="combo-display">COMBO: 0</div>
+        <div id="bot-turn">UBBA'S TURN</div>
+
+        <!-- Arrow Lanes -->
+        <div id="lanes-container">
+            <!-- Left Side (Player) -->
+            <div class="lane-side">
+                <div class="arrow-lane" id="lane-w">
+                    <div class="static-arrow up">W</div>
+                </div>
+                <div class="arrow-lane" id="lane-a">
+                    <div class="static-arrow left">A</div>
+                </div>
+                <div class="arrow-lane" id="lane-s">
+                    <div class="static-arrow down">S</div>
+                </div>
+                <div class="arrow-lane" id="lane-d">
+                    <div class="static-arrow right">D</div>
+                </div>
+            </div>
+
+            <!-- Right Side (Ubba) -->
+            <div class="lane-side">
+                <div class="arrow-lane" id="lane-ubba-w">
+                    <div class="static-arrow up">W</div>
+                </div>
+                <div class="arrow-lane" id="lane-ubba-a">
+                    <div class="static-arrow left">A</div>
+                </div>
+                <div class="arrow-lane" id="lane-ubba-s">
+                    <div class="static-arrow down">S</div>
+                </div>
+                <div class="arrow-lane" id="lane-ubba-d">
+                    <div class="static-arrow right">D</div>
+                </div>
+            </div>
         </div>
-        
-        <div class="health-bar">
-            <div class="health-fill" id="health-fill"></div>
-            <div class="health-text">HP: <span id="health-text">25</span>/50</div>
+
+        <!-- Characters -->
+        <div id="characters">
+            <div class="character" id="player-character">YOU</div>
+            <div class="character" id="ubba-character"></div>
+        </div>
+
+        <!-- Start Screen -->
+        <div id="start-screen">
+            <h1>UBBA DANCE BATTLE</h1>
+            <p>Watch Ubba's sequence, then repeat it!</p>
+            <p>Use W A S D keys when arrows reach the targets</p>
+            <button class="battle-button" onclick="startGame()">START BATTLE</button>
+        </div>
+
+        <!-- Results Screen -->
+        <div id="results-screen">
+            <h1 id="result-title">BATTLE COMPLETE!</h1>
+            <p id="result-score">SCORE: 0</p>
+            <p id="result-combo">MAX COMBO: 0</p>
+            <button class="battle-button" onclick="location.reload()">PLAY AGAIN</button>
         </div>
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Game state
-            const state = {
-                score: 0,
-                health: 25,
-                maxHealth: 50,
-                arrows: [[], []], // Arrows for each player
-                keyState: {
-                    'w': false,
-                    'a': false,
-                    's': false,
-                    'd': false
-                },
-                arrowTypes: ['up', 'left', 'down', 'right'],
-                arrowKeys: {
-                    'w': 'up',
-                    'a': 'left',
-                    's': 'down',
-                    'd': 'right'
-                },
-                currentPattern: [],
-                botPlaying: true,
-                playerTurn: false,
-                gameStarted: false
-            };
+        // Game Configuration
+        const CONFIG = {
+            ARROW_SPEED: 4,
+            BOT_SEQUENCE_DELAY: 2000, // 2 seconds between bot sequences
+            PLAYER_TURN_DELAY: 1000,  // 1 second after bot finishes
+            LEVEL_DURATION: 4000,     // 4 seconds per level
+            ARROW_SPAWN_RATE: 600,    // Time between arrows in sequence
+            HIT_WINDOW: 50,           // Pixel range for successful hit
+            HEALTH_GAIN: 2,
+            HEALTH_LOSS: 1
+        };
+
+        // Game State
+        const gameState = {
+            currentLevel: 1,
+            totalLevels: 3,
+            score: 0,
+            combo: 0,
+            maxCombo: 0,
+            playerHealth: 100,
+            ubbaHealth: 100,
+            isPlaying: false,
+            isBotTurn: true,
+            currentSequence: [],
+            playerSequence: [],
+            activeArrows: [],
+            keys: { 'w': false, 'a': false, 's': false, 'd': false },
+            botTimer: null,
+            gameTimer: null
+        };
+
+        // Arrow types and their positions
+        const ARROW_TYPES = ['w', 'a', 's', 'd'];
+        const ARROW_POSITIONS = {
+            'w': { x: 0, side: 'left' },
+            'a': { x: 1, side: 'left' },
+            's': { x: 2, side: 'left' },
+            'd': { x: 3, side: 'left' }
+        };
+
+        // DOM Elements
+        const elements = {
+            startScreen: document.getElementById('start-screen'),
+            resultsScreen: document.getElementById('results-screen'),
+            scoreDisplay: document.getElementById('score-display'),
+            comboDisplay: document.getElementById('combo-display'),
+            botTurn: document.getElementById('bot-turn'),
+            playerHealth: document.querySelector('#player-health .health-fill'),
+            ubbaHealth: document.querySelector('#ubba-health .health-fill'),
+            resultTitle: document.getElementById('result-title'),
+            resultScore: document.getElementById('result-score'),
+            resultCombo: document.getElementById('result-combo')
+        };
+
+        function startGame() {
+            elements.startScreen.style.display = 'none';
+            gameState.isPlaying = true;
+            gameState.currentLevel = 1;
+            startLevel();
+        }
+
+        function startLevel() {
+            gameState.currentSequence = [];
+            gameState.playerSequence = [];
+            gameState.isBotTurn = true;
             
-            // DOM elements
-            const scoreElement = document.getElementById('score');
-            const healthElement = document.getElementById('health-text');
-            const healthFill = document.getElementById('health-fill');
-            const tracks = [document.getElementById('track1'), document.getElementById('track2')];
-            const keyElements = document.querySelectorAll('.key');
-            const hitEffects = [
-                document.getElementById('hit-effect1'),
-                document.getElementById('hit-effect2')
-            ];
-            const missEffects = [
-                document.getElementById('miss-effect1'),
-                document.getElementById('miss-effect2')
-            ];
-            const countdownElement = document.getElementById('countdown');
+            elements.botTurn.style.display = 'block';
             
-            // Initialize game
-            function init() {
-                updateUI();
-                showCountdown();
+            // Generate sequence for this level
+            const sequenceLength = 3 + gameState.currentLevel; // 4, 5, 6 arrows
+            for (let i = 0; i < sequenceLength; i++) {
+                const arrowType = ARROW_TYPES[Math.floor(Math.random() * ARROW_TYPES.length)];
+                gameState.currentSequence.push(arrowType);
             }
             
-            // Show countdown before game starts
-            function showCountdown() {
-                let count = 3;
-                countdownElement.textContent = count;
-                countdownElement.classList.add('active');
-                
-                const countdownInterval = setInterval(() => {
-                    count--;
-                    if (count > 0) {
-                        countdownElement.textContent = count;
-                    } else {
-                        countdownElement.textContent = "GO!";
-                        setTimeout(() => {
-                            countdownElement.classList.remove('active');
-                            startGame();
-                        }, 500);
-                        clearInterval(countdownInterval);
-                    }
-                }, 1000);
-            }
+            // Bot plays sequence
+            playBotSequence();
+        }
+
+        function playBotSequence() {
+            let index = 0;
             
-            // Start the game
-            function startGame() {
-                state.gameStarted = true;
-                generatePattern();
-                playBotTurn();
-                gameLoop();
-            }
-            
-            // Generate a pattern for the bot to play
-            function generatePattern() {
-                state.currentPattern = [];
-                const patternLength = 5 + Math.floor(Math.random() * 5);
-                
-                for (let i = 0; i < patternLength; i++) {
-                    const type = state.arrowTypes[Math.floor(Math.random() * state.arrowTypes.length)];
-                    state.currentPattern.push(type);
+            function playNextArrow() {
+                if (index >= gameState.currentSequence.length) {
+                    // Bot sequence complete
+                    elements.botTurn.style.display = 'none';
+                    setTimeout(startPlayerTurn, CONFIG.PLAYER_TURN_DELAY);
+                    return;
                 }
+                
+                const arrowType = gameState.currentSequence[index];
+                spawnArrow(arrowType, 'right'); // Bot arrows on right side
+                index++;
+                
+                setTimeout(playNextArrow, CONFIG.ARROW_SPAWN_RATE);
             }
             
-            // Bot plays the pattern
-            function playBotTurn() {
-                state.botPlaying = true;
-                
-                state.currentPattern.forEach((type, index) => {
-                    setTimeout(() => {
-                        createArrow(1, type);
-                        
-                        // Bot "presses" the key when arrow reaches hit line
-                        setTimeout(() => {
-                            handleHit(1, type);
-                        }, 1500 + index * 100);
-                    }, index * 800);
-                });
-                
-                // After bot finishes, player gets ready
+            playNextArrow();
+        }
+
+        function startPlayerTurn() {
+            gameState.isBotTurn = false;
+            
+            // Spawn arrows for player to match
+            gameState.currentSequence.forEach((arrowType, index) => {
                 setTimeout(() => {
-                    state.botPlaying = false;
-                    setTimeout(() => {
-                        state.playerTurn = true;
-                        playPlayerTurn();
-                    }, 500);
-                }, state.currentPattern.length * 800 + 1500);
-            }
+                    spawnArrow(arrowType, 'left'); // Player arrows on left side
+                }, index * CONFIG.ARROW_SPAWN_RATE);
+            });
             
-            // Player plays the same pattern
-            function playPlayerTurn() {
-                state.currentPattern.forEach((type, index) => {
-                    setTimeout(() => {
-                        createArrow(0, type);
-                    }, index * 800);
-                });
-            }
+            // Set level timer
+            gameState.gameTimer = setTimeout(() => {
+                endLevel();
+            }, CONFIG.LEVEL_DURATION);
+        }
+
+        function spawnArrow(type, side) {
+            const laneId = `lane-${side === 'right' ? 'ubba-' : ''}${type}`;
+            const lane = document.getElementById(laneId);
             
-            // Create a new arrow
-            function createArrow(player, type) {
-                const arrow = document.createElement('div');
-                arrow.className = `arrow ${type}`;
-                arrow.dataset.type = type;
+            const arrow = document.createElement('div');
+            arrow.className = `falling-arrow ${type}`;
+            arrow.textContent = type.toUpperCase();
+            arrow.style.top = '0px';
+            arrow.style.left = '50%';
+            arrow.style.transform = 'translateX(-50%)';
+            arrow.dataset.type = type;
+            arrow.dataset.side = side;
+            
+            lane.appendChild(arrow);
+            
+            gameState.activeArrows.push({
+                element: arrow,
+                type: type,
+                side: side,
+                y: 0,
+                hit: false,
+                lane: lane
+            });
+        }
+
+        function updateGame() {
+            if (!gameState.isPlaying) return;
+            
+            // Update falling arrows
+            gameState.activeArrows.forEach((arrowObj, index) => {
+                arrowObj.y += CONFIG.ARROW_SPEED;
+                arrowObj.element.style.top = arrowObj.y + 'px';
                 
-                // Set arrow symbol
-                if (type === 'up') arrow.innerHTML = '↑';
-                else if (type === 'left') arrow.innerHTML = '←';
-                else if (type === 'down') arrow.innerHTML = '↓';
-                else if (type === 'right') arrow.innerHTML = '→';
-                
-                tracks[player].appendChild(arrow);
-                state.arrows[player].push({
-                    element: arrow,
-                    type: type,
-                    position: 0,
-                    hit: false,
-                    player: player
-                });
-            }
-            
-            // Main game loop
-            function gameLoop() {
-                updateArrows();
-                checkHits();
-                requestAnimationFrame(gameLoop);
-            }
-            
-            // Update arrow positions
-            function updateArrows() {
-                for (let player = 0; player < 2; player++) {
-                    for (let i = state.arrows[player].length - 1; i >= 0; i--) {
-                        const arrow = state.arrows[player][i];
-                        arrow.position += 3;
-                        
-                        // Calculate position from bottom (0 to track height)
-                        const trackHeight = tracks[player].offsetHeight;
-                        const bottomPosition = arrow.position;
-                        
-                        // Remove arrows that are off screen
-                        if (bottomPosition > trackHeight) {
-                            arrow.element.remove();
-                            state.arrows[player].splice(i, 1);
-                            
-                            // If arrow wasn't hit and passed the hit line, it's a miss (for player only)
-                            if (!arrow.hit && arrow.player === 0 && bottomPosition > trackHeight - 120) {
-                                handleMiss(0);
-                            }
-                            continue;
-                        }
-                        
-                        // Update arrow position
-                        arrow.element.style.bottom = `${bottomPosition}px`;
+                // Check if arrow reached bottom
+                if (arrowObj.y > 100 && !arrowObj.hit) {
+                    if (arrowObj.side === 'left' && !gameState.isBotTurn) {
+                        // Player missed arrow
+                        gameState.playerHealth = Math.max(0, gameState.playerHealth - CONFIG.HEALTH_LOSS);
+                        gameState.combo = 0;
+                        updateUI();
                     }
+                    removeArrow(index);
                 }
-            }
+            });
             
-            // Check for key hits (player only)
-            function checkHits() {
-                if (!state.playerTurn) return;
-                
-                const hitLinePosition = tracks[0].offsetHeight - 120;
-                
-                for (let i = 0; i < state.arrows[0].length; i++) {
-                    const arrow = state.arrows[0][i];
-                    const arrowBottom = parseInt(arrow.element.style.bottom) || 0;
+            requestAnimationFrame(updateGame);
+        }
+
+        function checkArrowHit(key) {
+            if (gameState.isBotTurn || !gameState.isPlaying) return;
+            
+            let hit = false;
+            gameState.activeArrows.forEach((arrowObj, index) => {
+                if (arrowObj.type === key && arrowObj.side === 'left' && 
+                    arrowObj.y > 80 && arrowObj.y < 100 && !arrowObj.hit) {
                     
-                    // Check if arrow is near hit line and key is pressed
-                    if (Math.abs(arrowBottom - hitLinePosition) < 50 && !arrow.hit) {
-                        const key = getKeyForArrowType(arrow.type);
-                        
-                        if (state.keyState[key]) {
-                            // Successful hit
-                            arrow.hit = true;
-                            arrow.element.style.opacity = '0.5';
-                            handleHit(0, arrow.type);
-                            
-                            // Remove arrow after a delay
-                            setTimeout(() => {
-                                if (arrow.element.parentNode) {
-                                    arrow.element.remove();
-                                    state.arrows[0].splice(i, 1);
-                                }
-                            }, 200);
-                        }
+                    // Successful hit!
+                    arrowObj.hit = true;
+                    arrowObj.element.style.background = '#0f0';
+                    arrowObj.element.style.borderColor = '#0f0';
+                    
+                    gameState.score += 100;
+                    gameState.combo++;
+                    gameState.maxCombo = Math.max(gameState.maxCombo, gameState.combo);
+                    gameState.playerHealth = Math.min(100, gameState.playerHealth + CONFIG.HEALTH_GAIN);
+                    gameState.ubbaHealth = Math.max(0, gameState.ubbaHealth - CONFIG.HEALTH_LOSS);
+                    
+                    // Update combo display
+                    if (gameState.combo > 1) {
+                        elements.comboDisplay.textContent = `COMBO: ${gameState.combo}`;
+                        elements.comboDisplay.style.display = 'block';
                     }
-                }
-            }
-            
-            // Handle successful hit
-            function handleHit(player, type) {
-                // Show hit effect
-                hitEffects[player].classList.add('active');
-                setTimeout(() => {
-                    hitEffects[player].classList.remove('active');
-                }, 200);
-                
-                // Increase health (capped at max) and score for player only
-                if (player === 0) {
-                    state.health = Math.min(state.maxHealth, state.health + 2);
-                    state.score += 10;
-                    updateUI();
-                }
-            }
-            
-            // Handle missed arrow (player only)
-            function handleMiss(player) {
-                // Show miss effect
-                missEffects[player].classList.add('active');
-                setTimeout(() => {
-                    missEffects[player].classList.remove('active');
-                }, 200);
-                
-                // Decrease health for player only
-                if (player === 0) {
-                    state.health = Math.max(0, state.health - 1);
+                    
+                    setTimeout(() => removeArrow(index), 200);
+                    hit = true;
                     updateUI();
                     
-                    // Game over check
-                    if (state.health <= 0) {
-                        setTimeout(() => {
-                            alert('Game Over! Your score: ' + state.score);
-                            resetGame();
-                        }, 500);
-                    }
-                }
-            }
-            
-            // Handle incorrect key press (player only)
-            function handleIncorrectKey() {
-                if (!state.playerTurn) return;
-                
-                // Show miss effect
-                missEffects[0].classList.add('active');
-                setTimeout(() => {
-                    missEffects[0].classList.remove('active');
-                }, 200);
-                
-                // Decrease health
-                state.health = Math.max(0, state.health - 1);
-                updateUI();
-                
-                // Game over check
-                if (state.health <= 0) {
-                    setTimeout(() => {
-                        alert('Game Over! Your score: ' + state.score);
-                        resetGame();
-                    }, 500);
-                }
-            }
-            
-            // Reset game
-            function resetGame() {
-                state.score = 0;
-                state.health = 25;
-                state.playerTurn = false;
-                state.botPlaying = false;
-                state.gameStarted = false;
-                
-                // Clear all arrows
-                for (let player = 0; player < 2; player++) {
-                    state.arrows[player].forEach(arrow => {
-                        if (arrow.element.parentNode) {
-                            arrow.element.remove();
-                        }
-                    });
-                    state.arrows[player] = [];
-                }
-                
-                updateUI();
-                showCountdown();
-            }
-            
-            // Update UI elements
-            function updateUI() {
-                scoreElement.textContent = state.score;
-                healthElement.textContent = state.health;
-                healthFill.style.width = `${(state.health / state.maxHealth) * 100}%`;
-            }
-            
-            // Get key for arrow type
-            function getKeyForArrowType(type) {
-                for (const [key, arrowType] of Object.entries(state.arrowKeys)) {
-                    if (arrowType === type) return key;
-                }
-                return null;
-            }
-            
-            // Check if any arrow is currently in hit zone for a specific key
-            function isArrowInHitZone(key) {
-                if (!state.playerTurn) return false;
-                
-                const hitLinePosition = tracks[0].offsetHeight - 120;
-                const arrowType = state.arrowKeys[key];
-                
-                for (let i = 0; i < state.arrows[0].length; i++) {
-                    const arrow = state.arrows[0][i];
-                    const arrowBottom = parseInt(arrow.element.style.bottom) || 0;
+                    // Add to player sequence
+                    gameState.playerSequence.push(key);
                     
-                    if (arrow.type === arrowType && 
-                        Math.abs(arrowBottom - hitLinePosition) < 50 && 
-                        !arrow.hit) {
-                        return true;
-                    }
-                }
-                
-                return false;
-            }
-            
-            // Key event listeners
-            document.addEventListener('keydown', (e) => {
-                const key = e.key.toLowerCase();
-                if (state.keyState.hasOwnProperty(key)) {
-                    state.keyState[key] = true;
-                    
-                    // Highlight key
-                    keyElements.forEach(el => {
-                        if (el.classList.contains(key)) {
-                            el.classList.add('active');
-                        }
-                    });
-                    
-                    // Check if key press is correct (player only)
-                    if (state.playerTurn && !isArrowInHitZone(key)) {
-                        handleIncorrectKey();
+                    // Check if player completed sequence
+                    if (gameState.playerSequence.length === gameState.currentSequence.length) {
+                        endLevel();
                     }
                 }
             });
             
-            document.addEventListener('keyup', (e) => {
-                const key = e.key.toLowerCase();
-                if (state.keyState.hasOwnProperty(key)) {
-                    state.keyState[key] = false;
-                    
-                    // Remove highlight from key
-                    keyElements.forEach(el => {
-                        if (el.classList.contains(key)) {
-                            el.classList.remove('active');
-                        }
-                    });
-                }
-            });
+            if (!hit && !gameState.isBotTurn) {
+                // Miss - lose combo
+                gameState.combo = 0;
+                elements.comboDisplay.style.display = 'none';
+            }
+        }
+
+        function removeArrow(index) {
+            if (gameState.activeArrows[index]) {
+                gameState.activeArrows[index].element.remove();
+                gameState.activeArrows.splice(index, 1);
+            }
+        }
+
+        function endLevel() {
+            clearTimeout(gameState.gameTimer);
             
-            // Start the game
-            init();
+            // Clear remaining arrows
+            gameState.activeArrows.forEach(arrow => arrow.element.remove());
+            gameState.activeArrows = [];
+            
+            gameState.currentLevel++;
+            
+            if (gameState.currentLevel > gameState.totalLevels || gameState.playerHealth <= 0 || gameState.ubbaHealth <= 0) {
+                endGame();
+            } else {
+                setTimeout(startLevel, CONFIG.BOT_SEQUENCE_DELAY);
+            }
+        }
+
+        function endGame() {
+            gameState.isPlaying = false;
+            
+            const victory = gameState.ubbaHealth <= 0;
+            elements.resultTitle.textContent = victory ? 'VICTORY!' : 'DEFEAT!';
+            elements.resultScore.textContent = `SCORE: ${gameState.score}`;
+            elements.resultCombo.textContent = `MAX COMBO: ${gameState.maxCombo}`;
+            
+            elements.resultsScreen.style.display = 'flex';
+        }
+
+        function updateUI() {
+            elements.scoreDisplay.textContent = `SCORE: ${gameState.score}`;
+            elements.playerHealth.style.width = `${gameState.playerHealth}%`;
+            elements.ubbaHealth.style.width = `${gameState.ubbaHealth}%`;
+        }
+
+        // Event Listeners
+        document.addEventListener('keydown', (e) => {
+            const key = e.key.toLowerCase();
+            if (ARROW_TYPES.includes(key) && gameState.isPlaying) {
+                gameState.keys[key] = true;
+                checkArrowHit(key);
+            }
         });
+
+        document.addEventListener('keyup', (e) => {
+            const key = e.key.toLowerCase();
+            if (ARROW_TYPES.includes(key)) {
+                gameState.keys[key] = false;
+            }
+        });
+
+        // Start game loop
+        updateGame();
     </script>
 </body>
 </html>
