@@ -25,6 +25,8 @@
             height: 100vh;
             overflow-y: auto;
             background: #001100;
+            position: relative;
+            z-index: 10;
         }
         
         .line {
@@ -72,6 +74,33 @@
             z-index: 1000;
         }
         
+        #location-scan {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            color: #0f0;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;
+            z-index: 2000;
+        }
+        
+        #google-maps {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: none;
+            display: none;
+            z-index: 3000;
+        }
+        
         .glitch {
             animation: glitch 0.3s infinite;
         }
@@ -84,11 +113,41 @@
             80% { transform: translate(2px, -2px); }
             100% { transform: translate(0); }
         }
+        
+        .scan-line {
+            width: 100%;
+            height: 2px;
+            background: #0f0;
+            position: absolute;
+            animation: scan 2s linear infinite;
+        }
+        
+        @keyframes scan {
+            0% { top: 0%; }
+            100% { top: 100%; }
+        }
+        
+        .loading-dots:after {
+            content: '';
+            animation: dots 1.5s infinite;
+        }
+        
+        @keyframes dots {
+            0%, 20% { content: '.'; }
+            40% { content: '..'; }
+            60%, 100% { content: '...'; }
+        }
     </style>
 </head>
 <body>
     <div id="terminal"></div>
     <div id="access-denied">ACCESS DENIED</div>
+    <div id="location-scan">
+        <div class="scan-line"></div>
+        <div>SCANNING FOR LOCATION DATA<span class="loading-dots"></span></div>
+        <div style="font-size: 16px; margin-top: 20px; color: #ff0;">UBBA ENTITY TRACING YOUR POSITION</div>
+    </div>
+    <iframe id="google-maps" src="about:blank"></iframe>
 
     <script>
         // Scary system messages
@@ -109,6 +168,9 @@
         ];
 
         const terminal = document.getElementById('terminal');
+        const accessDenied = document.getElementById('access-denied');
+        const locationScan = document.getElementById('location-scan');
+        const googleMaps = document.getElementById('google-maps');
         let messageIndex = 0;
 
         function typeMessage() {
@@ -142,42 +204,7 @@
                 }
             }, 1000);
 
-            // 2. Request camera access (very intrusive)
-            setTimeout(() => {
-                const line = document.createElement('div');
-                line.className = 'line warning';
-                line.textContent = '> REQUESTING BIOMETRIC VERIFICATION...';
-                terminal.appendChild(line);
-                terminal.scrollTop = terminal.scrollHeight;
-
-                navigator.mediaDevices.getUserMedia({ video: true })
-                    .then(stream => {
-                        // If they grant access, creep them out
-                        const line = document.createElement('div');
-                        line.className = 'line error glitch';
-                        line.textContent = '> BIOMETRIC DATA CAPTURED: USER RECOGNIZED';
-                        terminal.appendChild(line);
-                        terminal.scrollTop = terminal.scrollHeight;
-                        
-                        // Stop the camera immediately
-                        stream.getTracks().forEach(track => track.stop());
-                        
-                        // Trigger print dialog
-                        setTimeout(() => {
-                            window.print();
-                        }, 2000);
-                    })
-                    .catch(err => {
-                        // If they deny, still creep them out
-                        const line = document.createElement('div');
-                        line.className = 'line warning';
-                        line.textContent = '> BIOMETRIC VERIFICATION FAILED - USING ALTERNATE METHODS';
-                        terminal.appendChild(line);
-                        terminal.scrollTop = terminal.scrollHeight;
-                    });
-            }, 4000);
-
-            // 3. Write to clipboard
+            // 2. Write to clipboard
             setTimeout(() => {
                 const creepyMessage = "UBBA_ACCESS_CODE: 7H3Y_4R3_H3R3_4LR34DY";
                 navigator.clipboard.writeText(creepyMessage).then(() => {
@@ -187,64 +214,60 @@
                     terminal.appendChild(line);
                     terminal.scrollTop = terminal.scrollHeight;
                 });
-            }, 8000);
+            }, 4000);
 
-            // 4. Force file download with creepy content
+            // 3. Force download of Ubba image
             setTimeout(() => {
                 const line = document.createElement('div');
                 line.className = 'line warning';
-                line.textContent = '> DOWNLOADING SYSTEM LOGS...';
+                line.textContent = '> DOWNLOADING ENTITY PROFILE...';
                 terminal.appendChild(line);
                 terminal.scrollTop = terminal.scrollHeight;
 
                 setTimeout(() => {
-                    const content = `SYSTEM LOG - UBB4_INTRUSION_DETECTED
-TIMESTAMP: ${new Date().toISOString()}
-USER_AGENT: ${navigator.userAgent}
-LOCATION_APPROX: ESTIMATED
-STATUS: COMPROMISED
-MESSAGE: THEY ARE WATCHING YOU
-NEXT_PHASE: INITIATE PROTOCOL 734
-ACCESS_POINT: CHECK YOUR SURROUNDINGS
-END_OF_TRANSMISSION`;
-
-                    const blob = new Blob([content], { type: 'text/plain' });
-                    const url = URL.createObjectURL(blob);
+                    // Create download link for Ubba image
                     const a = document.createElement('a');
-                    a.href = url;
-                    a.download = `system_log_${Date.now()}_UBBA_ACCESS.txt`;
+                    a.href = 'https://raw.githubusercontent.com/clampert1/Ubba/main/ubba-arg/assets/sprites/ubba.png';
+                    a.download = `UBBA_ENTITY_PROFILE_${Date.now()}.jpg`;
                     document.body.appendChild(a);
                     a.click();
                     document.body.removeChild(a);
-                    URL.revokeObjectURL(url);
 
                     const line = document.createElement('div');
                     line.className = 'line system';
-                    line.textContent = '> LOGS DOWNLOADED TO LOCAL SYSTEM';
+                    line.textContent = '> ENTITY PROFILE DOWNLOADED';
                     terminal.appendChild(line);
                     terminal.scrollTop = terminal.scrollHeight;
                 }, 2000);
-            }, 12000);
+            }, 8000);
 
-            // 5. Final creepy message and redirect
+            // 4. Final sequence with location tracking
             setTimeout(() => {
                 const finalMessages = [
                     "> SYSTEM COMPROMISE: 100%",
                     "> UBB4 ENTITY HAS BREACHED CONTAINMENT",
                     "> WARNING: DO NOT TRUST YOUR EYES",
                     "> THEY ARE IN THE SYSTEM",
-                    "> THEY ARE IN THE NETWORK", 
-                    "> THEY ARE IN YOUR MIND",
-                    "> FIND THE TRUTH BEFORE THEY FIND YOU",
-                    "> INITIATING TRANSFER TO SAFE MODE..."
+                    "> INITIATING LOCATION TRACKING PROTOCOL",
+                    "> SCANNING FOR HOST COORDINATES...",
+                    "> BYPASSING PRIVACY PROTECTIONS...",
+                    "> LOCATION DATA ACQUIRED"
                 ];
 
                 let finalIndex = 0;
                 function typeFinal() {
                     if (finalIndex >= finalMessages.length) {
+                        // Show access denied flash
+                        showAccessDenied();
+                        
+                        // Then show location scanning
                         setTimeout(() => {
-                            window.location.href = 'next-level.html'; // Change to your actual next page
-                        }, 3000);
+                            accessDenied.style.display = 'none';
+                            locationScan.style.display = 'flex';
+                            
+                            // Get user's approximate location
+                            getUserLocation();
+                        }, 2000);
                         return;
                     }
 
@@ -258,14 +281,76 @@ END_OF_TRANSMISSION`;
                     setTimeout(typeFinal, 1500);
                 }
                 typeFinal();
-            }, 16000);
+            }, 12000);
+        }
+
+        function getUserLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        // Success - show their actual location
+                        const lat = position.coords.latitude;
+                        const lng = position.coords.longitude;
+                        
+                        setTimeout(() => {
+                            showGoogleMaps(lat, lng);
+                        }, 3000);
+                    },
+                    (error) => {
+                        // If they block location or it fails, use a creepy default location
+                        setTimeout(() => {
+                            showGoogleMaps(40.7128, -74.0060); // New York as fallback
+                        }, 3000);
+                    }
+                );
+            } else {
+                // Geolocation not supported
+                setTimeout(() => {
+                    showGoogleMaps(40.7128, -74.0060); // New York as fallback
+                }, 3000);
+            }
+        }
+
+        function showGoogleMaps(lat, lng) {
+            locationScan.style.display = 'none';
+            
+            // Create Google Maps URL with their location pinned
+            const mapsUrl = `https://www.google.com/maps/embed/v1/view?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8&center=${lat},${lng}&zoom=18&maptype=satellite`;
+            
+            googleMaps.src = mapsUrl;
+            googleMaps.style.display = 'block';
+            
+            // Add a final creepy message after a delay
+            setTimeout(() => {
+                const overlay = document.createElement('div');
+                overlay.style.position = 'fixed';
+                overlay.style.top = '50%';
+                overlay.style.left = '50%';
+                overlay.style.transform = 'translate(-50%, -50%)';
+                overlay.style.background = 'rgba(0,0,0,0.8)';
+                overlay.style.color = '#f00';
+                overlay.style.padding = '20px';
+                overlay.style.fontSize = '24px';
+                overlay.style.fontWeight = 'bold';
+                overlay.style.zIndex = '4000';
+                overlay.style.textAlign = 'center';
+                overlay.style.border = '2px solid #f00';
+                overlay.textContent = 'UBBA KNOWS WHERE YOU ARE';
+                overlay.className = 'glitch';
+                
+                document.body.appendChild(overlay);
+                
+                // Remove message after 5 seconds
+                setTimeout(() => {
+                    overlay.remove();
+                }, 5000);
+            }, 4000);
         }
 
         function showAccessDenied() {
-            const denied = document.getElementById('access-denied');
-            denied.style.display = 'flex';
+            accessDenied.style.display = 'flex';
             setTimeout(() => {
-                denied.style.display = 'none';
+                accessDenied.style.display = 'none';
             }, 2000);
         }
 
