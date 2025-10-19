@@ -359,16 +359,15 @@ function loop() {
     a.y += (currentSpeed() / 60); // Convert % per second to % per frame (assuming 60fps)
     a.el.style.bottom = a.y + '%';
     
-    // Check if arrow reached the top (convert % back to pixels for detection)
-    const arrowBottom = percentToPx(a.y);
-    if (arrowBottom < 0) {
+    // Check if arrow went off top by checking its actual DOM position
+    const arrowRect = a.el.getBoundingClientRect();
+    if (arrowRect.bottom < 0) {
       // arrow went off top -> if player arrow, count miss (hp loss)
       if (a.side === 'player' && !a.hit) {
         a.hit = true;
         state.playerHP = Math.max(0, state.playerHP - CONFIG.hpLoss);
         state.combo = 0;
-        // Show miss effect aligned with static key
-        const targetRects = computeTargets();
+        // Show miss effect aligned with static keyconst targetRects = computeTargets();
         const staticRect = targetRects.player[a.type];
         if (staticRect) {
           showEffectAtStatic(staticRect, 'miss');
@@ -383,9 +382,6 @@ function loop() {
       if (a.el && a.el.parentElement) a.el.remove();
       state.arrows.splice(i,1);
     }
-  }
-  requestAnimationFrame(loop);
-}
 
 /* show hit/miss effect aligned with static key */
 function showEffectAtStatic(staticRect, cls) {
