@@ -43,7 +43,6 @@ html,body{height:100%;background:#000;color:#fff;font-family:Arial,Helvetica,san
 .arrow.right{background:#ff9f1c;border-color:#ff9f1c}
 
 /* HUD text */
-#score{position:absolute;top:118px;left:50%;transform:translateX(-50%);font-size:22px;color:#dfe;text-shadow:1px 1px 3px #000;z-index:80}
 #combo{position:absolute;top:154px;left:50%;transform:translateX(-50%);font-size:18px;color:#8ff;display:none;z-index:80}
 #level{position:absolute;top:182px;left:50%;transform:translateX(-50%);font-size:20px;color:#fff;z-index:80}
 #botTurn{position:absolute;top:210px;left:50%;transform:translateX(-50%);font-size:28px;color:#ffd700;display:none;z-index:80}
@@ -86,7 +85,6 @@ html,body{height:100%;background:#000;color:#fff;font-family:Arial,Helvetica,san
     </div>
   </div>
 
-  <div id="score">SCORE: 0</div>
   <div id="combo">COMBO: 0</div>
   <div id="level">LEVEL 1</div>
   <div id="botTurn">UBBA'S TURN</div>
@@ -132,7 +130,6 @@ const CONFIG = {
 const state = {
   playing: false,
   round: 1,
-  score: 0,
   combo: 0,
   maxCombo: 0,
   playerHP: CONFIG.playerMaxHP, // Start with 8 HP
@@ -155,7 +152,6 @@ const els = {
   resultTitle: document.getElementById('resultTitle'),
   resultText: document.getElementById('resultText'),
   replay: document.getElementById('replay'),
-  score: document.getElementById('score'),
   combo: document.getElementById('combo'),
   level: document.getElementById('level'),
   botTurn: document.getElementById('botTurn'),
@@ -491,7 +487,6 @@ function attemptHit(pressedType) {
       if (a.el && a.el.parentElement) a.el.remove();
     });
     state.arrows = state.arrows.filter(a=>!a.hit);
-    state.score += 100 * Math.max(1, required.length);
     state.combo += 1;
     state.maxCombo = Math.max(state.maxCombo, state.combo);
     state.playerHP = Math.min(CONFIG.playerMaxHP, state.playerHP + CONFIG.hpGain);
@@ -590,15 +585,14 @@ function finishGame(){
   cleanupRoundPrep();
   els.results.style.display = 'flex';
   els.start.style.display = 'none';
-  const victory = (state.ubbaHP <= 0 && state.playerHP > 0) || (state.score >= 800);
+  const victory = (state.ubbaHP <= 0 && state.playerHP > 0);
   els.resultTitle.textContent = victory ? 'VICTORY!' : 'DEFEAT!';
   els.resultTitle.style.color = victory ? '#1df53a' : '#ff4b4b';
-  els.resultText.innerHTML = `SCORE: ${state.score} • MAX COMBO: ${state.maxCombo}`;
+  els.resultText.innerHTML = `MAX COMBO: ${state.maxCombo}`;
 }
 
 /* update HUD visual values */
 function updateHUD() {
-  els.score.textContent = `SCORE: ${state.score}`;
   els.combo.style.display = state.combo > 1 ? 'block' : 'none';
   els.combo.textContent = `COMBO: ${state.combo}`;
   els.level.textContent = `LEVEL ${state.round}`;
@@ -612,7 +606,7 @@ function updateHUD() {
 function startGame(){
   state.playing = true;
   state.round = 1;
-  state.score = 0; state.combo = 0; state.maxCombo = 0;
+  state.combo = 0; state.maxCombo = 0;
   state.playerHP = CONFIG.playerMaxHP; // Start with 8 HP
   state.ubbaHP = 100;
   state.botTurnDuration = 0;
