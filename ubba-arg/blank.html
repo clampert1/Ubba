@@ -122,7 +122,9 @@ const CONFIG = {
   hpGain: 2,
   hpLoss: 1,
   rounds: 3,
-  chordWindow: 220   // ms window to consider multiple key presses a chord
+  chordWindow: 220,   // ms window to consider multiple key presses a chord
+  arrowMaxAge: 4000,  // 4 seconds max arrow lifetime
+  playerTurnTimeout: 3000 // 3 seconds extra beyond bot time
 };
 
 /* State */
@@ -138,7 +140,10 @@ const state = {
   sequence: [],      // current sequence (items string or array)
   isBotPhase: true,
   ubbaTimers: [],
-  recentKeyPresses: [] // {type, time}
+  recentKeyPresses: [], // {type, time}
+  botTurnStartTime: 0,
+  botTurnDuration: 0,
+  playerTurnTimer: null
 };
 
 /* DOM refs */
@@ -302,13 +307,19 @@ function spawnPlayerSequence(seq) {
 /* spawn ubba demonstration (handles chords) */
 function showUbbaSequence(seq, cb) {
   state.isBotPhase = true;
+  state.botTurnStartTime = performance.now();
   els.botTurn.style.display = 'block';
   cleanupRoundPrep(); // ensure clean start
   let i = 0;
   const gap = state.round === 3 ? 350 : CONFIG.spawnGapBase;
   const idGen = (()=>{let id=0;return ()=>++id;})();
   const timer = setInterval(()=>{
-    if (i >= seq.length) { clearInterval(timer); setTimeout(()=>{ state.isBotPhase=false; els.botTurn.style.display='none'; cb(); }, 500); return; }
+    if (i >= seq.length) { 
+      clearInterval(timer); 
+      state.botTurnDuration = performance.now() - state.botTurnStartTime;
+      setTimeout(()=>{ state.isBotPhase=false; els.botTurn.style.display='none'; cb(); }, 500); 
+      return; 
+    }
     const step = seq[i];
     if (Array.isArray(step)) {
       const gid = idGen();
@@ -318,12 +329,23 @@ function showUbbaSequence(seq, cb) {
   }, gap);
 }
 
-/* main loop — moves arrows up */
+/* main loop — moves arrows up and removes old arrows */
 function loop() {
   if (!state.playing) return;
-  // move arrows
+  
+  const now = performance.now();
+  
+  // move arrows and check for old arrows
   for (let i = state.arrows.length - 1; i >= 0; i--) {
     const a = state.arrows[i];
+    
+    // Remove arrows older than 4 seconds
+    if (now - a.spawnTime > CONFIG.arrowMaxAge) {
+      if (a.el && a.el.parentElement) a.el.remove();
+      state.arrows.splice(i,1);
+      continue;
+    }
+    
     if (a.hit) { state.arrows.splice(i,1); continue; }
     a.y += currentSpeed();
     a.el.style.bottom = a.y + 'px';
@@ -372,7 +394,6 @@ document.addEventListener('keydown', (ev) => {
   state.recentKeyPresses.push({ type: KEY_MAP[key], time: now });
   // purge old
   while(state.recentKeyPresses.length && now - state.recentKeyPresses[0].time > CONFIG.chordWindow) state.recentKeyPresses.shift();
-  // REMOVED: flashStatic('player', KEY_MAP[key], 150); - No green flash on key press
   attemptHit(KEY_MAP[key]);
 });
 
@@ -481,6 +502,7 @@ function checkRoundCompletion() {
   // if player phase and no player arrows remain and ubba timers cleared -> end round
   const playerArrowsExist = state.arrows.some(a => a.side === 'player' && !a.hit);
   if (!state.isBotPhase && !playerArrowsExist) {
+    clearPlayerTurnTimer();
     // round done
     state.round++;
     if (state.round > CONFIG.rounds || state.playerHP <= 0 || state.ubbaHP <= 0) {
@@ -491,12 +513,44 @@ function checkRoundCompletion() {
   }
 }
 
+/* Clear player turn timeout timer */
+function clearPlayerTurnTimer() {
+  if (state.playerTurnTimer) {
+    clearTimeout(state.playerTurnTimer);
+    state.playerTurnTimer = null;
+  }
+}
+
+/* Start player turn timeout */
+function startPlayerTurnTimeout() {
+  clearPlayerTurnTimer();
+  const timeoutDuration = state.botTurnDuration + CONFIG.playerTurnTimeout;
+  state.playerTurnTimer = setTimeout(() => {
+    if (!state.isBotPhase && state.playing) {
+      // Player took too long - auto advance
+      if (state.round === 3) {
+        // Round 3 timeout = player wins
+        state.ubbaHP = 0;
+      }
+      // Clear all player arrows
+      state.arrows.forEach(a => {
+        if (a.side === 'player' && a.el && a.el.parentElement) {
+          a.el.remove();
+        }
+      });
+      state.arrows = state.arrows.filter(a => a.side !== 'player');
+      checkRoundCompletion();
+    }
+  }, timeoutDuration);
+}
+
 /* remove leftover arrows and ubba timers */
 function cleanupRoundPrep() {
   state.ubbaTimers.forEach(t=>clearTimeout(t)); state.ubbaTimers = [];
   state.arrows.forEach(a=>{ try{ a.el.remove() }catch(e){} });
   state.arrows = [];
   state.recentKeyPresses = [];
+  clearPlayerTurnTimer();
 }
 
 /* start a round (play ubba then spawn player) */
@@ -506,8 +560,9 @@ function startRound() {
   els.botTurn.style.display = 'block';
   cleanupRoundPrep();
   showUbbaSequence(state.sequence, ()=> {
-    // once ubba done, spawn player sequence
+    // once ubba done, spawn player sequence and start timeout
     spawnPlayerSequence(state.sequence);
+    startPlayerTurnTimeout();
   });
 }
 
@@ -539,6 +594,7 @@ function startGame(){
   state.round = 1;
   state.score = 0; state.combo = 0; state.maxCombo = 0;
   state.playerHP = 100; state.ubbaHP = 100;
+  state.botTurnDuration = 0;
   updateHUD();
   els.start.style.display = 'none'; els.results.style.display = 'none';
   startRound();
