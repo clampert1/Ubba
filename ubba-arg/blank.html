@@ -113,127 +113,491 @@ html,body{height:100%;background:#000;color:#fff;font-family:Arial,Helvetica,san
 </div>
 
 <script>
-/* REPLACE your existing <script> block with this fixed one — everything else unchanged */
+/* Plan executed in code. Minimal comments on why-critical lines only. */
 
-const CONFIG = { baseSpeed: 3.2, spawnGapBase: 600, hitTolerance: 56, hpGain: 2, hpLoss: 1, rounds: 3, chordWindow: 220 };
-const state = { playing:false, round:1, score:0, combo:0, maxCombo:0, playerHP:100, ubbaHP:100, arrows:[], sequence:[], isBotPhase:true, ubbaTimers:[], recentKeyPresses:[], lastFrameTime:performance.now() };
-const els = {
-  start:document.getElementById('start'), startBtn:document.getElementById('startBtn'),
-  results:document.getElementById('results'), resultTitle:document.getElementById('resultTitle'),
-  resultText:document.getElementById('resultText'), replay:document.getElementById('replay'),
-  score:document.getElementById('score'), combo:document.getElementById('combo'),
-  level:document.getElementById('level'), botTurn:document.getElementById('botTurn'),
-  arrows:document.getElementById('arrows'), playerSide:document.getElementById('player-side'),
-  ubbaSide:document.getElementById('ubba-side'), playerFill:document.getElementById('playerFill'), ubbaFill:document.getElementById('ubbaFill')
+/* Config */
+const CONFIG = {
+  baseSpeed: 3.2,    // px per frame baseline
+  spawnGapBase: 600, // ms
+  hitTolerance: 56,  // px tolerance (center-to-center)
+  hpGain: 2,
+  hpLoss: 1,
+  rounds: 3,
+  chordWindow: 220   // ms window to consider multiple key presses a chord
 };
-const KEY_MAP = { a:'left', s:'down', w:'up', d:'right' };
-const ARROW_SYMBOL = { left:'←', down:'↓', up:'↑', right:'→' };
 
-function computeTargets(){
-  const map={player:{},ubba:{}};
+/* State */
+const state = {
+  playing: false,
+  round: 1,
+  score: 0,
+  combo: 0,
+  maxCombo: 0,
+  playerHP: 100,
+  ubbaHP: 100,
+  arrows: [],        // {el,type,side,y,hit,spawnTime,groupId}
+  sequence: [],      // current sequence (items string or array)
+  isBotPhase: true,
+  ubbaTimers: [],
+  recentKeyPresses: [], // {type, time}
+  lastFrameTime: performance.now()
+};
+
+/* DOM refs */
+const els = {
+  start: document.getElementById('start'),
+  startBtn: document.getElementById('startBtn'),
+  results: document.getElementById('results'),
+  resultTitle: document.getElementById('resultTitle'),
+  resultText: document.getElementById('resultText'),
+  replay: document.getElementById('replay'),
+  score: document.getElementById('score'),
+  combo: document.getElementById('combo'),
+  level: document.getElementById('level'),
+  botTurn: document.getElementById('botTurn'),
+  arrows: document.getElementById('arrows'),
+  playerSide: document.getElementById('player-side'),
+  ubbaSide: document.getElementById('ubba-side'),
+  playerFill: document.getElementById('playerFill'),
+  ubbaFill: document.getElementById('ubbaFill')
+};
+
+/* maps */
+const KEY_MAP = { a: 'left', s: 'down', w: 'up', d: 'right' };
+const ARROW_SYMBOL = { left: '←', down: '↓', up: '↑', right: '→' };
+
+/* Compute bounding rect map for static targets each spawn (ensures perfect alignment) */
+function computeTargets() {
+  const map = { player: {}, ubba: {} };
   document.querySelectorAll('#player-side .static').forEach(s=>{
-    if(s.classList.contains('left'))map.player.left=s.getBoundingClientRect();
-    if(s.classList.contains('down'))map.player.down=s.getBoundingClientRect();
-    if(s.classList.contains('up'))map.player.up=s.getBoundingClientRect();
-    if(s.classList.contains('right'))map.player.right=s.getBoundingClientRect();
+    if (s.classList.contains('left')) map.player.left = s.getBoundingClientRect();
+    if (s.classList.contains('down')) map.player.down = s.getBoundingClientRect();
+    if (s.classList.contains('up')) map.player.up = s.getBoundingClientRect();
+    if (s.classList.contains('right')) map.player.right = s.getBoundingClientRect();
   });
   document.querySelectorAll('#ubba-side .static').forEach(s=>{
-    if(s.classList.contains('left'))map.ubba.left=s.getBoundingClientRect();
-    if(s.classList.contains('down'))map.ubba.down=s.getBoundingClientRect();
-    if(s.classList.contains('up'))map.ubba.up=s.getBoundingClientRect();
-    if(s.classList.contains('right'))map.ubba.right=s.getBoundingClientRect();
+    if (s.classList.contains('left')) map.ubba.left = s.getBoundingClientRect();
+    if (s.classList.contains('down')) map.ubba.down = s.getBoundingClientRect();
+    if (s.classList.contains('up')) map.ubba.up = s.getBoundingClientRect();
+    if (s.classList.contains('right')) map.ubba.right = s.getBoundingClientRect();
   });
   return map;
 }
-function makeSequence(r){const b=['left','down','up','right'];if(r<3){const l=6+(r-1)*4;return Array.from({length:l},()=>b[Math.floor(Math.random()*b.length)])}else{const c=[['up','right'],['left','up'],['down','right'],['left','down','up'],['right','up','left']];const l=22,s=[];for(let i=0;i<l;i++){if(Math.random()<.28)s.push(c[Math.floor(Math.random()*c.length)]);else s.push(b[Math.floor(Math.random()*b.length)])}return s}}
-function spawnArrow(type,side,gid=null){
-  const tr=computeTargets();const sr=side==='player'?tr.player[type]:tr.ubba[type];if(!sr)return;
-  const a=document.createElement('div');a.className=`arrow ${type}`;a.textContent=ARROW_SYMBOL[type];
-  const left=Math.round(sr.left+sr.width/2-35);a.style.left=left+'px';
-  const cr=document.getElementById('characters').getBoundingClientRect();const sb=Math.max(20,window.innerHeight-cr.top+12);a.style.bottom=sb+'px';
-  els.arrows.appendChild(a);
-  const obj={el:a,type,side,y:sb,hit:false,spawnTime:performance.now(),groupId:gid};state.arrows.push(obj);
-  if(side==='ubba')scheduleUbbaForArrow(obj,sr);return obj;
-}
-function scheduleUbbaForArrow(o,sr){
-  const ar=o.el.getBoundingClientRect(),ac=ar.top+ar.height/2,sc=sr.top+sr.height/2,d=ac-sc;
-  const pxPerMs=currentSpeed()/(1000/60),t=Math.max(0,d/pxPerMs);
-  const pre=70;const ft=setTimeout(()=>flashStatic('ubba',o.type,110),Math.max(0,t-pre));
-  const ht=setTimeout(()=>{if(!o.hit){if(o.groupId!==null){const g=state.arrows.filter(a=>a.groupId===o.groupId);g.forEach(x=>{x.hit=true;if(x.el&&x.el.parentElement)x.el.remove()});state.arrows=state.arrows.filter(a=>a.groupId!==o.groupId)}else{o.hit=true;if(o.el&&o.el.parentElement)o.el.remove();state.arrows=state.arrows.filter(a=>a!==o)}}},Math.max(0,t+12));
-  state.ubbaTimers.push(ft,ht);
-}
-function flashStatic(s,t,ms=140){const c=s==='player'?els.playerSide:els.ubbaSide;const e=[...c.querySelectorAll('.static')].find(x=>x.classList.contains(t));if(!e)return;e.classList.add('active');setTimeout(()=>e.classList.remove('active'),ms);}
-function flashStaticMiss(s,t,ms=140){
-  const c=s==='player'?els.playerSide:els.ubbaSide;
-  const e=[...c.querySelectorAll('.static')].find(x=>x.classList.contains(t));
-  if(!e)return;
-  // align red flash correctly to static
-  const rect=e.getBoundingClientRect();
-  const eff=document.createElement('div');
-  eff.className='miss'; eff.style.left=(rect.left+rect.width/2-40)+'px'; eff.style.top=(rect.top+rect.height/2-40)+'px';
-  document.body.appendChild(eff);
-  setTimeout(()=>eff.remove(),360);
-  e.classList.add('miss'); setTimeout(()=>e.classList.remove('miss'),ms);
-}
-function currentSpeed(){return CONFIG.baseSpeed*(state.round===3?2.0:1.0);}
-function spawnPlayerSequence(seq){let i=0;const g=state.round===3?350:CONFIG.spawnGapBase;const id=(()=>{let id=0;return()=>++id})();const t=setInterval(()=>{if(i>=seq.length){clearInterval(t);return;}const s=seq[i];if(Array.isArray(s)){const gid=id();s.forEach(x=>spawnArrow(x,'player',gid))}else spawnArrow(s,'player',null);i++;},g);}
-function showUbbaSequence(seq,cb){state.isBotPhase=true;els.botTurn.style.display='block';cleanupRoundPrep();let i=0;const g=state.round===3?350:CONFIG.spawnGapBase;const id=(()=>{let id=0;return()=>++id})();const t=setInterval(()=>{if(i>=seq.length){clearInterval(t);setTimeout(()=>{state.isBotPhase=false;els.botTurn.style.display='none';cb();},500);return;}const s=seq[i];if(Array.isArray(s)){const gid=id();s.forEach(x=>spawnArrow(x,'ubba',gid))}else spawnArrow(s,'ubba',null);i++;},g);}
-function loop(ct){if(!state.playing)return;const dt=ct-state.lastFrameTime;state.lastFrameTime=ct;
-  for(let i=state.arrows.length-1;i>=0;i--){const a=state.arrows[i];if(a.hit){state.arrows.splice(i,1);continue;}
-    const fs=currentSpeed()*(dt/(1000/60));a.y+=fs;a.el.style.bottom=a.y+'px';const r=a.el.getBoundingClientRect();
-    if(r.bottom<0){if(a.side==='player'&&!a.hit){a.hit=true;state.playerHP=Math.max(0,state.playerHP-CONFIG.hpLoss);state.combo=0;showEffect(a.el,'miss');flashStaticMiss('player',a.type,150);updateHUD();}
-      if(a.el&&a.el.parentElement)a.el.remove();state.arrows.splice(i,1);}
+
+/* Sequence generator — normal rounds single arrows, round 3 expert with chords */
+function makeSequence(round) {
+  const base = ['left','down','up','right'];
+  if (round < 3) {
+    const len = 6 + (round - 1) * 4;
+    return Array.from({length: len}, ()=> base[Math.floor(Math.random()*base.length)]);
+  } else {
+    const combos = [['up','right'],['left','up'],['down','right'],['left','down','up'],['right','up','left']];
+    const len = 22;
+    const seq = [];
+    for(let i=0;i<len;i++){
+      if (Math.random() < 0.28) seq.push(combos[Math.floor(Math.random()*combos.length)]);
+      else seq.push(base[Math.floor(Math.random()*base.length)]);
+    }
+    return seq;
   }
-  // check lose mid-loop
-  if(state.playerHP<=0){finishGame();return;}
+}
+
+/* spawn arrow (single) perfectly centered beneath its static target; spawn bottom above characters */
+function spawnArrow(type, side, groupId=null) {
+  const targetRects = computeTargets();
+  const staticRect = side === 'player' ? targetRects.player[type] : targetRects.ubba[type];
+  if (!staticRect) return null;
+
+  const arrow = document.createElement('div');
+  arrow.className = `arrow ${type}`;
+  arrow.textContent = ARROW_SYMBOL[type];
+
+  // center arrow X on the static target center
+  const left = Math.round(staticRect.left + staticRect.width/2 - 35); // arrow width 70
+  arrow.style.left = left + 'px';
+
+  // spawn bottom *above* characters area
+  const charsRect = document.getElementById('characters').getBoundingClientRect();
+  const spawnBottom = Math.max(20, window.innerHeight - charsRect.top + 12);
+  arrow.style.bottom = spawnBottom + 'px';
+
+  els.arrows.appendChild(arrow);
+
+  const obj = { el: arrow, type, side, y: spawnBottom, hit:false, spawnTime:performance.now(), groupId };
+  state.arrows.push(obj);
+
+  // schedule ubba auto-hit for ubba-side arrow(s)
+  if (side === 'ubba') scheduleUbbaForArrow(obj, staticRect);
+
+  return obj;
+}
+
+/* schedule ubba flash + removal for single arrow or group; compute time until arrow center reaches target center */
+function scheduleUbbaForArrow(arrowObj, staticRect) {
+  // compute current arrow center Y and static center Y
+  const arrowRect = arrowObj.el.getBoundingClientRect();
+  const arrowCenterY = arrowRect.top + arrowRect.height/2;
+  const staticCenterY = staticRect.top + staticRect.height/2;
+  const distance = arrowCenterY - staticCenterY; // arrow below static -> positive
+
+  // approximate px per ms from speed (speed is px/frame; frame ~16.66ms)
+  const pxPerMs = (currentSpeed()) / (1000/60);
+  const timeMs = Math.max(0, distance / pxPerMs);
+
+  // flash a bit earlier
+  const preFlash = 70;
+  const flashTimer = setTimeout(()=> {
+    flashStatic('ubba', arrowObj.type, 110);
+  }, Math.max(0, timeMs - preFlash));
+  // remove at hit time
+  const hitTimer = setTimeout(()=>{
+    if (!arrowObj.hit) {
+      // if this arrow is part of a chord group, remove all group members
+      if (arrowObj.groupId !== null) {
+        const groupMembers = state.arrows.filter(a=>a.groupId === arrowObj.groupId);
+        groupMembers.forEach(g=>{
+          g.hit = true;
+          if (g.el && g.el.parentElement) g.el.remove();
+        });
+        state.arrows = state.arrows.filter(a=>a.groupId !== arrowObj.groupId);
+      } else {
+        arrowObj.hit = true;
+        if (arrowObj.el && arrowObj.el.parentElement) arrowObj.el.remove();
+        state.arrows = state.arrows.filter(a=>a!==arrowObj);
+      }
+    }
+  }, Math.max(0, timeMs + 12));
+
+  state.ubbaTimers.push(flashTimer, hitTimer);
+}
+
+/* flash static key for given side+type for ms */
+function flashStatic(side, type, ms=140) {
+  const container = side === 'player' ? els.playerSide : els.ubbaSide;
+  const el = Array.from(container.querySelectorAll('.static')).find(s=>s.classList.contains(type));
+  if (!el) return;
+  el.classList.add('active');
+  setTimeout(()=>el.classList.remove('active'), ms);
+}
+
+/* flash static key RED for miss — now aligns and places the circular effect at the static center */
+function flashStaticMiss(side, type, ms=140) {
+  const container = side === 'player' ? els.playerSide : els.ubbaSide;
+  const el = Array.from(container.querySelectorAll('.static')).find(s=>s.classList.contains(type));
+  if (!el) return;
+  // center miss circle over the static (so off-screen arrow misses don't place effects off-screen)
+  const rect = el.getBoundingClientRect();
+  const eff = document.createElement('div');
+  eff.className = 'miss';
+  eff.style.left = (rect.left + rect.width/2 - 40) + 'px';
+  eff.style.top = (rect.top + rect.height/2 - 40) + 'px';
+  document.body.appendChild(eff);
+  setTimeout(()=>{ try { eff.remove(); } catch(e){} }, 360);
+
+  el.classList.add('miss');
+  setTimeout(()=>el.classList.remove('miss'), ms);
+}
+
+/* compute current speed (round 3 faster) */
+function currentSpeed() {
+  return CONFIG.baseSpeed * (state.round === 3 ? 2.0 : 1.0);
+}
+
+/* spawn player sequence (handles chords: arrays) */
+function spawnPlayerSequence(seq) {
+  // ensure we are definitely in player phase (prevents race softlock)
+  state.isBotPhase = false;
+
+  let i = 0;
+  const gap = state.round === 3 ? 350 : CONFIG.spawnGapBase;
+  const idGen = (()=>{let id=0;return ()=>++id;})();
+  const timer = setInterval(()=>{
+    if (i >= seq.length) { clearInterval(timer); return; }
+    const step = seq[i];
+    if (Array.isArray(step)) {
+      const gid = idGen();
+      step.forEach(t=>spawnArrow(t,'player', gid));
+    } else spawnArrow(step,'player', null);
+    i++;
+  }, gap);
+}
+
+/* spawn ubba demonstration (handles chords) */
+function showUbbaSequence(seq, cb) {
+  state.isBotPhase = true;
+  els.botTurn.style.display = 'block';
+  cleanupRoundPrep(); // ensure clean start
+  let i = 0;
+  const gap = state.round === 3 ? 350 : CONFIG.spawnGapBase;
+  const idGen = (()=>{let id=0;return ()=>++id;})();
+  const timer = setInterval(()=>{
+    if (i >= seq.length) { clearInterval(timer); setTimeout(()=>{ state.isBotPhase=false; els.botTurn.style.display='none'; cb(); }, 500); return; }
+    const step = seq[i];
+    if (Array.isArray(step)) {
+      const gid = idGen();
+      step.forEach(t=>spawnArrow(t,'ubba', gid));
+    } else spawnArrow(step,'ubba', null);
+    i++;
+  }, gap);
+}
+
+/* main loop — moves arrows up with frame-independent timing */
+function loop(currentTime) {
+  if (!state.playing) return;
+  
+  const deltaTime = currentTime - state.lastFrameTime;
+  state.lastFrameTime = currentTime;
+  
+  // move arrows
+  for (let i = state.arrows.length - 1; i >= 0; i--) {
+    const a = state.arrows[i];
+    if (a.hit) { state.arrows.splice(i,1); continue; }
+    
+    // Frame-independent movement
+    const frameSpeed = currentSpeed() * (deltaTime / (1000/60));
+    a.y += frameSpeed;
+    a.el.style.bottom = a.y + 'px';
+    
+    const rect = a.el.getBoundingClientRect();
+    // Check if arrow went off top of screen
+    if (rect.bottom < 0) {
+      // arrow went off top -> if player arrow, count miss (hp loss)
+      if (a.side === 'player' && !a.hit) {
+        // handle group chords: remove all members and scale HP penalty
+        if (a.groupId !== null) {
+          const groupMembers = state.arrows.filter(x => x.groupId === a.groupId && !x.hit);
+          const count = groupMembers.length || 1;
+          groupMembers.forEach(g=>{
+            g.hit = true;
+            if (g.el && g.el.parentElement) g.el.remove();
+          });
+          state.arrows = state.arrows.filter(x => x.groupId !== a.groupId);
+          // apply HP loss scaled by number of arrows missed
+          state.playerHP = Math.max(0, state.playerHP - CONFIG.hpLoss * count);
+          state.combo = 0;
+          flashStaticMiss('player', a.type, 150);
+          updateHUD();
+        } else {
+          // single arrow missed
+          a.hit = true;
+          if (a.el && a.el.parentElement) a.el.remove();
+          state.arrows.splice(i,1);
+          state.playerHP = Math.max(0, state.playerHP - CONFIG.hpLoss);
+          state.combo = 0;
+          flashStaticMiss('player', a.type, 150);
+          updateHUD();
+        }
+      } else {
+        // non-player arrow offscreen (ubba), just remove
+        if (a.el && a.el.parentElement) a.el.remove();
+        state.arrows.splice(i,1);
+      }
+
+      // After removal, check for end of round or game
+      if (state.playerHP <= 0) { finishGame(); return; }
+      checkRoundCompletion();
+    }
+  }
   requestAnimationFrame(loop);
 }
-function showEffect(el,cls){try{const r=el.getBoundingClientRect();const e=document.createElement('div');e.className=cls==='hit'?'hit':'miss';e.style.left=(r.left+r.width/2-40)+'px';e.style.top=(r.top+r.height/2-40)+'px';document.body.appendChild(e);setTimeout(()=>e.remove(),360);}catch(e){}}
-document.addEventListener('keydown',ev=>{if(!state.playing||state.isBotPhase)return;const k=ev.key.toLowerCase();if(!(k in KEY_MAP))return;const n=performance.now();state.recentKeyPresses.push({type:KEY_MAP[k],time:n});while(state.recentKeyPresses.length&&n-state.recentKeyPresses[0].time>CONFIG.chordWindow)state.recentKeyPresses.shift();attemptHit(KEY_MAP[k]);});
-function attemptHit(pt){
-  const t=computeTargets().player,n=performance.now();const c=state.arrows.filter(a=>a.side==='player'&&!a.hit);
-  if(!c.length){flashStaticMiss('player',pt,150);state.playerHP=Math.max(0,state.playerHP-CONFIG.hpLoss);state.combo=0;updateHUD();checkRoundCompletion();return;}
-  const near=[];for(const a of c){const r=a.el.getBoundingClientRect();const ay=r.top+r.height/2;const sy=t[a.type].top+t[a.type].height/2;if(Math.abs(ay-sy)<=CONFIG.hitTolerance)near.push(a);}
-  if(!near.length){flashStaticMiss('player',pt,150);state.playerHP=Math.max(0,state.playerHP-CONFIG.hpLoss);state.combo=0;updateHUD();checkRoundCompletion();return;}
-  const g={};for(const a of near){const r=a.el.getBoundingClientRect();const cY=Math.round(r.top+r.height/2);const k=Math.round(cY/8)*8;g[k]=g[k]||[];g[k].push(a);}
-  let cg=null;for(const k in g){const gg=g[k];if(gg.some(x=>x.type===pt)){cg=gg;break;}}if(!cg){const ks=Object.keys(g);cg=g[ks[0]];}
-  const req=[...new Set(cg.map(a=>a.type))];const ps=new Set(state.recentKeyPresses.map(p=>p.type));const all=req.every(r=>ps.has(r));
-  if(all){cg.forEach(a=>{a.hit=true;showEffect(a.el,'hit');flashStatic('player',a.type,150);if(a.el&&a.el.parentElement)a.el.remove();});state.arrows=state.arrows.filter(a=>!a.hit);state.score+=100*Math.max(1,req.length);state.combo+=1;state.maxCombo=Math.max(state.maxCombo,state.combo);state.playerHP=Math.min(100,state.playerHP+CONFIG.hpGain);state.ubbaHP=Math.max(0,state.ubbaHP-CONFIG.hpLoss*req.length);updateHUD();}
-  else{flashStaticMiss('player',pt,150);state.playerHP=Math.max(0,state.playerHP-CONFIG.hpLoss);state.combo=0;updateHUD();}
+
+/* show small hit/miss effect */
+function showEffect(el, cls) {
+  try {
+    const r = el.getBoundingClientRect();
+    const e = document.createElement('div');
+    e.className = cls === 'hit' ? 'hit' : 'miss';
+    e.style.left = (r.left + r.width/2 - 40) + 'px';
+    e.style.top = (r.top + r.height/2 - 40) + 'px';
+    document.body.appendChild(e);
+    setTimeout(()=>e.remove(), 360);
+  } catch(e){}
+}
+
+/* handle player key presses with chord logic */
+document.addEventListener('keydown', (ev) => {
+  if (!state.playing || state.isBotPhase) return;
+  const key = ev.key.toLowerCase();
+  if (!(key in KEY_MAP)) return;
+  // record press for chord detection
+  const now = performance.now();
+  state.recentKeyPresses.push({ type: KEY_MAP[key], time: now });
+  // purge old
+  while(state.recentKeyPresses.length && now - state.recentKeyPresses[0].time > CONFIG.chordWindow) state.recentKeyPresses.shift();
+  attemptHit(KEY_MAP[key]);
+});
+
+/* attempt to hit — supports chords: if multiple arrows overlap Y band, check recent key buffer */
+function attemptHit(pressedType) {
+  const targets = computeTargets().player;
+  const now = performance.now();
+
+  // gather candidate player-side arrows that are not hit
+  const candidates = state.arrows.filter(a => a.side === 'player' && !a.hit);
+  if (candidates.length === 0) {
+    // spam penalty
+    flashStaticMiss('player', pressedType, 150);
+    state.playerHP = Math.max(0, state.playerHP - CONFIG.hpLoss);
+    state.combo = 0;
+    updateHUD();
+    checkRoundCompletion();
+    return;
+  }
+
+  // find arrows near their static centers (within tolerance) and group by Y center rounded
+  const near = [];
+  for (const a of candidates) {
+    const rect = a.el.getBoundingClientRect();
+    const aCenterY = rect.top + rect.height/2;
+    const staticCenterY = (targets[a.type].top + targets[a.type].height/2);
+    const dist = Math.abs(aCenterY - staticCenterY);
+    if (dist <= CONFIG.hitTolerance) near.push(a);
+  }
+  if (near.length === 0) {
+    // no near arrow -> penalty
+    flashStaticMiss('player', pressedType, 150);
+    state.playerHP = Math.max(0, state.playerHP - CONFIG.hpLoss);
+    state.combo = 0;
+    updateHUD();
+    checkRoundCompletion();
+    return;
+  }
+
+  // If multiple near arrows share nearly identical centerY, treat as chord group
+  // group by Y band
+  const grouped = {};
+  for (const a of near) {
+    const rect = a.el.getBoundingClientRect();
+    const center = Math.round(rect.top + rect.height/2);
+    const key = Math.round(center / 8) * 8; // coarse bucket
+    grouped[key] = grouped[key] || [];
+    grouped[key].push(a);
+  }
+  // choose the group that contains the pressedType if possible, else the largest group
+  let chosenGroup = null;
+  for (const k in grouped) {
+    const g = grouped[k];
+    if (g.some(x => x.type === pressedType)) { chosenGroup = g; break; }
+  }
+  if (!chosenGroup) {
+    const keys = Object.keys(grouped);
+    chosenGroup = grouped[keys[0]];
+  }
+
+  // determine keys required
+  const required = [...new Set(chosenGroup.map(a=>a.type))];
+
+  // check recent presses for required set
+  const pressedSet = new Set(state.recentKeyPresses.map(p=>p.type));
+  const allPressed = required.every(r=>pressedSet.has(r));
+
+  if (allPressed) {
+    // success: remove all chosen group arrows
+    chosenGroup.forEach(a=>{
+      a.hit = true;
+      showEffect(a.el, 'hit');
+      flashStatic('player', a.type, 150);
+      if (a.el && a.el.parentElement) a.el.remove();
+    });
+    state.arrows = state.arrows.filter(a=>!a.hit);
+    state.score += 100 * Math.max(1, required.length);
+    state.combo += 1;
+    state.maxCombo = Math.max(state.maxCombo, state.combo);
+    state.playerHP = Math.min(100, state.playerHP + CONFIG.hpGain);
+    state.ubbaHP = Math.max(0, state.ubbaHP - CONFIG.hpLoss * required.length);
+    updateHUD();
+  } else {
+    // partial/no press -> penalty
+    flashStaticMiss('player', pressedType, 150);
+    state.playerHP = Math.max(0, state.playerHP - CONFIG.hpLoss);
+    state.combo = 0;
+    updateHUD();
+  }
+
   checkRoundCompletion();
 }
-function checkRoundCompletion(){
-  const exist=state.arrows.some(a=>a.side==='player'&&!a.hit);
-  if(!state.isBotPhase&&!exist){
-    if(state.playerHP<=0||state.ubbaHP<=0||state.round>=CONFIG.rounds){finishGame();}
-    else{state.round++;setTimeout(()=>{updateHUD();startRound();},900);}
+
+/* check round finished and advance or end game */
+function checkRoundCompletion() {
+  // if player phase and no player arrows remain and ubba timers cleared -> end round
+  const playerArrowsExist = state.arrows.some(a => a.side === 'player' && !a.hit);
+  if (!state.isBotPhase && !playerArrowsExist) {
+    // round done
+    state.round++;
+    if (state.round > CONFIG.rounds || state.playerHP <= 0 || state.ubbaHP <= 0) {
+      finishGame();
+    } else {
+      setTimeout(()=>{ updateHUD(); startRound(); }, 900);
+    }
   }
 }
-function cleanupRoundPrep(){state.ubbaTimers.forEach(t=>clearTimeout(t));state.ubbaTimers=[];state.arrows.forEach(a=>{try{a.el.remove()}catch(e){}});state.arrows=[];state.recentKeyPresses=[];}
-function startRound(){state.sequence=makeSequence(state.round);state.isBotPhase=true;els.botTurn.style.display='block';cleanupRoundPrep();showUbbaSequence(state.sequence,()=>{spawnPlayerSequence(state.sequence)});}
-function finishGame(){
-  state.playing=false;cleanupRoundPrep();
-  els.results.style.display='flex';els.start.style.display='none';
-  const vic=(state.ubbaHP<=0&&state.playerHP>0)||(state.score>=800);
-  els.resultTitle.textContent=vic?'VICTORY!':(state.playerHP<=0?'YOU LOST! TRY AGAIN?':'DEFEAT!');
-  els.resultTitle.style.color=vic?'#1df53a':'#ff4b4b';
-  els.resultText.innerHTML=`SCORE: ${state.score} • MAX COMBO: ${state.maxCombo}`;
-}
-function updateHUD(){
-  els.score.textContent=`SCORE: ${state.score}`;
-  els.combo.style.display=state.combo>1?'block':'none';
-  els.combo.textContent=`COMBO: ${state.combo}`;
-  els.level.textContent=`LEVEL ${state.round}`;
-  els.playerFill.style.width=`${state.playerHP}%`;
-  els.ubbaFill.style.width=`${state.ubbaHP}%`;
-  if(state.playerHP<=0){finishGame();}
-}
-function startGame(){state.playing=true;state.round=1;state.score=0;state.combo=0;state.maxCombo=0;state.playerHP=100;state.ubbaHP=100;state.lastFrameTime=performance.now();updateHUD();els.start.style.display='none';els.results.style.display='none';startRound();requestAnimationFrame(loop);}
-document.getElementById('startBtn').addEventListener('click',startGame);
-document.getElementById('replay').addEventListener('click',()=>location.reload());
-document.querySelectorAll('.static.down').forEach(s=>s.style.color='#fff');
-window.addEventListener('resize',()=>{});
-</script>
 
+/* remove leftover arrows and ubba timers */
+function cleanupRoundPrep() {
+  state.ubbaTimers.forEach(t=>clearTimeout(t)); state.ubbaTimers = [];
+  state.arrows.forEach(a=>{ try{ a.el.remove() }catch(e){} });
+  state.arrows = [];
+  state.recentKeyPresses = [];
+}
+
+/* start a round (play ubba then spawn player) */
+function startRound() {
+  state.sequence = makeSequence(state.round);
+  state.isBotPhase = true;
+  els.botTurn.style.display = 'block';
+  cleanupRoundPrep();
+  showUbbaSequence(state.sequence, ()=> {
+    // once ubba done, spawn player sequence
+    spawnPlayerSequence(state.sequence);
+  });
+}
+
+/* finish game and show results */
+function finishGame(){
+  state.playing = false;
+  cleanupRoundPrep();
+  els.results.style.display = 'flex';
+  els.start.style.display = 'none';
+  const victory = (state.ubbaHP <= 0 && state.playerHP > 0) || (state.score >= 800);
+  // if playerHP is 0, show a clearer lose title
+  els.resultTitle.textContent = victory ? 'VICTORY!' : (state.playerHP <= 0 ? 'YOU LOST! TRY AGAIN?' : 'DEFEAT!');
+  els.resultTitle.style.color = victory ? '#1df53a' : '#ff4b4b';
+  els.resultText.innerHTML = `SCORE: ${state.score} • MAX COMBO: ${state.maxCombo}`;
+}
+
+/* update HUD visual values */
+function updateHUD() {
+  els.score.textContent = `SCORE: ${state.score}`;
+  els.combo.style.display = state.combo > 1 ? 'block' : 'none';
+  els.combo.textContent = `COMBO: ${state.combo}`;
+  els.level.textContent = `LEVEL ${state.round}`;
+  els.playerFill.style.width = `${state.playerHP}%`;
+  els.ubbaFill.style.width = `${state.ubbaHP}%`;
+  if (state.playerHP <= 0) finishGame();
+}
+
+/* start game */
+function startGame(){
+  state.playing = true;
+  state.round = 1;
+  state.score = 0; state.combo = 0; state.maxCombo = 0;
+  state.playerHP = 100; state.ubbaHP = 100;
+  state.lastFrameTime = performance.now();
+  updateHUD();
+  els.start.style.display = 'none'; els.results.style.display = 'none';
+  startRound();
+  requestAnimationFrame(loop);
+}
+
+/* basic helpers & event wiring */
+document.getElementById('startBtn').addEventListener('click', startGame);
+document.getElementById('replay').addEventListener('click', ()=> location.reload());
+
+/* ensure S/down stays white (fix for earlier issue) */
+document.querySelectorAll('.static.down').forEach(s=>s.style.color = '#fff');
+
+/* Clean-up on resize (no-op; spawn uses live static rects) */
+window.addEventListener('resize', ()=>{ /* positions recomputed on spawn */ });
+</script>
 </body>
 </html>
