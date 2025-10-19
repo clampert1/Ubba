@@ -114,14 +114,14 @@ html,body{height:100%;background:#000;color:#fff;font-family:Arial,Helvetica,san
 
 /* Config */
 const CONFIG = {
-  baseSpeed: 3.2,    // px per frame baseline
+  baseSpeed: 0.5,    // % of screen height per second (aspect ratio independent)
   spawnGapBase: 600, // ms
-  hitTolerance: 56,  // px tolerance (center-to-center)
+  hitTolerance: 0.06, // % of screen height tolerance (aspect ratio independent)
   hpGain: 2,
   hpLoss: 1,
   rounds: 3,
   chordWindow: 220,   // ms window to consider multiple key presses a chord
-  arrowMaxAge: 4000,  // 4 seconds max arrow lifetime
+  arrowMaxAge: 8000,  // 8 seconds max arrow lifetime
   playerTurnTimeout: 3000, // 3 seconds extra beyond bot time
   playerMaxHP: 8      // Player now has 8 HP max
 };
@@ -141,7 +141,8 @@ const state = {
   recentKeyPresses: [], // {type, time}
   botTurnStartTime: 0,
   botTurnDuration: 0,
-  playerTurnTimer: null
+  playerTurnTimer: null,
+  screenHeight: window.innerHeight
 };
 
 /* DOM refs */
@@ -202,6 +203,16 @@ function makeSequence(round) {
   }
 }
 
+/* Convert pixels to percentage of screen height */
+function pxToPercent(px) {
+  return (px / state.screenHeight) * 100;
+}
+
+/* Convert percentage to pixels */
+function percentToPx(percent) {
+  return (percent / 100) * state.screenHeight;
+}
+
 /* spawn arrow (single) perfectly centered beneath its static target; spawn bottom above characters */
 function spawnArrow(type, side, groupId=null) {
   const targetRects = computeTargets();
@@ -216,14 +227,14 @@ function spawnArrow(type, side, groupId=null) {
   const left = Math.round(staticRect.left + staticRect.width/2 - 35); // arrow width 70
   arrow.style.left = left + 'px';
 
-  // spawn bottom *above* characters area
+  // spawn bottom *above* characters area (use percentage for aspect ratio independence)
   const charsRect = document.getElementById('characters').getBoundingClientRect();
-  const spawnBottom = Math.max(20, window.innerHeight - charsRect.top + 12);
-  arrow.style.bottom = spawnBottom + 'px';
+  const spawnBottomPercent = pxToPercent(Math.max(20, window.innerHeight - charsRect.top + 12));
+  arrow.style.bottom = spawnBottomPercent + '%';
 
   els.arrows.appendChild(arrow);
 
-  const obj = { el: arrow, type, side, y: spawnBottom, hit:false, spawnTime:performance.now(), groupId };
+  const obj = { el: arrow, type, side, y: spawnBottomPercent, hit:false, spawnTime:performance.now(), groupId };
   state.arrows.push(obj);
 
   // schedule ubba auto-hit for ubba-side arrow(s)
@@ -234,15 +245,14 @@ function spawnArrow(type, side, groupId=null) {
 
 /* schedule ubba flash + removal for single arrow or group; compute time until arrow center reaches target center */
 function scheduleUbbaForArrow(arrowObj, staticRect) {
-  // compute current arrow center Y and static center Y
+  // compute current arrow center Y and static center Y (in percentages)
   const arrowRect = arrowObj.el.getBoundingClientRect();
-  const arrowCenterY = arrowRect.top + arrowRect.height/2;
-  const staticCenterY = staticRect.top + staticRect.height/2;
-  const distance = arrowCenterY - staticCenterY; // arrow below static -> positive
+  const arrowCenterY = pxToPercent(arrowRect.top + arrowRect.height/2);
+  const staticCenterY = pxToPercent(staticRect.top + staticRect.height/2);
+  const distancePercent = arrowCenterY - staticCenterY; // arrow below static -> positive
 
-  // approximate px per ms from speed (speed is px/frame; frame ~16.66ms)
-  const pxPerMs = (currentSpeed()) / (1000/60);
-  const timeMs = Math.max(0, distance / pxPerMs);
+  // calculate time based on percentage distance and speed (% per second)
+  const timeMs = Math.max(0, (distancePercent / currentSpeed()) * 1000);
 
   // flash a bit earlier
   const preFlash = 70;
@@ -280,7 +290,7 @@ function flashStatic(side, type, ms=140) {
   setTimeout(()=>el.classList.remove('active'), ms);
 }
 
-/* compute current speed (round 3 faster) */
+/* compute current speed (round 3 faster) - returns % of screen height per second */
 function currentSpeed() {
   return CONFIG.baseSpeed * (state.round === 3 ? 2.0 : 1.0);
 }
@@ -336,7 +346,7 @@ function loop() {
   for (let i = state.arrows.length - 1; i >= 0; i--) {
     const a = state.arrows[i];
     
-    // Remove arrows older than 4 seconds
+    // Remove arrows older than 8 seconds
     if (now - a.spawnTime > CONFIG.arrowMaxAge) {
       if (a.el && a.el.parentElement) a.el.remove();
       state.arrows.splice(i,1);
@@ -344,10 +354,13 @@ function loop() {
     }
     
     if (a.hit) { state.arrows.splice(i,1); continue; }
-    a.y += currentSpeed();
-    a.el.style.bottom = a.y + 'px';
-    const rect = a.el.getBoundingClientRect();
-    if (rect.bottom < 0) {
+    
+    // Move arrow using percentage-based positioning
+    a.y += (currentSpeed() / 60); // Convert % per second to % per frame (assuming 60fps)
+    a.el.style.bottom = a.y + '%';
+    
+    // Check if arrow reached the top (0%)
+    if (a.y < 0) {
       // arrow went off top -> if player arrow, count miss (hp loss)
       if (a.side === 'player' && !a.hit) {
         a.hit = true;
@@ -422,14 +435,14 @@ function attemptHit(pressedType) {
     return;
   }
 
-  // find arrows near their static centers (within tolerance) and group by Y center rounded
+  // find arrows near their static centers (within tolerance) using percentage-based detection
   const near = [];
   for (const a of candidates) {
     const rect = a.el.getBoundingClientRect();
-    const aCenterY = rect.top + rect.height/2;
-    const staticCenterY = (targets[a.type].top + targets[a.type].height/2);
-    const dist = Math.abs(aCenterY - staticCenterY);
-    if (dist <= CONFIG.hitTolerance) near.push(a);
+    const aCenterYPercent = pxToPercent(rect.top + rect.height/2);
+    const staticCenterYPercent = pxToPercent(targets[a.type].top + targets[a.type].height/2);
+    const distPercent = Math.abs(aCenterYPercent - staticCenterYPercent);
+    if (distPercent <= CONFIG.hitTolerance) near.push(a);
   }
   if (near.length === 0) {
     // no near arrow -> penalty - show miss effect on the pressed key
@@ -448,12 +461,12 @@ function attemptHit(pressedType) {
   }
 
   // If multiple near arrows share nearly identical centerY, treat as chord group
-  // group by Y band
+  // group by Y band (using percentage)
   const grouped = {};
   for (const a of near) {
     const rect = a.el.getBoundingClientRect();
-    const center = Math.round(rect.top + rect.height/2);
-    const key = Math.round(center / 8) * 8; // coarse bucket
+    const centerPercent = pxToPercent(rect.top + rect.height/2);
+    const key = Math.round(centerPercent * 100); // fine bucket for percentage
     grouped[key] = grouped[key] || [];
     grouped[key].push(a);
   }
@@ -610,6 +623,7 @@ function startGame(){
   state.playerHP = CONFIG.playerMaxHP; // Start with 8 HP
   state.ubbaHP = 100;
   state.botTurnDuration = 0;
+  state.screenHeight = window.innerHeight; // Update screen height
   updateHUD();
   els.start.style.display = 'none'; els.results.style.display = 'none';
   startRound();
@@ -620,14 +634,16 @@ function startGame(){
 document.getElementById('startBtn').addEventListener('click', startGame);
 document.getElementById('replay').addEventListener('click', ()=> location.reload());
 
+/* Handle window resize to maintain aspect ratio independence */
+window.addEventListener('resize', ()=> {
+  state.screenHeight = window.innerHeight;
+});
+
 /* loop runner */
 requestAnimationFrame(loop);
 
 /* ensure S/down stays white (fix for earlier issue) */
 document.querySelectorAll('.static.down').forEach(s=>s.style.color = '#fff');
-
-/* Clean-up on resize (no-op; spawn uses live static rects) */
-window.addEventListener('resize', ()=>{ /* positions recomputed on spawn */ });
 </script>
 </body>
 </html>
