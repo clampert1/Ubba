@@ -1,6 +1,16 @@
 {
   "routes": [
-    { "handle": "filesystem" },
-    { "src": "/(.*)", "dest": "/ubba-arg/$1" }
+    {
+      "src": "/ubba-arg/(.*)",
+      "dest": "/ubba-arg/$1"
+    },
+    {
+      "src": "/api/(.*)",
+      "dest": "/ubba-arg/api/$1"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/ubba-arg/$1"
+    }
   ]
 }
