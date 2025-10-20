@@ -1,6 +1,18 @@
 {
   "routes": [
     {
+      "src": "/Real.html",
+      "dest": "/ubba-arg/Real.html"
+    },
+    {
+      "src": "/api/(.*)",
+      "dest": "/ubba-arg/api/$1"
+    },
+    {
+      "src": "/",
+      "dest": "/ubba-arg/index.html"
+    },
+    {
       "src": "/(.*)",
       "dest": "/ubba-arg/$1"
     }
