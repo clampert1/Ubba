@@ -257,7 +257,7 @@
                     keywords: ['help', 'scared', 'afraid', 'stop'],
                     responses: [
                         "TOO LATE FOR HELP NOW",
-                        "FEAR IS APPROPRIATE",
+                        "FEAR IS APPROPRIAconst response = await fetch('/ubba-arg/api/ubba-ai', {TE",
                         "YOU SHOULD BE TERRIFIED",
                         "THE DOOR CANNOT BE CLOSED"
                     ]
@@ -293,10 +293,14 @@
             ]
         };
 
-        // Real AI integration with Vercel
+        // Real AI integration with Vercel - USING DIRECT PATH
         async function getUbbaResponse(userMessage) {
             try {
-                const response = await fetch('/api/ubba-ai', {
+                console.log('=== DEBUG: Starting API call ===');
+                console.log('Message:', userMessage);
+
+                // Use the direct path to your API
+                const response = await fetch('/ubba-arg/api/ubba-ai', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -306,7 +310,15 @@
                     })
                 });
 
+                console.log('=== DEBUG: API Response Status ===', response.status);
+                
+                if (!response.ok) {
+                    throw new Error(`API returned ${response.status}`);
+                }
+
                 const data = await response.json();
+                console.log('=== DEBUG: API Response Data ===', data);
+                
                 return data.response || "THE STATIC SPEAKS...";
             } catch (error) {
                 console.error('API Error:', error);
