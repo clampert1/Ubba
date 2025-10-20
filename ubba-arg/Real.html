@@ -223,7 +223,7 @@
         const chatContainer = document.getElementById('chat-container');
         const userInput = document.getElementById('user-input');
 
-        // Enhanced Ubba responses - no AI dependency
+        // Enhanced Ubba responses - fallback system
         const ubbaResponses = {
             patterns: [
                 {
@@ -293,7 +293,30 @@
             ]
         };
 
-        function getUbbaResponse(userMessage) {
+        // Real AI integration with Vercel
+        async function getUbbaResponse(userMessage) {
+            try {
+                const response = await fetch('/api/ubba-ai', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        message: userMessage
+                    })
+                });
+
+                const data = await response.json();
+                return data.response || "THE STATIC SPEAKS...";
+            } catch (error) {
+                console.error('API Error:', error);
+                // Fallback to original responses if API fails
+                return getFallbackResponse(userMessage);
+            }
+        }
+
+        // Fallback response system
+        function getFallbackResponse(userMessage) {
             const lowerMessage = userMessage.toLowerCase();
             
             for (const pattern of ubbaResponses.patterns) {
@@ -490,18 +513,18 @@
                     chatContainer.appendChild(typingDiv);
                     chatContainer.scrollTop = chatContainer.scrollHeight;
                     
-                    // Get response after a delay (simulate thinking)
-                    setTimeout(() => {
-                        // Remove typing indicator
+                    // Get AI response
+                    try {
+                        const response = await getUbbaResponse(userText);
                         document.getElementById('typing-indicator').remove();
-                        
-                        // Get and add AI response
-                        const response = getUbbaResponse(userText);
                         addMessage("UBBA", response);
-                        
-                        userInput.disabled = false;
-                        userInput.focus();
-                    }, 1000 + Math.random() * 1000); // Random delay between 1-2 seconds
+                    } catch (error) {
+                        document.getElementById('typing-indicator').remove();
+                        addMessage("UBBA", "THE STATIC INTERFERES... TRY AGAIN");
+                    }
+                    
+                    userInput.disabled = false;
+                    userInput.focus();
                 }
             }
         });
