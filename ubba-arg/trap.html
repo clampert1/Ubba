@@ -115,11 +115,14 @@
         let velocityY = 0;
         let angularVelocity = 0;
         let rotation = 0;
-        let dragOffsetX = 0;
-        let dragOffsetY = 0;
+        
+        // Drag variables - completely new approach
+        let dragWorldAnchorX = 0;  // World position where user clicked
+        let dragWorldAnchorY = 0;
+        let dragLocalAnchorX = 0;  // Local position relative to cage center
+        let dragLocalAnchorY = 0;
         let lastMouseX = 0;
         let lastMouseY = 0;
-        let lastTime = 0;
         
         // Win condition variables
         let isOverUbba = false;
@@ -136,22 +139,37 @@
         const SCREEN_LEFT = 0;
         const SCREEN_RIGHT = window.innerWidth;
         
+        // Convert local coordinates to world coordinates
+        function localToWorld(localX, localY) {
+            const cos = Math.cos(rotation * Math.PI / 180);
+            const sin = Math.sin(rotation * Math.PI / 180);
+            const worldX = cageX + localX * cos - localY * sin;
+            const worldY = cageY + localX * sin + localY * cos;
+            return { x: worldX, y: worldY };
+        }
+        
+        // Convert world coordinates to local coordinates
+        function worldToLocal(worldX, worldY) {
+            const cos = Math.cos(-rotation * Math.PI / 180);
+            const sin = Math.sin(-rotation * Math.PI / 180);
+            const localX = (worldX - cageX) * cos - (worldY - cageY) * sin;
+            const localY = (worldX - cageX) * sin + (worldY - cageY) * cos;
+            return { x: localX, y: localY };
+        }
+        
         // Game loop
-        function gameLoop(timestamp) {
-            const deltaTime = lastTime ? (timestamp - lastTime) / 16.67 : 1;
-            lastTime = timestamp;
-            
+        function gameLoop() {
             if (!isDragging) {
                 // Apply physics when not dragging
-                cageX += velocityX * deltaTime;
-                cageY += velocityY * deltaTime;
-                rotation += angularVelocity * deltaTime;
+                cageX += velocityX;
+                cageY += velocityY;
+                rotation += angularVelocity;
                 
                 // Moderate gravity
-                velocityY += 0.3 * deltaTime;
+                velocityY += 0.3;
                 
                 // Natural rotation damping
-                angularVelocity *= Math.pow(0.97, deltaTime);
+                angularVelocity *= 0.97;
                 
                 // Ground collision
                 const cageBottom = cageY + CAGE_SIZE/2;
@@ -190,11 +208,11 @@
                 }
                 
                 // Air resistance
-                velocityX *= Math.pow(0.99, deltaTime);
-                velocityY *= Math.pow(0.99, deltaTime);
+                velocityX *= 0.99;
+                velocityY *= 0.99;
             }
             
-            // Update position and rotation (ALWAYS - including during drag)
+            // Update position and rotation
             cage.style.left = (cageX - CAGE_SIZE/2) + 'px';
             cage.style.bottom = (GROUND_Y - cageY - CAGE_SIZE/2) + 'px';
             cage.style.transform = `rotate(${rotation}deg)`;
@@ -222,10 +240,19 @@
             const clientX = e.clientX || e.touches[0].clientX;
             const clientY = e.clientY || e.touches[0].clientY;
             
-            // Calculate exact click point relative to cage center
+            // Store the exact world position where user clicked
+            dragWorldAnchorX = clientX;
+            dragWorldAnchorY = clientY;
+            
+            // Calculate the local position relative to cage center
             const cageRect = cage.getBoundingClientRect();
-            dragOffsetX = clientX - (cageRect.left + CAGE_SIZE/2);
-            dragOffsetY = clientY - (cageRect.top + CAGE_SIZE/2);
+            const clickLocalX = clientX - (cageRect.left + CAGE_SIZE/2);
+            const clickLocalY = clientY - (cageRect.top + CAGE_SIZE/2);
+            
+            // Convert to cage's local coordinate system (accounting for current rotation)
+            const localPos = worldToLocal(dragWorldAnchorX, dragWorldAnchorY);
+            dragLocalAnchorX = localPos.x;
+            dragLocalAnchorY = localPos.y;
             
             lastMouseX = clientX;
             lastMouseY = clientY;
@@ -242,40 +269,47 @@
             const clientX = e.clientX || e.touches[0].clientX;
             const clientY = e.clientY || e.touches[0].clientY;
             
-            // Calculate mouse movement (acceleration/force)
+            // Calculate mouse movement
             const deltaX = clientX - lastMouseX;
             const deltaY = clientY - lastMouseY;
             
-            // Move cage so the clicked point stays under mouse
-            cageX = clientX - dragOffsetX;
-            cageY = clientY - dragOffsetY;
+            // The anchor point in world space should follow the mouse exactly
+            const targetWorldAnchorX = clientX;
+            const targetWorldAnchorY = clientY;
             
-            // Calculate rotation based on force around anchor point
-            // This creates realistic rotation around the point being held
-            const anchorDistance = Math.sqrt(dragOffsetX * dragOffsetX + dragOffsetY * dragOffsetY);
+            // Calculate where the anchor point should be in world space based on current cage position
+            const currentWorldAnchor = localToWorld(dragLocalAnchorX, dragLocalAnchorY);
             
-            if (anchorDistance > 10) { // Only rotate if not holding near center
-                // Calculate the perpendicular force to the anchor vector
-                const anchorAngle = Math.atan2(dragOffsetY, dragOffsetX);
-                const movementAngle = Math.atan2(deltaY, deltaX);
-                
-                // Calculate the angle difference between anchor and movement
-                const angleDiff = movementAngle - (anchorAngle + Math.PI/2);
-                
-                // The rotation force is proportional to:
-                // 1. Distance from center (lever arm)
-                // 2. Mouse movement speed (force)
-                // 3. How perpendicular the movement is to the anchor
-                const rotationForce = Math.sin(angleDiff) * anchorDistance * Math.sqrt(deltaX*deltaX + deltaY*deltaY) * 0.01;
-                
-                // Apply rotation immediately during drag
-                rotation += rotationForce;
-                angularVelocity = rotationForce * 2; // For when released
-            }
+            // Calculate the error between where anchor is and where it should be
+            const errorX = targetWorldAnchorX - currentWorldAnchor.x;
+            const errorY = targetWorldAnchorY - currentWorldAnchor.y;
+            
+            // Move cage to correct the error
+            cageX += errorX;
+            cageY += errorY;
+            
+            // Calculate rotation based on circular movement around anchor point
+            const currentToMouseX = clientX - currentWorldAnchor.x;
+            const currentToMouseY = clientY - currentWorldAnchor.y;
+            const lastToMouseX = lastMouseX - currentWorldAnchor.x;
+            const lastToMouseY = lastMouseY - currentWorldAnchor.y;
+            
+            // Calculate the angle between the two vectors
+            const currentAngle = Math.atan2(currentToMouseY, currentToMouseX);
+            const lastAngle = Math.atan2(lastToMouseY, lastToMouseX);
+            let angleDiff = currentAngle - lastAngle;
+            
+            // Normalize angle difference
+            if (angleDiff > Math.PI) angleDiff -= 2 * Math.PI;
+            if (angleDiff < -Math.PI) angleDiff += 2 * Math.PI;
+            
+            // Apply rotation based on circular movement
+            rotation += angleDiff * (180 / Math.PI); // Convert to degrees
             
             // Calculate velocity for when released
             velocityX = deltaX * 2;
             velocityY = deltaY * 2;
+            angularVelocity = angleDiff * 10;
             
             // Update last mouse position
             lastMouseX = clientX;
@@ -359,7 +393,7 @@
         }
         
         // Start the game loop
-        requestAnimationFrame(gameLoop);
+        gameLoop();
     </script>
 </body>
 </html>
