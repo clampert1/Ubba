@@ -1,58 +1,399 @@
-Druddigon @ Roseli Berry  
-Ability: Mold Breaker  
-Tera Type: Dragon  
-EVs: 80 HP / 252 Def / 176 Spe  
-Impish Nature  
-- Earthquake  
-- Fire Punch  
-- Glare  
-- Stealth Rock  
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TRAP</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: #2c3e50;
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            padding-bottom: 25vh;
+        }
+        
+        #game-container {
+            position: relative;
+            width: 100vw;
+            height: 75vh;
+            border-bottom: 4px solid #7f8c8d;
+        }
+        
+        #cage {
+            position: absolute;
+            width: 200px;
+            height: 200px;
+            cursor: grab;
+            z-index: 10;
+            left: 100px;
+            bottom: 200px;
+            transform-origin: center center;
+        }
+        
+        #ubba {
+            position: absolute;
+            width: 150px;
+            height: 150px;
+            pointer-events: none;
+            z-index: 5;
+            right: 100px;
+            bottom: 0;
+        }
+        
+        #win-message {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            color: #0f0;
+            font-family: 'Courier New', monospace;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            z-index: 100;
+            font-size: 48px;
+        }
+        
+        #win-message button {
+            margin-top: 20px;
+            padding: 10px 20px;
+            background: #000;
+            color: #0f0;
+            border: 2px solid #0f0;
+            font-family: 'Courier New', monospace;
+            cursor: pointer;
+            font-size: 24px;
+        }
 
-Urshifu-Rapid-Strike @ Choice Band  
-Ability: Unseen Fist  
-Tera Type: Fighting  
-EVs: 252 Atk / 4 Def / 252 Spe  
-Jolly Nature  
-- Surging Strikes  
-- Close Combat  
-- U-turn  
-- Poison Jab  
+        #countdown {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #0f0;
+            font-family: 'Courier New', monospace;
+            font-size: 24px;
+            display: none;
+            z-index: 50;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <img src="https://raw.githubusercontent.com/clampert1/Ubba/main/ubba-arg/assets/cameras/cage.png" id="cage">
+        <img src="https://raw.githubusercontent.com/clampert1/Ubba/main/ubba-arg/assets/sprites/ubba%20png.png" id="ubba">
+        <div id="countdown"></div>
+    </div>
+    
+    <div id="win-message">
+        CONTAINMENT SUCCESSFUL
+        <button onclick="location.reload()">PLAY AGAIN</button>
+    </div>
 
-Great Tusk @ Leftovers  
-Ability: Protosynthesis  
-Tera Type: Water  
-EVs: 252 HP / 88 Def / 168 Spe  
-Impish Nature  
-- Headlong Rush  
-- Knock Off  
-- Rapid Spin  
-- Ice Spinner  
-
-Gholdengo @ Choice Scarf  
-Ability: Good as Gold  
-Tera Type: Flying  
-EVs: 252 SpA / 4 SpD / 252 Spe  
-Timid Nature  
-- Make It Rain  
-- Shadow Ball  
-- Focus Blast  
-- Trick  
-
-Kingambit @ Darkinium Z  
-Ability: Supreme Overlord  
-Tera Type: Dark  
-EVs: 252 HP / 252 Atk / 4 SpD  
-Adamant Nature  
-- Swords Dance  
-- Kowtow Cleave  
-- Sucker Punch  
-- Iron Head  
-
-Mega Lopunny @ Lopunnite  
-Ability: Scrappy  
-EVs: 252 Atk / 4 SpD / 252 Spe  
-Jolly Nature  
-- Fake Out  
-- Close Combat  
-- Return  
-- Ice Punch  
+    <script>
+        const cage = document.getElementById('cage');
+        const ubba = document.getElementById('ubba');
+        const winMessage = document.getElementById('win-message');
+        const countdown = document.getElementById('countdown');
+        const gameContainer = document.getElementById('game-container');
+        
+        // Physics variables
+        let isDragging = false;
+        let velocityX = 0;
+        let velocityY = 0;
+        let angularVelocity = 0;
+        let rotation = 0;
+        
+        // Drag variables - completely new approach
+        let dragWorldAnchorX = 0;  // World position where user clicked
+        let dragWorldAnchorY = 0;
+        let dragLocalAnchorX = 0;  // Local position relative to cage center
+        let dragLocalAnchorY = 0;
+        let lastMouseX = 0;
+        let lastMouseY = 0;
+        
+        // Win condition variables
+        let isOverUbba = false;
+        let countdownStart = 0;
+        let currentCountdown = 3;
+        
+        // Cage position (center of cage)
+        let cageX = 200;
+        let cageY = 300;
+        
+        const GROUND_Y = gameContainer.offsetHeight;
+        const CEILING_Y = 0;
+        const CAGE_SIZE = 200;
+        const SCREEN_LEFT = 0;
+        const SCREEN_RIGHT = window.innerWidth;
+        
+        // Convert local coordinates to world coordinates
+        function localToWorld(localX, localY) {
+            const cos = Math.cos(rotation * Math.PI / 180);
+            const sin = Math.sin(rotation * Math.PI / 180);
+            const worldX = cageX + localX * cos - localY * sin;
+            const worldY = cageY + localX * sin + localY * cos;
+            return { x: worldX, y: worldY };
+        }
+        
+        // Convert world coordinates to local coordinates
+        function worldToLocal(worldX, worldY) {
+            const cos = Math.cos(-rotation * Math.PI / 180);
+            const sin = Math.sin(-rotation * Math.PI / 180);
+            const localX = (worldX - cageX) * cos - (worldY - cageY) * sin;
+            const localY = (worldX - cageX) * sin + (worldY - cageY) * cos;
+            return { x: localX, y: localY };
+        }
+        
+        // Game loop
+        function gameLoop() {
+            if (!isDragging) {
+                // Apply physics when not dragging
+                cageX += velocityX;
+                cageY += velocityY;
+                rotation += angularVelocity;
+                
+                // Moderate gravity
+                velocityY += 0.3;
+                
+                // Natural rotation damping
+                angularVelocity *= 0.97;
+                
+                // Ground collision
+                const cageBottom = cageY + CAGE_SIZE/2;
+                if (cageBottom > GROUND_Y) {
+                    cageY = GROUND_Y - CAGE_SIZE/2;
+                    velocityY = -velocityY * 0.3;
+                    velocityX *= 0.8;
+                    angularVelocity *= 0.7;
+                    
+                    if (Math.abs(velocityY) < 0.5) {
+                        velocityY = 0;
+                    }
+                }
+                
+                // Ceiling collision
+                const cageTop = cageY - CAGE_SIZE/2;
+                if (cageTop < CEILING_Y) {
+                    cageY = CEILING_Y + CAGE_SIZE/2;
+                    velocityY = -velocityY * 0.5;
+                    angularVelocity *= 0.8;
+                }
+                
+                // Wall collisions
+                const cageLeft = cageX - CAGE_SIZE/2;
+                const cageRight = cageX + CAGE_SIZE/2;
+                
+                if (cageLeft < SCREEN_LEFT) {
+                    cageX = SCREEN_LEFT + CAGE_SIZE/2;
+                    velocityX = -velocityX * 0.6;
+                    angularVelocity += velocityX * 0.03;
+                }
+                if (cageRight > SCREEN_RIGHT) {
+                    cageX = SCREEN_RIGHT - CAGE_SIZE/2;
+                    velocityX = -velocityX * 0.6;
+                    angularVelocity += velocityX * 0.03;
+                }
+                
+                // Air resistance
+                velocityX *= 0.99;
+                velocityY *= 0.99;
+            }
+            
+            // Update position and rotation
+            cage.style.left = (cageX - CAGE_SIZE/2) + 'px';
+            cage.style.bottom = (GROUND_Y - cageY - CAGE_SIZE/2) + 'px';
+            cage.style.transform = `rotate(${rotation}deg)`;
+            
+            checkWinCondition();
+            updateCountdown();
+            requestAnimationFrame(gameLoop);
+        }
+        
+        // Mouse/touch events
+        cage.addEventListener('mousedown', startDrag);
+        cage.addEventListener('touchstart', startDrag);
+        
+        document.addEventListener('mousemove', drag);
+        document.addEventListener('touchmove', drag);
+        
+        document.addEventListener('mouseup', endDrag);
+        document.addEventListener('touchend', endDrag);
+        
+        function startDrag(e) {
+            e.preventDefault();
+            isDragging = true;
+            cage.style.cursor = 'grabbing';
+            
+            const clientX = e.clientX || e.touches[0].clientX;
+            const clientY = e.clientY || e.touches[0].clientY;
+            
+            // Store the exact world position where user clicked
+            dragWorldAnchorX = clientX;
+            dragWorldAnchorY = clientY;
+            
+            // Calculate the local position relative to cage center
+            const cageRect = cage.getBoundingClientRect();
+            const clickLocalX = clientX - (cageRect.left + CAGE_SIZE/2);
+            const clickLocalY = clientY - (cageRect.top + CAGE_SIZE/2);
+            
+            // Convert to cage's local coordinate system (accounting for current rotation)
+            const localPos = worldToLocal(dragWorldAnchorX, dragWorldAnchorY);
+            dragLocalAnchorX = localPos.x;
+            dragLocalAnchorY = localPos.y;
+            
+            lastMouseX = clientX;
+            lastMouseY = clientY;
+            
+            velocityX = 0;
+            velocityY = 0;
+            angularVelocity = 0;
+        }
+        
+        function drag(e) {
+            if (!isDragging) return;
+            e.preventDefault();
+            
+            const clientX = e.clientX || e.touches[0].clientX;
+            const clientY = e.clientY || e.touches[0].clientY;
+            
+            // Calculate mouse movement
+            const deltaX = clientX - lastMouseX;
+            const deltaY = clientY - lastMouseY;
+            
+            // The anchor point in world space should follow the mouse exactly
+            const targetWorldAnchorX = clientX;
+            const targetWorldAnchorY = clientY;
+            
+            // Calculate where the anchor point should be in world space based on current cage position
+            const currentWorldAnchor = localToWorld(dragLocalAnchorX, dragLocalAnchorY);
+            
+            // Calculate the error between where anchor is and where it should be
+            const errorX = targetWorldAnchorX - currentWorldAnchor.x;
+            const errorY = targetWorldAnchorY - currentWorldAnchor.y;
+            
+            // Move cage to correct the error
+            cageX += errorX;
+            cageY += errorY;
+            
+            // Calculate rotation based on circular movement around anchor point
+            const currentToMouseX = clientX - currentWorldAnchor.x;
+            const currentToMouseY = clientY - currentWorldAnchor.y;
+            const lastToMouseX = lastMouseX - currentWorldAnchor.x;
+            const lastToMouseY = lastMouseY - currentWorldAnchor.y;
+            
+            // Calculate the angle between the two vectors
+            const currentAngle = Math.atan2(currentToMouseY, currentToMouseX);
+            const lastAngle = Math.atan2(lastToMouseY, lastToMouseX);
+            let angleDiff = currentAngle - lastAngle;
+            
+            // Normalize angle difference
+            if (angleDiff > Math.PI) angleDiff -= 2 * Math.PI;
+            if (angleDiff < -Math.PI) angleDiff += 2 * Math.PI;
+            
+            // Apply rotation based on circular movement
+            rotation += angleDiff * (180 / Math.PI); // Convert to degrees
+            
+            // Calculate velocity for when released
+            velocityX = deltaX * 2;
+            velocityY = deltaY * 2;
+            angularVelocity = angleDiff * 10;
+            
+            // Update last mouse position
+            lastMouseX = clientX;
+            lastMouseY = clientY;
+            
+            // Apply boundaries during drag
+            const cageLeft = cageX - CAGE_SIZE/2;
+            const cageRight = cageX + CAGE_SIZE/2;
+            const cageTop = cageY - CAGE_SIZE/2;
+            const cageBottom = cageY + CAGE_SIZE/2;
+            
+            if (cageLeft < SCREEN_LEFT) {
+                cageX = SCREEN_LEFT + CAGE_SIZE/2;
+                velocityX = 0;
+            }
+            if (cageRight > SCREEN_RIGHT) {
+                cageX = SCREEN_RIGHT - CAGE_SIZE/2;
+                velocityX = 0;
+            }
+            if (cageTop < CEILING_Y) {
+                cageY = CEILING_Y + CAGE_SIZE/2;
+                velocityY = 0;
+            }
+            if (cageBottom > GROUND_Y) {
+                cageY = GROUND_Y - CAGE_SIZE/2;
+                velocityY = 0;
+            }
+        }
+        
+        function endDrag() {
+            if (!isDragging) return;
+            isDragging = false;
+            cage.style.cursor = 'grab';
+        }
+        
+        function checkWinCondition() {
+            const cageRect = cage.getBoundingClientRect();
+            const ubbaRect = ubba.getBoundingClientRect();
+            
+            // Check if cage completely covers ubba
+            const completelyCovers = 
+                cageRect.left <= ubbaRect.left &&
+                cageRect.right >= ubbaRect.right &&
+                cageRect.top <= ubbaRect.top &&
+                cageRect.bottom >= ubbaRect.bottom;
+            
+            // Also check if not moving too fast
+            const isStable = Math.abs(velocityX) < 1 && Math.abs(velocityY) < 1 && Math.abs(angularVelocity) < 0.5;
+            
+            if (completelyCovers && isStable) {
+                if (!isOverUbba) {
+                    // Start countdown
+                    isOverUbba = true;
+                    countdownStart = Date.now();
+                    currentCountdown = 3;
+                    countdown.style.display = 'block';
+                    countdown.textContent = `CONTAINING: ${currentCountdown}`;
+                }
+            } else {
+                if (isOverUbba) {
+                    // Reset countdown
+                    isOverUbba = false;
+                    countdown.style.display = 'none';
+                }
+            }
+        }
+        
+        function updateCountdown() {
+            if (isOverUbba) {
+                const elapsed = (Date.now() - countdownStart) / 1000;
+                const remaining = Math.max(0, 3 - elapsed);
+                currentCountdown = Math.ceil(remaining);
+                
+                countdown.textContent = `CONTAINING: ${currentCountdown}`;
+                
+                if (remaining <= 0) {
+                    winMessage.style.display = 'flex';
+                    countdown.style.display = 'none';
+                }
+            }
+        }
+        
+        // Start the game loop
+        gameLoop();
+    </script>
+</body>
+</html>
