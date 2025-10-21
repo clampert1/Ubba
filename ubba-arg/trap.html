@@ -116,17 +116,6 @@
             display: none;
             z-index: 50;
         }
-
-        #attempt-counter {
-            position: absolute;
-            top: 150px;
-            left: 50%;
-            transform: translateX(-50%);
-            color: #b8860b;
-            font-family: 'Courier New', monospace;
-            font-size: 16px;
-            z-index: 50;
-        }
     </style>
 </head>
 <body>
@@ -137,7 +126,6 @@
         <img src="https://raw.githubusercontent.com/clampert1/Ubba/main/ubba-arg/assets/cameras/cage.png" id="cage">
         <img src="https://raw.githubusercontent.com/clampert1/Ubba/main/ubba-arg/assets/sprites/ubba%20png.png" id="ubba">
         <div id="countdown"></div>
-        <div id="attempt-counter">Attempts: 0/5</div>
     </div>
     
     <div id="win-message">
@@ -150,7 +138,6 @@
         const ubba = document.getElementById('ubba');
         const winMessage = document.getElementById('win-message');
         const countdown = document.getElementById('countdown');
-        const attemptCounter = document.getElementById('attempt-counter');
         const gameContainer = document.getElementById('game-container');
         
         // Update constants for bigger images
@@ -372,17 +359,18 @@
             const cageRect = cage.getBoundingClientRect();
             const ubbaRect = ubba.getBoundingClientRect();
             
-            // Check if cage completely covers ubba
-            const completelyCovers = 
-                cageRect.left <= ubbaRect.left &&
-                cageRect.right >= ubbaRect.right &&
-                cageRect.top <= ubbaRect.top &&
-                cageRect.bottom >= ubbaRect.bottom;
+            // Check if cage mostly covers ubba with bigger hitbox tolerance
+            const tolerance = 30; // Increased tolerance for easier caging
+            const mostlyCovers = 
+                cageRect.left <= ubbaRect.left + tolerance &&
+                cageRect.right >= ubbaRect.right - tolerance &&
+                cageRect.top <= ubbaRect.top + tolerance &&
+                cageRect.bottom >= ubbaRect.bottom - tolerance;
             
             // Also check if not moving too fast
             const isStable = Math.abs(velocityX) < 0.8 && Math.abs(velocityY) < 0.8 && Math.abs(angularVelocity) < 0.3;
             
-            if (completelyCovers && isStable) {
+            if (mostlyCovers && isStable) {
                 if (!isOverUbba) {
                     // Start countdown
                     isOverUbba = true;
@@ -413,30 +401,31 @@
             if (!isOverUbba) return;
             
             attempts++;
-            attemptCounter.textContent = `Attempts: ${attempts}/5`;
             
-            // Calculate sabotage force based on attempt number
-            const baseForce = 15 + (attempts * 5); // Increasing force each attempt
+            // Calculate sabotage force based on attempt number - more violent each time
+            const baseForce = 20 + (attempts * 8); // Much more force each attempt
             const randomAngle = Math.random() * Math.PI * 2;
             
-            // Throw cage away from Ubba
+            // Throw cage away from Ubba with more violence
             velocityX = Math.cos(randomAngle) * baseForce;
-            velocityY = Math.sin(randomAngle) * baseForce - 5; // Add some upward force
-            angularVelocity = (Math.random() - 0.5) * 10;
+            velocityY = Math.sin(randomAngle) * baseForce - 8; // More upward force
+            angularVelocity = (Math.random() - 0.5) * 15; // More spin
             
             // Reset containment
             isOverUbba = false;
             countdown.style.display = 'none';
             
-            // Screen shake based on attempt number
-            const shakeIntensity = 5 + (attempts * 3);
+            // More violent screen shake based on attempt number
+            const shakeIntensity = 8 + (attempts * 6); // Much more violent shaking
             screenShake(shakeIntensity);
             
             // Show sabotage message
             countdown.textContent = "CONTAINMENT BREACH!";
+            countdown.style.color = "#ff4444";
             countdown.style.display = 'block';
             setTimeout(() => {
                 countdown.style.display = 'none';
+                countdown.style.color = "#d4af37";
             }, 2000);
         }
         
@@ -444,7 +433,7 @@
             const originalX = gameContainer.style.left || '0';
             const originalY = gameContainer.style.top || '0';
             let shakeCount = 0;
-            const maxShakes = 10 + (intensity * 2);
+            const maxShakes = 15 + (intensity * 3); // More shakes for more violence
             
             const shakeInterval = setInterval(() => {
                 const x = (Math.random() - 0.5) * intensity;
@@ -457,7 +446,7 @@
                     clearInterval(shakeInterval);
                     gameContainer.style.transform = 'translate(0, 0)';
                 }
-            }, 50);
+            }, 40); // Faster shaking for more violence
         }
         
         function updateCountdown() {
