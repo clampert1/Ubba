@@ -37,7 +37,6 @@
             left: 100px;
             bottom: 200px;
             transform-origin: center center;
-            transition: transform 0.1s; /* Smooth rotation */
         }
         
         #ubba {
@@ -120,7 +119,7 @@
         let dragOffsetY = 0;
         let lastMouseX = 0;
         let lastMouseY = 0;
-        let lastRotation = 0;
+        let lastTime = 0;
         
         // Win condition variables
         let isOverUbba = false;
@@ -138,18 +137,21 @@
         const SCREEN_RIGHT = window.innerWidth;
         
         // Game loop
-        function gameLoop() {
+        function gameLoop(timestamp) {
+            const deltaTime = lastTime ? (timestamp - lastTime) / 16.67 : 1;
+            lastTime = timestamp;
+            
             if (!isDragging) {
                 // Apply physics when not dragging
-                cageX += velocityX;
-                cageY += velocityY;
-                rotation += angularVelocity;
+                cageX += velocityX * deltaTime;
+                cageY += velocityY * deltaTime;
+                rotation += angularVelocity * deltaTime;
                 
                 // Moderate gravity
-                velocityY += 0.3;
+                velocityY += 0.3 * deltaTime;
                 
                 // Natural rotation damping
-                angularVelocity *= 0.97;
+                angularVelocity *= Math.pow(0.97, deltaTime);
                 
                 // Ground collision
                 const cageBottom = cageY + CAGE_SIZE/2;
@@ -188,8 +190,8 @@
                 }
                 
                 // Air resistance
-                velocityX *= 0.99;
-                velocityY *= 0.99;
+                velocityX *= Math.pow(0.99, deltaTime);
+                velocityY *= Math.pow(0.99, deltaTime);
             }
             
             // Update position and rotation (ALWAYS - including during drag)
@@ -227,7 +229,6 @@
             
             lastMouseX = clientX;
             lastMouseY = clientY;
-            lastRotation = rotation;
             
             velocityX = 0;
             velocityY = 0;
@@ -241,7 +242,7 @@
             const clientX = e.clientX || e.touches[0].clientX;
             const clientY = e.clientY || e.touches[0].clientY;
             
-            // Calculate mouse movement
+            // Calculate mouse movement (acceleration/force)
             const deltaX = clientX - lastMouseX;
             const deltaY = clientY - lastMouseY;
             
@@ -249,21 +250,32 @@
             cageX = clientX - dragOffsetX;
             cageY = clientY - dragOffsetY;
             
-            // Calculate rotation based on circular mouse movement
-            // This creates visual spinning when you move mouse in circles
-            const movementAngle = Math.atan2(deltaY, deltaX);
-            const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+            // Calculate rotation based on force around anchor point
+            // This creates realistic rotation around the point being held
+            const anchorDistance = Math.sqrt(dragOffsetX * dragOffsetX + dragOffsetY * dragOffsetY);
             
-            // Apply rotation DURING drag - this makes it spin visually!
-            rotation = lastRotation + (distance * 2); // Multiply for more visible rotation
-            
-            // Update last rotation for continuous rotation
-            lastRotation = rotation;
+            if (anchorDistance > 10) { // Only rotate if not holding near center
+                // Calculate the perpendicular force to the anchor vector
+                const anchorAngle = Math.atan2(dragOffsetY, dragOffsetX);
+                const movementAngle = Math.atan2(deltaY, deltaX);
+                
+                // Calculate the angle difference between anchor and movement
+                const angleDiff = movementAngle - (anchorAngle + Math.PI/2);
+                
+                // The rotation force is proportional to:
+                // 1. Distance from center (lever arm)
+                // 2. Mouse movement speed (force)
+                // 3. How perpendicular the movement is to the anchor
+                const rotationForce = Math.sin(angleDiff) * anchorDistance * Math.sqrt(deltaX*deltaX + deltaY*deltaY) * 0.01;
+                
+                // Apply rotation immediately during drag
+                rotation += rotationForce;
+                angularVelocity = rotationForce * 2; // For when released
+            }
             
             // Calculate velocity for when released
             velocityX = deltaX * 2;
             velocityY = deltaY * 2;
-            angularVelocity = distance * 0.5; // Carry over rotation when released
             
             // Update last mouse position
             lastMouseX = clientX;
@@ -347,7 +359,7 @@
         }
         
         // Start the game loop
-        gameLoop();
+        requestAnimationFrame(gameLoop);
     </script>
 </body>
 </html>
