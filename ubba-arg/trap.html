@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TRAP</title>
-    <link href="https://fonts.googleapis.com/css2?family=UnifrakturMaguntia&display=swap" rel="stylesheet">
     <style>
         * {
             margin: 0;
@@ -13,13 +12,13 @@
         }
         
         body {
-            background: #1a2530; /* Darker navy blue gray */
+            background: #1a2530;
             overflow: hidden;
             height: 100vh;
             display: flex;
             justify-content: center;
             align-items: flex-end;
-            padding-bottom: 15vh; /* Lower ground floor */
+            padding-bottom: 15vh;
         }
         
         #title {
@@ -27,17 +26,18 @@
             top: 30px;
             left: 50%;
             transform: translateX(-50%);
-            font-family: 'UnifrakturMaguntia', cursive;
-            font-size: 48px;
-            color: #d4af37; /* Gold color for old saloon feel */
+            font-family: 'Courier New', monospace;
+            font-size: 36px;
+            color: #d4af37;
             text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
             z-index: 20;
             text-align: center;
+            font-weight: bold;
         }
         
         #subtitle {
             position: absolute;
-            top: 90px;
+            top: 80px;
             left: 50%;
             transform: translateX(-50%);
             font-family: 'Courier New', monospace;
@@ -50,28 +50,28 @@
         #game-container {
             position: relative;
             width: 100vw;
-            height: 85vh; /* More space for bigger images */
-            border-bottom: 2px solid #5d6d7e; /* Thinner ground line */
+            height: 85vh;
+            border-bottom: 2px solid #5d6d7e;
         }
         
         #cage {
             position: absolute;
-            width: 250px; /* Bigger cage */
+            width: 250px;
             height: 250px;
             cursor: grab;
             z-index: 10;
-            left: 200px; /* More centered */
+            left: 200px;
             bottom: 300px;
             transform-origin: center center;
         }
         
         #ubba {
             position: absolute;
-            width: 200px; /* Bigger Ubba */
+            width: 200px;
             height: 200px;
             pointer-events: none;
             z-index: 5;
-            right: 200px; /* More centered */
+            right: 200px;
             bottom: 0;
         }
         
@@ -83,13 +83,14 @@
             height: 100%;
             background: rgba(0, 0, 0, 0.9);
             color: #d4af37;
-            font-family: 'UnifrakturMaguntia', cursive;
+            font-family: 'Courier New', monospace;
             display: none;
             justify-content: center;
             align-items: center;
             flex-direction: column;
             z-index: 100;
-            font-size: 60px;
+            font-size: 48px;
+            font-weight: bold;
         }
         
         #win-message button {
@@ -106,7 +107,7 @@
 
         #countdown {
             position: absolute;
-            top: 140px;
+            top: 120px;
             left: 50%;
             transform: translateX(-50%);
             color: #d4af37;
@@ -162,7 +163,7 @@
         let currentCountdown = 3;
         
         // Cage position (center of cage)
-        let cageX = 200 + CAGE_SIZE/2; // Adjusted for bigger size
+        let cageX = 200 + CAGE_SIZE/2;
         let cageY = 300;
         
         const GROUND_Y = gameContainer.offsetHeight;
