@@ -293,14 +293,14 @@
             ]
         };
 
-        // Real AI integration with Vercel - USING DIRECT PATH
+                // Real AI integration with Vercel - USING ROOT PATH
         async function getUbbaResponse(userMessage) {
             try {
                 console.log('=== DEBUG: Starting API call ===');
                 console.log('Message:', userMessage);
-
-                // Use the direct path to your API
-                const response = await fetch('api/ubba-ai', {
+        
+                // Use the root path to your API
+                const response = await fetch('/api/ubba-ai', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -309,13 +309,13 @@
                         message: userMessage
                     })
                 });
-
+        
                 console.log('=== DEBUG: API Response Status ===', response.status);
                 
                 if (!response.ok) {
                     throw new Error(`API returned ${response.status}`);
                 }
-
+        
                 const data = await response.json();
                 console.log('=== DEBUG: API Response Data ===', data);
                 
