@@ -76,12 +76,25 @@
             cursor: pointer;
             font-size: 24px;
         }
+
+        #countdown {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #0f0;
+            font-family: 'Courier New', monospace;
+            font-size: 24px;
+            display: none;
+            z-index: 50;
+        }
     </style>
 </head>
 <body>
     <div id="game-container">
         <img src="https://raw.githubusercontent.com/clampert1/Ubba/main/ubba-arg/assets/cameras/cage.png" id="cage">
         <img src="https://raw.githubusercontent.com/clampert1/Ubba/main/ubba-arg/assets/sprites/ubba%20png.png" id="ubba">
+        <div id="countdown"></div>
     </div>
     
     <div id="win-message">
@@ -93,6 +106,7 @@
         const cage = document.getElementById('cage');
         const ubba = document.getElementById('ubba');
         const winMessage = document.getElementById('win-message');
+        const countdown = document.getElementById('countdown');
         const gameContainer = document.getElementById('game-container');
         
         // Physics variables
@@ -103,6 +117,13 @@
         let rotation = 0;
         let dragOffsetX = 0;
         let dragOffsetY = 0;
+        let lastMouseX = 0;
+        let lastMouseY = 0;
+        
+        // Win condition variables
+        let isOverUbba = false;
+        let countdownStart = 0;
+        let currentCountdown = 3;
         
         // Cage position (center of cage)
         let cageX = 200;
@@ -123,26 +144,21 @@
                 rotation += angularVelocity;
                 
                 // Moderate gravity
-                velocityY += 0.8;
+                velocityY += 0.3;
                 
-                // Weight at bottom - natural pendulum physics
-                // The cage wants to stay upright (rotation = 0)
-                const rotationDiff = 0 - rotation;
-                const torque = rotationDiff * 0.1; // Restoring force
-                angularVelocity += torque;
+                // Natural rotation damping
+                angularVelocity *= 0.97;
                 
-                // Air resistance for rotation
-                angularVelocity *= 0.96;
-                
-                // Ground collision
+                // Ground collision - realistic physics
                 const cageBottom = cageY + CAGE_SIZE/2;
                 if (cageBottom > GROUND_Y) {
                     cageY = GROUND_Y - CAGE_SIZE/2;
-                    velocityY = -velocityY * 0.4; // Some bounce
-                    // When hitting ground, reduce rotation based on impact
-                    angularVelocity *= 0.8;
+                    velocityY = -velocityY * 0.3; // Some bounce
+                    // Reduce horizontal speed on ground impact (friction)
+                    velocityX *= 0.8;
+                    angularVelocity *= 0.7;
                     
-                    if (Math.abs(velocityY) < 1) {
+                    if (Math.abs(velocityY) < 0.5) {
                         velocityY = 0;
                     }
                 }
@@ -151,7 +167,7 @@
                 const cageTop = cageY - CAGE_SIZE/2;
                 if (cageTop < CEILING_Y) {
                     cageY = CEILING_Y + CAGE_SIZE/2;
-                    velocityY = -velocityY * 0.4;
+                    velocityY = -velocityY * 0.5;
                     angularVelocity *= 0.8;
                 }
                 
@@ -161,19 +177,18 @@
                 
                 if (cageLeft < SCREEN_LEFT) {
                     cageX = SCREEN_LEFT + CAGE_SIZE/2;
-                    velocityX = -velocityX * 0.5;
-                    // Add some rotation when hitting walls
-                    angularVelocity += velocityX * 0.02;
+                    velocityX = -velocityX * 0.6;
+                    angularVelocity += velocityX * 0.03;
                 }
                 if (cageRight > SCREEN_RIGHT) {
                     cageX = SCREEN_RIGHT - CAGE_SIZE/2;
-                    velocityX = -velocityX * 0.5;
-                    angularVelocity += velocityX * 0.02;
+                    velocityX = -velocityX * 0.6;
+                    angularVelocity += velocityX * 0.03;
                 }
                 
                 // Air resistance
-                velocityX *= 0.98;
-                velocityY *= 0.98;
+                velocityX *= 0.99;
+                velocityY *= 0.99;
             }
             
             // Update position and rotation
@@ -182,6 +197,7 @@
             cage.style.transform = `rotate(${rotation}deg)`;
             
             checkWinCondition();
+            updateCountdown();
             requestAnimationFrame(gameLoop);
         }
         
@@ -208,6 +224,9 @@
             dragOffsetX = clientX - (cageRect.left + CAGE_SIZE/2);
             dragOffsetY = clientY - (cageRect.top + CAGE_SIZE/2);
             
+            lastMouseX = clientX;
+            lastMouseY = clientY;
+            
             velocityX = 0;
             velocityY = 0;
             angularVelocity = 0;
@@ -220,39 +239,26 @@
             const clientX = e.clientX || e.touches[0].clientX;
             const clientY = e.clientY || e.touches[0].clientY;
             
+            // Calculate mouse movement
+            const deltaX = clientX - lastMouseX;
+            const deltaY = clientY - lastMouseY;
+            
             // Move cage so the clicked point stays under mouse
-            const newCageX = clientX - dragOffsetX;
-            const newCageY = clientY - dragOffsetY;
+            cageX = clientX - dragOffsetX;
+            cageY = clientY - dragOffsetY;
             
-            // Calculate movement for velocity
-            const deltaX = newCageX - cageX;
-            const deltaY = newCageY - cageY;
-            
-            // Update position
-            cageX = newCageX;
-            cageY = newCageY;
-            
-            // Calculate distance from center to click point
-            const distanceFromCenter = Math.sqrt(dragOffsetX * dragOffsetX + dragOffsetY * dragOffsetY);
-            
-            // Calculate angle of drag offset from center
-            const dragAngle = Math.atan2(dragOffsetY, dragOffsetX);
-            
-            // Calculate movement direction
-            const moveAngle = Math.atan2(deltaY, deltaX);
-            
-            // Calculate the angle difference for pendulum effect
-            // This creates natural sway when dragging from edges
-            const angleDiff = moveAngle - (dragAngle + rotation * Math.PI / 180);
-            
-            // Apply rotation based on pendulum physics
-            // Stronger effect when dragging from farther from center
-            const pendulumForce = Math.sin(angleDiff) * distanceFromCenter * 0.008;
-            angularVelocity += pendulumForce;
+            // Calculate rotation based on circular mouse movement
+            // Use the cross product of drag offset and mouse movement
+            const crossProduct = (dragOffsetX * deltaY) - (dragOffsetY * deltaX);
+            angularVelocity = crossProduct * 0.01;
             
             // Calculate velocity for when released
-            velocityX = deltaX * 3;
-            velocityY = deltaY * 3;
+            velocityX = deltaX * 2;
+            velocityY = deltaY * 2;
+            
+            // Update last mouse position
+            lastMouseX = clientX;
+            lastMouseY = clientY;
             
             // Apply boundaries during drag
             const cageLeft = cageX - CAGE_SIZE/2;
@@ -288,24 +294,46 @@
             const cageRect = cage.getBoundingClientRect();
             const ubbaRect = ubba.getBoundingClientRect();
             
-            const cageLeft = cageRect.left;
-            const cageRight = cageRect.right;
-            const cageTop = cageRect.top;
-            const cageBottom = cageRect.bottom;
+            // Check if cage completely covers ubba
+            const completelyCovers = 
+                cageRect.left <= ubbaRect.left &&
+                cageRect.right >= ubbaRect.right &&
+                cageRect.top <= ubbaRect.top &&
+                cageRect.bottom >= ubbaRect.bottom;
             
-            const ubbaLeft = ubbaRect.left;
-            const ubbaRight = ubbaRect.right;
-            const ubbaTop = ubbaRect.top;
-            const ubbaBottom = ubbaRect.bottom;
+            // Also check if not moving too fast
+            const isStable = Math.abs(velocityX) < 1 && Math.abs(velocityY) < 1 && Math.abs(angularVelocity) < 0.5;
             
-            const isOverlapping = 
-                cageLeft < ubbaRight &&
-                cageRight > ubbaLeft &&
-                cageTop < ubbaBottom &&
-                cageBottom > ubbaTop;
-            
-            if (isOverlapping && Math.abs(velocityX) < 2 && Math.abs(velocityY) < 2 && Math.abs(angularVelocity) < 1) {
-                winMessage.style.display = 'flex';
+            if (completelyCovers && isStable) {
+                if (!isOverUbba) {
+                    // Start countdown
+                    isOverUbba = true;
+                    countdownStart = Date.now();
+                    currentCountdown = 3;
+                    countdown.style.display = 'block';
+                    countdown.textContent = `CONTAINING: ${currentCountdown}`;
+                }
+            } else {
+                if (isOverUbba) {
+                    // Reset countdown
+                    isOverUbba = false;
+                    countdown.style.display = 'none';
+                }
+            }
+        }
+        
+        function updateCountdown() {
+            if (isOverUbba) {
+                const elapsed = (Date.now() - countdownStart) / 1000;
+                const remaining = Math.max(0, 3 - elapsed);
+                currentCountdown = Math.ceil(remaining);
+                
+                countdown.textContent = `CONTAINING: ${currentCountdown}`;
+                
+                if (remaining <= 0) {
+                    winMessage.style.display = 'flex';
+                    countdown.style.display = 'none';
+                }
             }
         }
         
