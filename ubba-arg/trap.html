@@ -17,14 +17,15 @@
             height: 100vh;
             display: flex;
             justify-content: center;
-            align-items: center;
+            align-items: flex-end; /* Align to bottom for ground line */
+            padding-bottom: 25vh; /* Ground at 3/4 height */
         }
         
         #game-container {
             position: relative;
-            width: 800px;
-            height: 500px;
-            border-bottom: 4px solid #7f8c8d; /* Ground line */
+            width: 100vw;
+            height: 75vh; /* 3/4 of screen */
+            border-bottom: 4px solid #7f8c8d; /* Ground line at bottom */
         }
         
         #cage {
@@ -34,7 +35,8 @@
             cursor: grab;
             z-index: 10;
             left: 100px;
-            bottom: 200px; /* Start above ground */
+            bottom: 200px;
+            transform-origin: center center;
         }
         
         #ubba {
@@ -43,8 +45,8 @@
             height: 150px;
             pointer-events: none;
             z-index: 5;
-            left: 600px;
-            bottom: 0; /* Align with ground */
+            right: 100px;
+            bottom: 0; /* On ground */
         }
         
         #win-message {
@@ -74,6 +76,14 @@
             cursor: pointer;
             font-size: 24px;
         }
+
+        /* Debug hitbox - remove this in final version */
+        .hitbox {
+            position: absolute;
+            border: 2px solid red;
+            pointer-events: none;
+            z-index: 20;
+        }
     </style>
 </head>
 <body>
@@ -99,15 +109,17 @@
         let velocityY = 0;
         let angularVelocity = 0;
         let rotation = 0;
-        let dragOffsetX = 0;
-        let dragOffsetY = 0;
+        let lastMouseX = 0;
+        let lastMouseY = 0;
         
         // Cage position (center of cage)
-        let cageX = 200; // 100px left + 100px (half width)
-        let cageY = 300; // 500px container - 200px bottom - 100px (half height)
+        let cageX = 200;
+        let cageY = 300;
         
-        const GROUND_Y = 500; // Bottom of container
-        const CAGE_HEIGHT = 200;
+        const GROUND_Y = gameContainer.offsetHeight; // Bottom of container
+        const CAGE_SIZE = 200;
+        const SCREEN_LEFT = 0;
+        const SCREEN_RIGHT = window.innerWidth;
         
         // Game loop
         function gameLoop() {
@@ -121,34 +133,41 @@
                 velocityY += 0.5;
                 
                 // Ground collision
-                const cageBottom = cageY + CAGE_HEIGHT/2;
+                const cageBottom = cageY + CAGE_SIZE/2;
                 if (cageBottom > GROUND_Y) {
-                    cageY = GROUND_Y - CAGE_HEIGHT/2;
-                    velocityY = -velocityY * 0.6; // Bounce with energy loss
-                    angularVelocity *= 0.8; // Slow rotation on ground impact
+                    cageY = GROUND_Y - CAGE_SIZE/2;
+                    velocityY = -velocityY * 0.6;
+                    angularVelocity *= 0.8;
                     
-                    // Stop if very slow
                     if (Math.abs(velocityY) < 2) {
                         velocityY = 0;
                     }
                 }
                 
-                // Wall collisions
-                if (cageX < 100 || cageX > 700) {
+                // Wall collisions (screen edges)
+                const cageLeft = cageX - CAGE_SIZE/2;
+                const cageRight = cageX + CAGE_SIZE/2;
+                
+                if (cageLeft < SCREEN_LEFT) {
+                    cageX = SCREEN_LEFT + CAGE_SIZE/2;
                     velocityX = -velocityX * 0.8;
-                    cageX = Math.max(100, Math.min(700, cageX));
-                    angularVelocity += velocityX * 0.1; // Add spin on wall hit
+                    angularVelocity += velocityX * 0.1;
+                }
+                if (cageRight > SCREEN_RIGHT) {
+                    cageX = SCREEN_RIGHT - CAGE_SIZE/2;
+                    velocityX = -velocityX * 0.8;
+                    angularVelocity += velocityX * 0.1;
                 }
                 
                 // Apply friction
                 velocityX *= 0.98;
                 angularVelocity *= 0.98;
-                
-                // Update position and rotation
-                cage.style.left = (cageX - 100) + 'px';
-                cage.style.bottom = (GROUND_Y - cageY - 100) + 'px';
-                cage.style.transform = `rotate(${rotation}deg)`;
             }
+            
+            // Update position and rotation (always)
+            cage.style.left = (cageX - CAGE_SIZE/2) + 'px';
+            cage.style.bottom = (GROUND_Y - cageY - CAGE_SIZE/2) + 'px';
+            cage.style.transform = `rotate(${rotation}deg)`;
             
             // Check for win condition
             checkWinCondition();
@@ -171,13 +190,11 @@
             isDragging = true;
             cage.style.cursor = 'grabbing';
             
-            const rect = cage.getBoundingClientRect();
             const clientX = e.clientX || e.touches[0].clientX;
             const clientY = e.clientY || e.touches[0].clientY;
             
-            // Calculate offset from center of cage
-            dragOffsetX = clientX - (rect.left + rect.width / 2);
-            dragOffsetY = clientY - (rect.top + rect.height / 2);
+            lastMouseX = clientX;
+            lastMouseY = clientY;
             
             // Reset velocities when starting drag
             velocityX = 0;
@@ -192,28 +209,39 @@
             const clientX = e.clientX || e.touches[0].clientX;
             const clientY = e.clientY || e.touches[0].clientY;
             
-            // Calculate new center position based on mouse and offset
-            const newX = clientX - dragOffsetX;
-            const newY = clientY - dragOffsetY;
+            // Calculate movement
+            const deltaX = clientX - lastMouseX;
+            const deltaY = clientY - lastMouseY;
             
-            // Convert to game container coordinates
-            const containerRect = gameContainer.getBoundingClientRect();
-            cageX = newX - containerRect.left;
-            cageY = GROUND_Y - (newY - containerRect.top);
+            // Move cage directly with mouse (no inversion)
+            cageX += deltaX;
+            cageY -= deltaY; // Subtract because screen Y increases downward
             
-            // Calculate velocity for when released (based on mouse movement)
-            const mouseMovementX = e.movementX || 0;
-            const mouseMovementY = e.movementY || 0;
-            velocityX = mouseMovementX * 2;
-            velocityY = -mouseMovementY * 2; // Invert Y since screen coordinates are flipped
+            // Calculate velocity for when released
+            velocityX = deltaX * 2;
+            velocityY = -deltaY * 2; // Invert for physics system
             
             // Add rotation based on mouse movement
-            angularVelocity = (mouseMovementX + mouseMovementY) * 0.5;
+            angularVelocity = (deltaX + deltaY) * 0.3;
             
-            // Update position and rotation while dragging
-            cage.style.left = (cageX - 100) + 'px';
-            cage.style.bottom = (GROUND_Y - cageY - 100) + 'px';
-            cage.style.transform = `rotate(${rotation}deg)`;
+            // Update last mouse position
+            lastMouseX = clientX;
+            lastMouseY = clientY;
+            
+            // Apply boundaries during drag
+            const cageLeft = cageX - CAGE_SIZE/2;
+            const cageRight = cageX + CAGE_SIZE/2;
+            const cageBottom = cageY + CAGE_SIZE/2;
+            
+            if (cageLeft < SCREEN_LEFT) {
+                cageX = SCREEN_LEFT + CAGE_SIZE/2;
+            }
+            if (cageRight > SCREEN_RIGHT) {
+                cageX = SCREEN_RIGHT - CAGE_SIZE/2;
+            }
+            if (cageBottom > GROUND_Y) {
+                cageY = GROUND_Y - CAGE_SIZE/2;
+            }
         }
         
         function endDrag() {
@@ -226,19 +254,26 @@
             const cageRect = cage.getBoundingClientRect();
             const ubbaRect = ubba.getBoundingClientRect();
             
-            // Check if cage is mostly covering ubba
-            const cageCenterX = cageRect.left + cageRect.width / 2;
-            const cageCenterY = cageRect.top + cageRect.height / 2;
-            const ubbaCenterX = ubbaRect.left + ubbaRect.width / 2;
-            const ubbaCenterY = ubbaRect.top + ubbaRect.height / 2;
+            // Rectangle collision detection
+            const cageLeft = cageRect.left;
+            const cageRight = cageRect.right;
+            const cageTop = cageRect.top;
+            const cageBottom = cageRect.bottom;
             
-            const distance = Math.sqrt(
-                Math.pow(cageCenterX - ubbaCenterX, 2) + 
-                Math.pow(cageCenterY - ubbaCenterY, 2)
-            );
+            const ubbaLeft = ubbaRect.left;
+            const ubbaRight = ubbaRect.right;
+            const ubbaTop = ubbaRect.top;
+            const ubbaBottom = ubbaRect.bottom;
             
-            // Win if centers are close and cage is not moving too fast
-            if (distance < 80 && Math.abs(velocityX) < 3 && Math.abs(velocityY) < 3 && Math.abs(angularVelocity) < 2) {
+            // Check if cage rectangle overlaps ubba rectangle
+            const isOverlapping = 
+                cageLeft < ubbaRight &&
+                cageRight > ubbaLeft &&
+                cageTop < ubbaBottom &&
+                cageBottom > ubbaTop;
+            
+            // Win if overlapping and not moving too fast
+            if (isOverlapping && Math.abs(velocityX) < 3 && Math.abs(velocityY) < 3 && Math.abs(angularVelocity) < 2) {
                 winMessage.style.display = 'flex';
             }
         }
