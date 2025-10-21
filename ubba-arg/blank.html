@@ -135,7 +135,7 @@ const state = {
   maxCombo: 0,
   playerHP: CONFIG.playerMaxHP, // Start with 8 HP
   ubbaHP: 100,
-  arrows: [],        // {el,type,side,y,hit,spawnTime,groupId}
+  arrows: [],        // {el,type,side,y,hit,spawnTime,groupId,missed}
   sequence: [],      // current sequence (items string or array)
   isBotPhase: true,
   ubbaTimers: [],
@@ -236,7 +236,7 @@ function spawnArrow(type, side, groupId=null) {
 
   els.arrows.appendChild(arrow);
 
-  const obj = { el: arrow, type, side, y: spawnBottomPercent, hit:false, spawnTime:performance.now(), groupId };
+  const obj = { el: arrow, type, side, y: spawnBottomPercent, hit:false, spawnTime:performance.now(), groupId, missed:false };
   state.arrows.push(obj);
 
   // schedule ubba auto-hit for ubba-side arrow(s)
@@ -364,7 +364,24 @@ function loop() {
     // Check if arrow went off top by checking its actual DOM position
     const arrowRect = a.el.getBoundingClientRect();
     if (arrowRect.bottom < 0) {
-      // Simply remove the arrow without penalty - no HP loss or miss effect
+      // arrow went off top -> if player arrow and not already marked as missed, count miss (hp loss)
+      if (a.side === 'player' && !a.hit && !a.missed) {
+        a.missed = true;
+        state.playerHP = Math.max(0, state.playerHP - CONFIG.hpLoss);
+        state.combo = 0;
+        // Show miss effect aligned with static key
+        const targetRects = computeTargets();
+        const staticRect = targetRects.player[a.type];
+        if (staticRect) {
+          showEffectAtStatic(staticRect, 'miss');
+        }
+        updateHUD();
+        // Check if player died
+        if (state.playerHP <= 0) {
+          finishGame();
+          return;
+        }
+      }
       if (a.el && a.el.parentElement) a.el.remove();
       state.arrows.splice(i,1);
     }
@@ -478,6 +495,8 @@ function attemptHit(pressedType) {
     // success: remove all chosen group arrows
     chosenGroup.forEach(a=>{
       a.hit = true;
+      // Mark as hit so it doesn't cause HP loss when going off-screen
+      a.missed = false;
       // Show hit effect aligned with the static key
       const staticRect = targets[a.type];
       if (staticRect) {
