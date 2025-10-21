@@ -103,8 +103,6 @@
         let rotation = 0;
         let dragOffsetX = 0;
         let dragOffsetY = 0;
-        let lastMouseX = 0;
-        let lastMouseY = 0;
         
         // Cage position (center of cage)
         let cageX = 200;
@@ -124,22 +122,25 @@
                 cageY += velocityY;
                 rotation += angularVelocity;
                 
-                // Heavy gravity
-                velocityY += 1.5;
+                // Moderate gravity
+                velocityY += 0.8;
                 
-                // Gravity affects rotation - heavy object wants to stay upright
-                if (!isDragging) {
-                    const targetRotation = 0; // Try to stay upright
-                    const rotationDiff = targetRotation - rotation;
-                    angularVelocity += rotationDiff * 0.02; // Gravity pulls toward upright
-                }
+                // Weight at bottom - natural pendulum physics
+                // The cage wants to stay upright (rotation = 0)
+                const rotationDiff = 0 - rotation;
+                const torque = rotationDiff * 0.1; // Restoring force
+                angularVelocity += torque;
                 
-                // Ground collision - minimal bounce for heavy object
+                // Air resistance for rotation
+                angularVelocity *= 0.96;
+                
+                // Ground collision
                 const cageBottom = cageY + CAGE_SIZE/2;
                 if (cageBottom > GROUND_Y) {
                     cageY = GROUND_Y - CAGE_SIZE/2;
-                    velocityY = -velocityY * 0.3;
-                    angularVelocity *= 0.7;
+                    velocityY = -velocityY * 0.4; // Some bounce
+                    // When hitting ground, reduce rotation based on impact
+                    angularVelocity *= 0.8;
                     
                     if (Math.abs(velocityY) < 1) {
                         velocityY = 0;
@@ -150,8 +151,8 @@
                 const cageTop = cageY - CAGE_SIZE/2;
                 if (cageTop < CEILING_Y) {
                     cageY = CEILING_Y + CAGE_SIZE/2;
-                    velocityY = -velocityY * 0.3;
-                    angularVelocity *= 0.7;
+                    velocityY = -velocityY * 0.4;
+                    angularVelocity *= 0.8;
                 }
                 
                 // Wall collisions
@@ -160,18 +161,19 @@
                 
                 if (cageLeft < SCREEN_LEFT) {
                     cageX = SCREEN_LEFT + CAGE_SIZE/2;
-                    velocityX = -velocityX * 0.3;
-                    angularVelocity += velocityX * 0.05;
+                    velocityX = -velocityX * 0.5;
+                    // Add some rotation when hitting walls
+                    angularVelocity += velocityX * 0.02;
                 }
                 if (cageRight > SCREEN_RIGHT) {
                     cageX = SCREEN_RIGHT - CAGE_SIZE/2;
-                    velocityX = -velocityX * 0.3;
-                    angularVelocity += velocityX * 0.05;
+                    velocityX = -velocityX * 0.5;
+                    angularVelocity += velocityX * 0.02;
                 }
                 
-                // Heavy friction
-                velocityX *= 0.92;
-                angularVelocity *= 0.90;
+                // Air resistance
+                velocityX *= 0.98;
+                velocityY *= 0.98;
             }
             
             // Update position and rotation
@@ -206,9 +208,6 @@
             dragOffsetX = clientX - (cageRect.left + CAGE_SIZE/2);
             dragOffsetY = clientY - (cageRect.top + CAGE_SIZE/2);
             
-            lastMouseX = clientX;
-            lastMouseY = clientY;
-            
             velocityX = 0;
             velocityY = 0;
             angularVelocity = 0;
@@ -222,41 +221,38 @@
             const clientY = e.clientY || e.touches[0].clientY;
             
             // Move cage so the clicked point stays under mouse
-            cageX = clientX - dragOffsetX;
-            cageY = clientY - dragOffsetY;
+            const newCageX = clientX - dragOffsetX;
+            const newCageY = clientY - dragOffsetY;
             
-            // Calculate mouse movement for rotation
-            const deltaX = clientX - lastMouseX;
-            const deltaY = clientY - lastMouseY;
+            // Calculate movement for velocity
+            const deltaX = newCageX - cageX;
+            const deltaY = newCageY - cageY;
             
-            // Calculate distance from center to click point for pendulum effect
+            // Update position
+            cageX = newCageX;
+            cageY = newCageY;
+            
+            // Calculate distance from center to click point
             const distanceFromCenter = Math.sqrt(dragOffsetX * dragOffsetX + dragOffsetY * dragOffsetY);
             
             // Calculate angle of drag offset from center
             const dragAngle = Math.atan2(dragOffsetY, dragOffsetX);
             
-            // Calculate current movement direction
+            // Calculate movement direction
             const moveAngle = Math.atan2(deltaY, deltaX);
             
-            // Calculate angle difference for pendulum sway
+            // Calculate the angle difference for pendulum effect
+            // This creates natural sway when dragging from edges
             const angleDiff = moveAngle - (dragAngle + rotation * Math.PI / 180);
             
             // Apply rotation based on pendulum physics
-            // When dragging sideways, create sway motion
-            const pendulumForce = Math.sin(angleDiff) * distanceFromCenter * 0.01;
+            // Stronger effect when dragging from farther from center
+            const pendulumForce = Math.sin(angleDiff) * distanceFromCenter * 0.008;
             angularVelocity += pendulumForce;
             
-            // Also add direct rotation based on circular movement
-            const circularRotation = (deltaX + deltaY) * 0.1;
-            angularVelocity += circularRotation;
-            
             // Calculate velocity for when released
-            velocityX = deltaX * 2;
-            velocityY = deltaY * 2;
-            
-            // Update last mouse position
-            lastMouseX = clientX;
-            lastMouseY = clientY;
+            velocityX = deltaX * 3;
+            velocityY = deltaY * 3;
             
             // Apply boundaries during drag
             const cageLeft = cageX - CAGE_SIZE/2;
