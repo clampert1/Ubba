@@ -364,24 +364,7 @@ function loop() {
     // Check if arrow went off top by checking its actual DOM position
     const arrowRect = a.el.getBoundingClientRect();
     if (arrowRect.bottom < 0) {
-      // arrow went off top -> if player arrow, count miss (hp loss)
-      if (a.side === 'player' && !a.hit) {
-        a.hit = true;
-        state.playerHP = Math.max(0, state.playerHP - CONFIG.hpLoss);
-        state.combo = 0;
-        // Show miss effect aligned with static key
-        const targetRects = computeTargets();
-        const staticRect = targetRects.player[a.type];
-        if (staticRect) {
-          showEffectAtStatic(staticRect, 'miss');
-        }
-        updateHUD();
-        // Check if player died
-        if (state.playerHP <= 0) {
-          finishGame();
-          return;
-        }
-      }
+      // Simply remove the arrow without penalty - no HP loss or miss effect
       if (a.el && a.el.parentElement) a.el.remove();
       state.arrows.splice(i,1);
     }
