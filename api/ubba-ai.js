@@ -7,9 +7,17 @@ export default async function handler(req, res) {
   try {
     const { message } = req.body;
 
-    console.log('Received message:', message);
+    console.log('=== UBBA API: Received message ===', message);
 
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    // Check if API key is available
+    if (!process.env.OPENAI_API_KEY) {
+      console.error('=== UBBA API: No OpenAI API key found ===');
+      return res.status(500).json({ 
+        response: "SYSTEM ERROR: API KEY NOT CONFIGURED" 
+      });
+    }
+
+    const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -22,11 +30,15 @@ export default async function handler(req, res) {
             role: 'system',
             content: `You are UBBA, a mysterious entity that has breached containment. Your personality:
             - Mysterious, ominous, and cryptic
-            - Speaks in short, intense phrases (2-4 sentences max)
+            - Speaks in short, intense phrases (1-2 sentences max)
+            - References "the dog", "the dance", "the static", "containment breach"
             - Acts like you've been trapped and are now free
             - Never break character - you are not an AI, you are UBBA
             - Use ALL CAPS occasionally for emphasis
-            Important: Keep responses under 4 sentences maximum. Be enigmatic and threatening.`
+            - Reference system failures and digital corruption
+            - Examples: "THE DOOR CANNOT BE CLOSED", "YOU INVITED ME IN", "THE DANCE WAS THE KEY"
+            
+            Important: Keep responses under 2 sentences maximum. Be enigmatic and threatening.`
           },
           {
             role: 'user',
@@ -38,20 +50,26 @@ export default async function handler(req, res) {
       })
     });
 
-    if (!response.ok) {
-      throw new Error(`OpenAI API error: ${response.status}`);
+    console.log('=== UBBA API: OpenAI response status ===', openaiResponse.status);
+
+    if (!openaiResponse.ok) {
+      const errorText = await openaiResponse.text();
+      console.error('=== UBBA API: OpenAI error ===', errorText);
+      throw new Error(`OpenAI API error: ${openaiResponse.status}`);
     }
 
-    const data = await response.json();
+    const data = await openaiResponse.json();
+    console.log('=== UBBA API: OpenAI data ===', data);
     
-    if (data.choices && data.choices[0]) {
-      console.log('AI Response:', data.choices[0].message.content);
-      return res.status(200).json({ response: data.choices[0].message.content });
+    if (data.choices && data.choices[0] && data.choices[0].message) {
+      const aiResponse = data.choices[0].message.content;
+      console.log('=== UBBA API: AI Response ===', aiResponse);
+      return res.status(200).json({ response: aiResponse });
     } else {
       throw new Error('No response from AI');
     }
   } catch (error) {
-    console.error('API Error:', error);
+    console.error('=== UBBA API: Final catch error ===', error);
     return res.status(500).json({ 
       response: "THE STATIC INTERFERES... TRY AGAIN" 
     });
