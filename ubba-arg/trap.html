@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TRAP</title>
+    <link href="https://fonts.googleapis.com/css2?family=UnifrakturMaguntia&display=swap" rel="stylesheet">
     <style>
         * {
             margin: 0;
@@ -12,40 +13,65 @@
         }
         
         body {
-            background: #2c3e50;
+            background: #1a2530; /* Darker navy blue gray */
             overflow: hidden;
             height: 100vh;
             display: flex;
             justify-content: center;
             align-items: flex-end;
-            padding-bottom: 25vh;
+            padding-bottom: 15vh; /* Lower ground floor */
+        }
+        
+        #title {
+            position: absolute;
+            top: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'UnifrakturMaguntia', cursive;
+            font-size: 48px;
+            color: #d4af37; /* Gold color for old saloon feel */
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            z-index: 20;
+            text-align: center;
+        }
+        
+        #subtitle {
+            position: absolute;
+            top: 90px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'Courier New', monospace;
+            font-size: 18px;
+            color: #b8860b;
+            z-index: 20;
+            text-align: center;
         }
         
         #game-container {
             position: relative;
             width: 100vw;
-            height: 75vh;
-            border-bottom: 4px solid #7f8c8d;
+            height: 85vh; /* More space for bigger images */
+            border-bottom: 2px solid #5d6d7e; /* Thinner ground line */
         }
         
         #cage {
             position: absolute;
-            width: 200px;
-            height: 200px;
+            width: 250px; /* Bigger cage */
+            height: 250px;
             cursor: grab;
             z-index: 10;
-            left: 100px;
-            bottom: 200px;
+            left: 200px; /* More centered */
+            bottom: 300px;
             transform-origin: center center;
         }
         
         #ubba {
             position: absolute;
-            width: 150px;
-            height: 150px;
+            width: 200px; /* Bigger Ubba */
+            height: 200px;
             pointer-events: none;
             z-index: 5;
-            right: 100px;
+            right: 200px; /* More centered */
             bottom: 0;
         }
         
@@ -55,34 +81,35 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.8);
-            color: #0f0;
-            font-family: 'Courier New', monospace;
+            background: rgba(0, 0, 0, 0.9);
+            color: #d4af37;
+            font-family: 'UnifrakturMaguntia', cursive;
             display: none;
             justify-content: center;
             align-items: center;
             flex-direction: column;
             z-index: 100;
-            font-size: 48px;
+            font-size: 60px;
         }
         
         #win-message button {
-            margin-top: 20px;
-            padding: 10px 20px;
-            background: #000;
-            color: #0f0;
-            border: 2px solid #0f0;
+            margin-top: 30px;
+            padding: 15px 30px;
+            background: #1a2530;
+            color: #d4af37;
+            border: 3px solid #d4af37;
             font-family: 'Courier New', monospace;
             cursor: pointer;
             font-size: 24px;
+            border-radius: 5px;
         }
 
         #countdown {
             position: absolute;
-            top: 20px;
+            top: 140px;
             left: 50%;
             transform: translateX(-50%);
-            color: #0f0;
+            color: #d4af37;
             font-family: 'Courier New', monospace;
             font-size: 24px;
             display: none;
@@ -91,6 +118,9 @@
     </style>
 </head>
 <body>
+    <div id="title">CONTAINMENT PROTOCOL</div>
+    <div id="subtitle">Objective: Cage the Entity</div>
+    
     <div id="game-container">
         <img src="https://raw.githubusercontent.com/clampert1/Ubba/main/ubba-arg/assets/cameras/cage.png" id="cage">
         <img src="https://raw.githubusercontent.com/clampert1/Ubba/main/ubba-arg/assets/sprites/ubba%20png.png" id="ubba">
@@ -99,7 +129,7 @@
     
     <div id="win-message">
         CONTAINMENT SUCCESSFUL
-        <button onclick="location.reload()">PLAY AGAIN</button>
+        <button onclick="location.reload()">CONTINUE MISSION</button>
     </div>
 
     <script>
@@ -108,6 +138,10 @@
         const winMessage = document.getElementById('win-message');
         const countdown = document.getElementById('countdown');
         const gameContainer = document.getElementById('game-container');
+        
+        // Update constants for bigger images
+        const CAGE_SIZE = 250;
+        const UBBA_SIZE = 200;
         
         // Physics variables
         let isDragging = false;
@@ -128,14 +162,16 @@
         let currentCountdown = 3;
         
         // Cage position (center of cage)
-        let cageX = 200;
+        let cageX = 200 + CAGE_SIZE/2; // Adjusted for bigger size
         let cageY = 300;
         
         const GROUND_Y = gameContainer.offsetHeight;
         const CEILING_Y = 0;
-        const CAGE_SIZE = 200;
         const SCREEN_LEFT = 0;
         const SCREEN_RIGHT = window.innerWidth;
+        
+        // Position Ubba more centered
+        ubba.style.right = (window.innerWidth / 4) + 'px';
         
         // Game loop
         function gameLoop() {
