@@ -293,40 +293,39 @@
             ]
         };
 
-                // Real AI integration with Vercel - USING ROOT PATH
-        async function getUbbaResponse(userMessage) {
-            try {
-                console.log('=== DEBUG: Starting API call ===');
-                console.log('Message:', userMessage);
+// Real AI integration with Vercel - USING ROOT PATH
+async function getUbbaResponse(userMessage) {
+    try {
+        console.log('=== DEBUG: Starting API call ===');
+        console.log('Message:', userMessage);
+
+        // Use the root path to your API
+        const response = await fetch('/api/ubba-ai', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                message: userMessage
+            })
+        });
+
+        console.log('=== DEBUG: API Response Status ===', response.status);
         
-                // Use the root path to your API
-                const response = await fetch('/api/ubba-ai', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        message: userMessage
-                    })
-                });
-        
-                console.log('=== DEBUG: API Response Status ===', response.status);
-                
-                if (!response.ok) {
-                    throw new Error(`API returned ${response.status}`);
-                }
-        
-                const data = await response.json();
-                console.log('=== DEBUG: API Response Data ===', data);
-                
-                return data.response || "THE STATIC SPEAKS...";
-            } catch (error) {
-                console.error('API Error:', error);
-                // Fallback to original responses if API fails
-                return getFallbackResponse(userMessage);
-            }
+        if (!response.ok) {
+            throw new Error(`API returned ${response.status}`);
         }
 
+        const data = await response.json();
+        console.log('=== DEBUG: API Response Data ===', data);
+        
+        return data.response || "THE STATIC SPEAKS...";
+    } catch (error) {
+        console.error('API Error:', error);
+        // Fallback to original responses if API fails
+        return getFallbackResponse(userMessage);
+    }
+}
         // Fallback response system
         function getFallbackResponse(userMessage) {
             const lowerMessage = userMessage.toLowerCase();
