@@ -37,6 +37,7 @@
             left: 100px;
             bottom: 200px;
             transform-origin: center center;
+            transition: transform 0.1s; /* Smooth rotation */
         }
         
         #ubba {
@@ -119,6 +120,7 @@
         let dragOffsetY = 0;
         let lastMouseX = 0;
         let lastMouseY = 0;
+        let lastRotation = 0;
         
         // Win condition variables
         let isOverUbba = false;
@@ -149,12 +151,11 @@
                 // Natural rotation damping
                 angularVelocity *= 0.97;
                 
-                // Ground collision - realistic physics
+                // Ground collision
                 const cageBottom = cageY + CAGE_SIZE/2;
                 if (cageBottom > GROUND_Y) {
                     cageY = GROUND_Y - CAGE_SIZE/2;
-                    velocityY = -velocityY * 0.3; // Some bounce
-                    // Reduce horizontal speed on ground impact (friction)
+                    velocityY = -velocityY * 0.3;
                     velocityX *= 0.8;
                     angularVelocity *= 0.7;
                     
@@ -191,7 +192,7 @@
                 velocityY *= 0.99;
             }
             
-            // Update position and rotation
+            // Update position and rotation (ALWAYS - including during drag)
             cage.style.left = (cageX - CAGE_SIZE/2) + 'px';
             cage.style.bottom = (GROUND_Y - cageY - CAGE_SIZE/2) + 'px';
             cage.style.transform = `rotate(${rotation}deg)`;
@@ -226,6 +227,7 @@
             
             lastMouseX = clientX;
             lastMouseY = clientY;
+            lastRotation = rotation;
             
             velocityX = 0;
             velocityY = 0;
@@ -248,13 +250,20 @@
             cageY = clientY - dragOffsetY;
             
             // Calculate rotation based on circular mouse movement
-            // Use the cross product of drag offset and mouse movement
-            const crossProduct = (dragOffsetX * deltaY) - (dragOffsetY * deltaX);
-            angularVelocity = crossProduct * 0.01;
+            // This creates visual spinning when you move mouse in circles
+            const movementAngle = Math.atan2(deltaY, deltaX);
+            const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+            
+            // Apply rotation DURING drag - this makes it spin visually!
+            rotation = lastRotation + (distance * 2); // Multiply for more visible rotation
+            
+            // Update last rotation for continuous rotation
+            lastRotation = rotation;
             
             // Calculate velocity for when released
             velocityX = deltaX * 2;
             velocityY = deltaY * 2;
+            angularVelocity = distance * 0.5; // Carry over rotation when released
             
             // Update last mouse position
             lastMouseX = clientX;
