@@ -197,6 +197,34 @@
             0% { top: 0%; }
             100% { top: 100%; }
         }
+
+        /* Next Button - Always bottom right */
+        #next-button {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #000;
+            color: #0f0;
+            border: 1px solid #0f0;
+            padding: 10px 20px;
+            font-family: 'Courier New', monospace;
+            cursor: pointer;
+            transition: all 0.2s;
+            z-index: 1000;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 14px;
+        }
+
+        #next-button:hover {
+            background: #0f0;
+            color: #000;
+            box-shadow: 0 0 15px #0f0;
+        }
+
+        #next-button:active {
+            transform: scale(0.95);
+        }
     </style>
 </head>
 <body>
@@ -214,6 +242,11 @@
         </div>
     </div>
 
+    <!-- Next Button -->
+    <a href="https://clampert1.github.io/Ubba/ubba-arg/trap.html" id="next-button" style="display: none;">
+        NEXT →
+    </a>
+
     <script>
         const defenseTerminal = document.getElementById('defense-terminal');
         const staticOverlay = document.getElementById('static-overlay');
@@ -222,6 +255,7 @@
         const ubbaTerminal = document.getElementById('ubba-terminal');
         const chatContainer = document.getElementById('chat-container');
         const userInput = document.getElementById('user-input');
+        const nextButton = document.getElementById('next-button');
 
         // Enhanced Ubba responses - fallback system
         const ubbaResponses = {
@@ -481,6 +515,8 @@ async function getUbbaResponse(userMessage) {
             function typeUbbaMessage() {
                 if (msgIndex >= initialMessages.length) {
                     userInput.focus();
+                    // Show the next button after all initial messages are displayed
+                    nextButton.style.display = 'block';
                     return;
                 }
                 
