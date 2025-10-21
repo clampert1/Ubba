@@ -448,17 +448,23 @@ function attemptHit(pressedType) {
     if (distPercent <= CONFIG.hitTolerance) near.push(a);
   }
   if (near.length === 0) {
-    // no near arrow -> penalty - show miss effect on the pressed key
+    // no near arrow -> penalty - show miss effect on the pressed key and mark the next arrow of this type as missed
     const staticRect = targets[pressedType];
     if (staticRect) {
       showEffectAtStatic(staticRect, 'miss');
     }
-    state.playerHP = Math.max(0, state.playerHP - CONFIG.hpLoss);
-    state.combo = 0;
-    updateHUD();
-    // Check if player died
-    if (state.playerHP <= 0) {
-      finishGame();
+    
+    // Find the next upcoming arrow of the pressed type that hasn't been missed yet
+    const nextArrow = candidates.find(a => a.type === pressedType && !a.missed);
+    if (nextArrow) {
+      nextArrow.missed = true;
+      state.playerHP = Math.max(0, state.playerHP - CONFIG.hpLoss);
+      state.combo = 0;
+      updateHUD();
+      // Check if player died
+      if (state.playerHP <= 0) {
+        finishGame();
+      }
     }
     return;
   }
@@ -516,12 +522,18 @@ function attemptHit(pressedType) {
     if (staticRect) {
       showEffectAtStatic(staticRect, 'miss');
     }
-    state.playerHP = Math.max(0, state.playerHP - CONFIG.hpLoss);
-    state.combo = 0;
-    updateHUD();
-    // Check if player died
-    if (state.playerHP <= 0) {
-      finishGame();
+    
+    // Find the next upcoming arrow of the pressed type that hasn't been missed yet
+    const nextArrow = candidates.find(a => a.type === pressedType && !a.missed);
+    if (nextArrow) {
+      nextArrow.missed = true;
+      state.playerHP = Math.max(0, state.playerHP - CONFIG.hpLoss);
+      state.combo = 0;
+      updateHUD();
+      // Check if player died
+      if (state.playerHP <= 0) {
+        finishGame();
+      }
     }
   }
 
