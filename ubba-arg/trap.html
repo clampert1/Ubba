@@ -101,11 +101,10 @@
         let velocityY = 0;
         let angularVelocity = 0;
         let rotation = 0;
-        let dragStartX = 0;
-        let dragStartY = 0;
-        let dragStartRotation = 0;
-        let dragStartCageX = 0;
-        let dragStartCageY = 0;
+        let dragOffsetX = 0;
+        let dragOffsetY = 0;
+        let lastMouseX = 0;
+        let lastMouseY = 0;
         
         // Cage position (center of cage)
         let cageX = 200;
@@ -128,11 +127,18 @@
                 // Heavy gravity
                 velocityY += 1.5;
                 
+                // Gravity affects rotation - heavy object wants to stay upright
+                if (!isDragging) {
+                    const targetRotation = 0; // Try to stay upright
+                    const rotationDiff = targetRotation - rotation;
+                    angularVelocity += rotationDiff * 0.02; // Gravity pulls toward upright
+                }
+                
                 // Ground collision - minimal bounce for heavy object
                 const cageBottom = cageY + CAGE_SIZE/2;
                 if (cageBottom > GROUND_Y) {
                     cageY = GROUND_Y - CAGE_SIZE/2;
-                    velocityY = -velocityY * 0.3; // Very little bounce
+                    velocityY = -velocityY * 0.3;
                     angularVelocity *= 0.7;
                     
                     if (Math.abs(velocityY) < 1) {
@@ -195,12 +201,13 @@
             const clientX = e.clientX || e.touches[0].clientX;
             const clientY = e.clientY || e.touches[0].clientY;
             
-            // Store initial positions
-            dragStartX = clientX;
-            dragStartY = clientY;
-            dragStartCageX = cageX;
-            dragStartCageY = cageY;
-            dragStartRotation = rotation;
+            // Calculate exact click point relative to cage center
+            const cageRect = cage.getBoundingClientRect();
+            dragOffsetX = clientX - (cageRect.left + CAGE_SIZE/2);
+            dragOffsetY = clientY - (cageRect.top + CAGE_SIZE/2);
+            
+            lastMouseX = clientX;
+            lastMouseY = clientY;
             
             velocityX = 0;
             velocityY = 0;
@@ -214,28 +221,42 @@
             const clientX = e.clientX || e.touches[0].clientX;
             const clientY = e.clientY || e.touches[0].clientY;
             
-            // Calculate mouse movement from drag start
-            const deltaX = clientX - dragStartX;
-            const deltaY = clientY - dragStartY;
+            // Move cage so the clicked point stays under mouse
+            cageX = clientX - dragOffsetX;
+            cageY = clientY - dragOffsetY;
             
-            // Move cage directly with mouse (correct direction)
-            cageX = dragStartCageX + deltaX;
-            cageY = dragStartCageY - deltaY; // Subtract because screen Y increases downward
+            // Calculate mouse movement for rotation
+            const deltaX = clientX - lastMouseX;
+            const deltaY = clientY - lastMouseY;
             
-            // Calculate distance from drag start for rotation
-            const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+            // Calculate distance from center to click point for pendulum effect
+            const distanceFromCenter = Math.sqrt(dragOffsetX * dragOffsetX + dragOffsetY * dragOffsetY);
             
-            // Calculate angle from drag start to current position
-            const angle = Math.atan2(deltaY, deltaX);
+            // Calculate angle of drag offset from center
+            const dragAngle = Math.atan2(dragOffsetY, dragOffsetX);
             
-            // Apply rotation based on circular mouse movement
-            // More distance = more rotation
-            rotation = dragStartRotation + (distance * 0.5);
+            // Calculate current movement direction
+            const moveAngle = Math.atan2(deltaY, deltaX);
+            
+            // Calculate angle difference for pendulum sway
+            const angleDiff = moveAngle - (dragAngle + rotation * Math.PI / 180);
+            
+            // Apply rotation based on pendulum physics
+            // When dragging sideways, create sway motion
+            const pendulumForce = Math.sin(angleDiff) * distanceFromCenter * 0.01;
+            angularVelocity += pendulumForce;
+            
+            // Also add direct rotation based on circular movement
+            const circularRotation = (deltaX + deltaY) * 0.1;
+            angularVelocity += circularRotation;
             
             // Calculate velocity for when released
-            velocityX = deltaX * 0.5;
-            velocityY = -deltaY * 0.5;
-            angularVelocity = distance * 0.1;
+            velocityX = deltaX * 2;
+            velocityY = deltaY * 2;
+            
+            // Update last mouse position
+            lastMouseX = clientX;
+            lastMouseY = clientY;
             
             // Apply boundaries during drag
             const cageLeft = cageX - CAGE_SIZE/2;
@@ -243,10 +264,22 @@
             const cageTop = cageY - CAGE_SIZE/2;
             const cageBottom = cageY + CAGE_SIZE/2;
             
-            if (cageLeft < SCREEN_LEFT) cageX = SCREEN_LEFT + CAGE_SIZE/2;
-            if (cageRight > SCREEN_RIGHT) cageX = SCREEN_RIGHT - CAGE_SIZE/2;
-            if (cageTop < CEILING_Y) cageY = CEILING_Y + CAGE_SIZE/2;
-            if (cageBottom > GROUND_Y) cageY = GROUND_Y - CAGE_SIZE/2;
+            if (cageLeft < SCREEN_LEFT) {
+                cageX = SCREEN_LEFT + CAGE_SIZE/2;
+                velocityX = 0;
+            }
+            if (cageRight > SCREEN_RIGHT) {
+                cageX = SCREEN_RIGHT - CAGE_SIZE/2;
+                velocityX = 0;
+            }
+            if (cageTop < CEILING_Y) {
+                cageY = CEILING_Y + CAGE_SIZE/2;
+                velocityY = 0;
+            }
+            if (cageBottom > GROUND_Y) {
+                cageY = GROUND_Y - CAGE_SIZE/2;
+                velocityY = 0;
+            }
         }
         
         function endDrag() {
