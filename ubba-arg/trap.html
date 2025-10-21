@@ -1,1 +1,229 @@
 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TRAP</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: #2c3e50; /* Navy gray background */
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        #game-container {
+            position: relative;
+            width: 800px;
+            height: 400px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        #cage {
+            position: absolute;
+            width: 200px;
+            height: 200px;
+            cursor: grab;
+            transition: transform 0.1s;
+            z-index: 10;
+        }
+        
+        #ubba {
+            position: absolute;
+            width: 150px;
+            height: 150px;
+            pointer-events: none;
+            z-index: 5;
+        }
+        
+        #win-message {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            color: #0f0;
+            font-family: 'Courier New', monospace;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            z-index: 100;
+            font-size: 48px;
+        }
+        
+        #win-message button {
+            margin-top: 20px;
+            padding: 10px 20px;
+            background: #000;
+            color: #0f0;
+            border: 2px solid #0f0;
+            font-family: 'Courier New', monospace;
+            cursor: pointer;
+            font-size: 24px;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <img src="https://raw.githubusercontent.com/clampert1/Ubba/main/ubba-arg/assets/cameras/cage.png" id="cage">
+        <img src="https://raw.githubusercontent.com/clampert1/Ubba/main/ubba-arg/assets/sprites/ubba%20png.png" id="ubba">
+    </div>
+    
+    <div id="win-message">
+        CONTAINMENT SUCCESSFUL
+        <button onclick="location.reload()">PLAY AGAIN</button>
+    </div>
+
+    <script>
+        const cage = document.getElementById('cage');
+        const ubba = document.getElementById('ubba');
+        const winMessage = document.getElementById('win-message');
+        
+        // Position ubba on the right side
+        ubba.style.left = '600px';
+        
+        // Physics variables
+        let isDragging = false;
+        let velocityX = 0;
+        let velocityY = 0;
+        let angularVelocity = 0;
+        let lastX = 400; // Start in middle-left
+        let lastY = 200;
+        let rotation = 0;
+        let dragOffsetX = 0;
+        let dragOffsetY = 0;
+        
+        // Game loop
+        function gameLoop() {
+            if (!isDragging) {
+                // Apply physics when not dragging
+                lastX += velocityX;
+                lastY += velocityY;
+                rotation += angularVelocity;
+                
+                // Apply friction
+                velocityX *= 0.98;
+                velocityY *= 0.98;
+                angularVelocity *= 0.98;
+                
+                // Bounce off walls
+                if (lastX < 100 || lastX > 700) {
+                    velocityX = -velocityX * 0.8;
+                    lastX = Math.max(100, Math.min(700, lastX));
+                }
+                if (lastY < 100 || lastY > 300) {
+                    velocityY = -velocityY * 0.8;
+                    lastY = Math.max(100, Math.min(300, lastY));
+                }
+                
+                // Update position and rotation
+                cage.style.left = (lastX - 100) + 'px';
+                cage.style.top = (lastY - 100) + 'px';
+                cage.style.transform = `rotate(${rotation}deg)`;
+            }
+            
+            // Check for win condition
+            checkWinCondition();
+            
+            requestAnimationFrame(gameLoop);
+        }
+        
+        // Mouse/touch events
+        cage.addEventListener('mousedown', startDrag);
+        cage.addEventListener('touchstart', startDrag);
+        
+        document.addEventListener('mousemove', drag);
+        document.addEventListener('touchmove', drag);
+        
+        document.addEventListener('mouseup', endDrag);
+        document.addEventListener('touchend', endDrag);
+        
+        function startDrag(e) {
+            e.preventDefault();
+            isDragging = true;
+            cage.style.cursor = 'grabbing';
+            
+            const rect = cage.getBoundingClientRect();
+            const clientX = e.clientX || e.touches[0].clientX;
+            const clientY = e.clientY || e.touches[0].clientY;
+            
+            dragOffsetX = clientX - rect.left;
+            dragOffsetY = clientY - rect.top;
+            
+            // Reset velocities when starting drag
+            velocityX = 0;
+            velocityY = 0;
+            angularVelocity = 0;
+        }
+        
+        function drag(e) {
+            if (!isDragging) return;
+            e.preventDefault();
+            
+            const clientX = e.clientX || e.touches[0].clientX;
+            const clientY = e.clientY || e.touches[0].clientY;
+            
+            // Calculate new position based on mouse and offset
+            const newX = clientX - dragOffsetX;
+            const newY = clientY - dragOffsetY;
+            
+            // Calculate velocity for when released
+            velocityX = (newX - lastX) * 0.5;
+            velocityY = (newY - lastY) * 0.5;
+            
+            // Add some random angular velocity based on movement
+            const movement = Math.sqrt(velocityX * velocityX + velocityY * velocityY);
+            angularVelocity = (Math.random() - 0.5) * movement * 0.1;
+            
+            lastX = newX;
+            lastY = newY;
+            
+            cage.style.left = (lastX - 100) + 'px';
+            cage.style.top = (lastY - 100) + 'px';
+        }
+        
+        function endDrag() {
+            if (!isDragging) return;
+            isDragging = false;
+            cage.style.cursor = 'grab';
+        }
+        
+        function checkWinCondition() {
+            const cageRect = cage.getBoundingClientRect();
+            const ubbaRect = ubba.getBoundingClientRect();
+            
+            // Check if cage is mostly covering ubba
+            const cageCenterX = cageRect.left + cageRect.width / 2;
+            const cageCenterY = cageRect.top + cageRect.height / 2;
+            const ubbaCenterX = ubbaRect.left + ubbaRect.width / 2;
+            const ubbaCenterY = ubbaRect.top + ubbaRect.height / 2;
+            
+            const distance = Math.sqrt(
+                Math.pow(cageCenterX - ubbaCenterX, 2) + 
+                Math.pow(cageCenterY - ubbaCenterY, 2)
+            );
+            
+            // Win if centers are close and cage is not moving too fast
+            if (distance < 50 && Math.abs(velocityX) < 2 && Math.abs(velocityY) < 2 && Math.abs(angularVelocity) < 1) {
+                winMessage.style.display = 'flex';
+            }
+        }
+        
+        // Start the game loop
+        gameLoop();
+    </script>
+</body>
+</html>
