@@ -116,11 +116,10 @@
         let angularVelocity = 0;
         let rotation = 0;
         
-        // Drag variables - completely new approach
-        let dragWorldAnchorX = 0;  // World position where user clicked
-        let dragWorldAnchorY = 0;
-        let dragLocalAnchorX = 0;  // Local position relative to cage center
-        let dragLocalAnchorY = 0;
+        // Rope physics variables
+        let ropeAnchorX = 0;
+        let ropeAnchorY = 0;
+        let ropeLength = 0;
         let lastMouseX = 0;
         let lastMouseY = 0;
         
@@ -139,24 +138,6 @@
         const SCREEN_LEFT = 0;
         const SCREEN_RIGHT = window.innerWidth;
         
-        // Convert local coordinates to world coordinates
-        function localToWorld(localX, localY) {
-            const cos = Math.cos(rotation * Math.PI / 180);
-            const sin = Math.sin(rotation * Math.PI / 180);
-            const worldX = cageX + localX * cos - localY * sin;
-            const worldY = cageY + localX * sin + localY * cos;
-            return { x: worldX, y: worldY };
-        }
-        
-        // Convert world coordinates to local coordinates
-        function worldToLocal(worldX, worldY) {
-            const cos = Math.cos(-rotation * Math.PI / 180);
-            const sin = Math.sin(-rotation * Math.PI / 180);
-            const localX = (worldX - cageX) * cos - (worldY - cageY) * sin;
-            const localY = (worldX - cageX) * sin + (worldY - cageY) * cos;
-            return { x: localX, y: localY };
-        }
-        
         // Game loop
         function gameLoop() {
             if (!isDragging) {
@@ -168,16 +149,19 @@
                 // Moderate gravity
                 velocityY += 0.3;
                 
-                // Natural rotation damping
+                // Natural rotation damping - square wants to stay upright
+                const targetRotation = 0;
+                const rotationDiff = targetRotation - rotation;
+                angularVelocity += rotationDiff * 0.02;
                 angularVelocity *= 0.97;
                 
                 // Ground collision
                 const cageBottom = cageY + CAGE_SIZE/2;
                 if (cageBottom > GROUND_Y) {
                     cageY = GROUND_Y - CAGE_SIZE/2;
-                    velocityY = -velocityY * 0.3;
-                    velocityX *= 0.8;
-                    angularVelocity *= 0.7;
+                    velocityY = -velocityY * 0.4;
+                    velocityX *= 0.7;
+                    angularVelocity *= 0.6;
                     
                     if (Math.abs(velocityY) < 0.5) {
                         velocityY = 0;
@@ -199,17 +183,50 @@
                 if (cageLeft < SCREEN_LEFT) {
                     cageX = SCREEN_LEFT + CAGE_SIZE/2;
                     velocityX = -velocityX * 0.6;
-                    angularVelocity += velocityX * 0.03;
+                    angularVelocity += velocityX * 0.02;
                 }
                 if (cageRight > SCREEN_RIGHT) {
                     cageX = SCREEN_RIGHT - CAGE_SIZE/2;
                     velocityX = -velocityX * 0.6;
-                    angularVelocity += velocityX * 0.03;
+                    angularVelocity += velocityX * 0.02;
                 }
                 
                 // Air resistance
                 velocityX *= 0.99;
                 velocityY *= 0.99;
+            } else {
+                // Rope physics while dragging
+                const mouseX = lastMouseX;
+                const mouseY = lastMouseY;
+                
+                // Calculate current rope vector
+                const currentRopeX = cageX - mouseX;
+                const currentRopeY = cageY - mouseY;
+                const currentRopeLength = Math.sqrt(currentRopeX * currentRopeX + currentRopeY * currentRopeY);
+                
+                // Rope tension - pull cage toward mouse if rope is stretched
+                if (currentRopeLength > ropeLength) {
+                    const stretch = currentRopeLength - ropeLength;
+                    const tension = stretch * 0.1;
+                    
+                    const ropeAngle = Math.atan2(currentRopeY, currentRopeX);
+                    velocityX -= Math.cos(ropeAngle) * tension;
+                    velocityY -= Math.sin(ropeAngle) * tension;
+                }
+                
+                // Pendulum sway - natural swinging motion
+                const gravityTorque = Math.sin(rotation * Math.PI / 180) * 0.5;
+                angularVelocity += gravityTorque;
+                
+                // Apply rope physics
+                cageX += velocityX;
+                cageY += velocityY;
+                rotation += angularVelocity;
+                
+                // Air resistance while dragging
+                velocityX *= 0.95;
+                velocityY *= 0.95;
+                angularVelocity *= 0.95;
             }
             
             // Update position and rotation
@@ -240,26 +257,26 @@
             const clientX = e.clientX || e.touches[0].clientX;
             const clientY = e.clientY || e.touches[0].clientY;
             
-            // Store the exact world position where user clicked
-            dragWorldAnchorX = clientX;
-            dragWorldAnchorY = clientY;
+            // Set rope anchor at mouse position
+            ropeAnchorX = clientX;
+            ropeAnchorY = clientY;
             
-            // Calculate the local position relative to cage center
+            // Calculate initial rope length
             const cageRect = cage.getBoundingClientRect();
-            const clickLocalX = clientX - (cageRect.left + CAGE_SIZE/2);
-            const clickLocalY = clientY - (cageRect.top + CAGE_SIZE/2);
-            
-            // Convert to cage's local coordinate system (accounting for current rotation)
-            const localPos = worldToLocal(dragWorldAnchorX, dragWorldAnchorY);
-            dragLocalAnchorX = localPos.x;
-            dragLocalAnchorY = localPos.y;
+            const cageCenterX = cageRect.left + CAGE_SIZE/2;
+            const cageCenterY = cageRect.top + CAGE_SIZE/2;
+            ropeLength = Math.sqrt(
+                Math.pow(clientX - cageCenterX, 2) + 
+                Math.pow(clientY - cageCenterY, 2)
+            );
             
             lastMouseX = clientX;
             lastMouseY = clientY;
             
-            velocityX = 0;
-            velocityY = 0;
-            angularVelocity = 0;
+            // Reduce existing velocities for smooth transition
+            velocityX *= 0.5;
+            velocityY *= 0.5;
+            angularVelocity *= 0.5;
         }
         
         function drag(e) {
@@ -273,45 +290,35 @@
             const deltaX = clientX - lastMouseX;
             const deltaY = clientY - lastMouseY;
             
-            // The anchor point in world space should follow the mouse exactly
-            const targetWorldAnchorX = clientX;
-            const targetWorldAnchorY = clientY;
+            // Update rope anchor (mouse position)
+            ropeAnchorX = clientX;
+            ropeAnchorY = clientY;
             
-            // Calculate where the anchor point should be in world space based on current cage position
-            const currentWorldAnchor = localToWorld(dragLocalAnchorX, dragLocalAnchorY);
+            // Calculate the lever arm - distance from cage center to rope attachment point
+            // For a square, the farthest point is from center to corner
+            const cageRect = cage.getBoundingClientRect();
+            const cageCenterX = cageRect.left + CAGE_SIZE/2;
+            const cageCenterY = cageRect.top + CAGE_SIZE/2;
             
-            // Calculate the error between where anchor is and where it should be
-            const errorX = targetWorldAnchorX - currentWorldAnchor.x;
-            const errorY = targetWorldAnchorY - currentWorldAnchor.y;
+            // The attachment point is where the rope connects (mouse click relative to cage)
+            const attachLocalX = lastMouseX - cageCenterX;
+            const attachLocalY = lastMouseY - cageCenterY;
+            const leverLength = Math.sqrt(attachLocalX * attachLocalX + attachLocalY * attachLocalY);
             
-            // Move cage to correct the error
-            cageX += errorX;
-            cageY += errorY;
+            // Calculate rotation based on movement perpendicular to the rope
+            const ropeAngle = Math.atan2(cageCenterY - lastMouseY, cageCenterX - lastMouseX);
+            const moveAngle = Math.atan2(deltaY, deltaX);
+            const angleDiff = moveAngle - ropeAngle;
             
-            // Calculate rotation based on circular movement around anchor point
-            const currentToMouseX = clientX - currentWorldAnchor.x;
-            const currentToMouseY = clientY - currentWorldAnchor.y;
-            const lastToMouseX = lastMouseX - currentWorldAnchor.x;
-            const lastToMouseY = lastMouseY - currentWorldAnchor.y;
+            // Apply rotation force based on perpendicular movement
+            // More force when moving perpendicular to the rope, less when moving along it
+            const rotationForce = Math.sin(angleDiff) * leverLength * 0.01;
+            angularVelocity += rotationForce;
             
-            // Calculate the angle between the two vectors
-            const currentAngle = Math.atan2(currentToMouseY, currentToMouseX);
-            const lastAngle = Math.atan2(lastToMouseY, lastToMouseX);
-            let angleDiff = currentAngle - lastAngle;
+            // Add some direct velocity from mouse movement
+            velocityX += deltaX * 0.3;
+            velocityY += deltaY * 0.3;
             
-            // Normalize angle difference
-            if (angleDiff > Math.PI) angleDiff -= 2 * Math.PI;
-            if (angleDiff < -Math.PI) angleDiff += 2 * Math.PI;
-            
-            // Apply rotation based on circular movement
-            rotation += angleDiff * (180 / Math.PI); // Convert to degrees
-            
-            // Calculate velocity for when released
-            velocityX = deltaX * 2;
-            velocityY = deltaY * 2;
-            angularVelocity = angleDiff * 10;
-            
-            // Update last mouse position
             lastMouseX = clientX;
             lastMouseY = clientY;
             
@@ -323,19 +330,19 @@
             
             if (cageLeft < SCREEN_LEFT) {
                 cageX = SCREEN_LEFT + CAGE_SIZE/2;
-                velocityX = 0;
+                velocityX = Math.max(0, velocityX);
             }
             if (cageRight > SCREEN_RIGHT) {
                 cageX = SCREEN_RIGHT - CAGE_SIZE/2;
-                velocityX = 0;
+                velocityX = Math.min(0, velocityX);
             }
             if (cageTop < CEILING_Y) {
                 cageY = CEILING_Y + CAGE_SIZE/2;
-                velocityY = 0;
+                velocityY = Math.max(0, velocityY);
             }
             if (cageBottom > GROUND_Y) {
                 cageY = GROUND_Y - CAGE_SIZE/2;
-                velocityY = 0;
+                velocityY = Math.min(0, velocityY);
             }
         }
         
