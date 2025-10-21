@@ -615,7 +615,7 @@ function finishGame(){
   cleanupRoundPrep();
   els.results.style.display = 'flex';
   els.start.style.display = 'none';
-  const victory = (state.ubbaHP <= 0 && state.playerHP > 0);
+  const victory = (state.ubbaHP <= 0 || state.playerHP > 0);
   
   els.resultTitle.textContent = victory ? 'VICTORY!' : 'DEFEAT!';
   els.resultTitle.style.color = victory ? '#1df53a' : '#ff4b4b';
